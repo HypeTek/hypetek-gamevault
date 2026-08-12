@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HypeTek GameVault</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark small">HT</span><span>HypeTek GameVault</span></div>
+    <nav>
+      <button id="scanButton" class="secondary">Bibliothek scannen</button>
+      <form action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="ghost">Abmelden</button>
+      </form>
+    </nav>
+  </header>
+  <div class="energy-line"><span></span></div>
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">TRUETITAN GAME ARCHIVE</p>
+        <h1>Deine Games. Ein Klick entfernt.</h1>
+        <p>Installationsmedien über das verbundene SMB-Laufwerk verwalten.</p>
+      </div>
+      <div id="stats" class="stats"></div>
+    </section>
+    <section class="toolbar">
+      <input id="search" type="search" placeholder="Titel durchsuchen …">
+      <select id="filter">
+        <option value="all">Alle Typen</option>
+        <option value="direct_setup">Direktes Setup</option>
+        <option value="iso">ISO</option>
+        <option value="manual">Nur anzeigen</option>
+        <option value="archive">Archiv</option>
+        <option value="manual_image">Sonderabbild</option>
+      </select>
+      <span id="status"></span>
+    </section>
+    <section id="library" class="library" aria-live="polite"></section>
+  </main>
+
+  <dialog id="editor">
+    <form id="editorForm" method="dialog">
+      <div class="dialog-head"><h2>Eintrag bearbeiten</h2><button value="cancel" class="ghost">×</button></div>
+      <input type="hidden" id="editId">
+      <label>Titel<input id="editTitle" type="text"></label>
+      <label>Plattform<input id="editPlatform" type="text" placeholder="Windows, DOS, PlayStation …"></label>
+      <label>Aktion
+        <select id="editAction">
+          <option value="">Automatisch erkannt</option>
+          <option value="direct_setup">Direktes Setup</option>
+          <option value="iso">ISO einbinden</option>
+          <option value="manual">Nur anzeigen / manuell</option>
+          <option value="archive">Archiv / manuell</option>
+          <option value="manual_image">Sonderabbild / manuell</option>
+          <option value="ignore">Ausblenden</option>
+        </select>
+      </label>
+      <label>Relativer Startpfad<input id="editLauncher" type="text" placeholder="Spiel/setup.exe"></label>
+      <label>Beschreibung<textarea id="editDescription" rows="4"></textarea></label>
+      <label>Cover (JPG, PNG, WEBP)<input id="editCover" type="file" accept="image/jpeg,image/png,image/webp"></label>
+      <div id="editNote" class="note"></div>
+      <div class="dialog-actions"><button value="cancel" class="secondary">Abbrechen</button><button id="saveButton" value="default">Speichern</button></div>
+    </form>
+  </dialog>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

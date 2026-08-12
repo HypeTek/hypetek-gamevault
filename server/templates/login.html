@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HypeTek GameVault – Anmeldung</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="login-page">
+  <main class="login-panel">
+    <div class="brand-mark">HT</div>
+    <h1>HypeTek GameVault</h1>
+    <p>Private Spielebibliothek auf TrueTitan</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="password">Administratorkennwort</label>
+      <input id="password" name="password" type="password" autofocus required>
+      {% if error %}<p class="error">{{ error }}</p>{% endif %}
+      <button type="submit">Anmelden</button>
+    </form>
+  </main>
+</body>
+</html>

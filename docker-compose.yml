@@ -1,0 +1,20 @@
+services:
+  gamevault:
+    image: ghcr.io/hypetek/hypetek-gamevault:latest
+    container_name: hypetek-gamevault
+    restart: unless-stopped
+    ports:
+      - "9998:8080"
+    environment:
+      GAMEVAULT_GAME_ROOT: /games
+      GAMEVAULT_CONFIG_DIR: /config
+      GAMEVAULT_ADMIN_PASSWORD: ${GAMEVAULT_ADMIN_PASSWORD}
+      GAMEVAULT_AGENT_TOKEN: ${GAMEVAULT_AGENT_TOKEN}
+      GAMEVAULT_SECRET_KEY: ${GAMEVAULT_SECRET_KEY}
+    volumes:
+      - /mnt/Titan/Game:/games:ro
+      - /mnt/Titan/Applications/gamevault:/config
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
