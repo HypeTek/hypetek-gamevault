@@ -22,6 +22,7 @@ DEFAULTS = {
     "crosshair_cursor": False,
     "scan_exclusions": [],
     "rawg_api_key": "",
+    "thegamesdb_api_key": "",
 }
 
 
@@ -104,4 +105,5 @@ class SettingsStore:
             "crosshair_cursor": bool(values.get("crosshair_cursor", False)),
             "scan_exclusions": exclusions,
             "rawg_api_key": str(values.get("rawg_api_key") or "").strip()[:200],
+            "thegamesdb_api_key": str(values.get("thegamesdb_api_key") or "").strip()[:200],
         }

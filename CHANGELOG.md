@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.3
+
+- TheGamesDB als aktiven Hauptanbieter für die manuelle Cover-Suche ergänzt.
+- API-Key wird vor dem Speichern gegen den offiziellen Suchendpunkt geprüft.
+- Suchtreffer zeigen Titel, Plattform, Erscheinungsdatum und Covervorschau.
+- Boxart wird ausschließlich vom offiziellen TheGamesDB-CDN geladen, geprüft und lokal zwischengespeichert.
+- Quellenlink verweist je Cover auf den zugehörigen TheGamesDB-Eintrag.
+- Bereits gespeicherte RAWG-Cover und deren Quellenlinks bleiben sichtbar; neue RAWG-Abfragen sind wegen der unklaren Verfügbarkeit deaktiviert.
+- Metadatenanbieter-Schicht und Tests für weitere spätere Quellen vorbereitet.
+
 ## 0.2.2
 
 - Freiwillige RAWG-Coversuche im Bearbeiten-Dialog ergänzt.

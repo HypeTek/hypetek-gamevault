@@ -7,7 +7,7 @@ import zipfile
 from io import BytesIO
 from functools import wraps
 from pathlib import Path, PurePosixPath
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from flask import (
     Flask,
@@ -26,7 +26,12 @@ from werkzeug.utils import secure_filename
 from database import Database
 from scanner import scan_library
 from settings import SettingsStore, THEMES
-from metadata import MetadataError, download_rawg_image, search_rawg, validate_rawg_key
+from metadata import (
+    MetadataError,
+    download_thegamesdb_image,
+    search_thegamesdb,
+    validate_thegamesdb_key,
+)
 
 
 GAME_ROOT = Path(os.environ.get("GAMEVAULT_GAME_ROOT", "/games")).resolve()
@@ -158,8 +163,9 @@ def index():
 
 def public_settings() -> dict:
     values = settings_store.load()
-    values["rawg_configured"] = bool(values.get("rawg_api_key"))
+    values["thegamesdb_configured"] = bool(values.get("thegamesdb_api_key"))
     values.pop("rawg_api_key", None)
+    values.pop("thegamesdb_api_key", None)
     values["background_url"] = (
         url_for("background", name=values["background_name"])
         if values.get("background_name")
@@ -187,16 +193,16 @@ def update_settings():
         "background_blur",
         "crosshair_cursor",
         "scan_exclusions",
-        "rawg_api_key",
+        "thegamesdb_api_key",
     }
     changes = {key: payload[key] for key in allowed if key in payload}
     if "theme" in changes and changes["theme"] not in THEMES:
         return jsonify(error="Unbekanntes Design"), 400
-    if changes.get("rawg_api_key"):
+    if changes.get("thegamesdb_api_key"):
         try:
-            validate_rawg_key(str(changes["rawg_api_key"]))
+            validate_thegamesdb_key(str(changes["thegamesdb_api_key"]))
         except MetadataError as error:
-            return jsonify(error=f"RAWG-Key wurde nicht gespeichert: {error}"), 502
+            return jsonify(error=f"TheGamesDB-Key wurde nicht gespeichert: {error}"), 502
     settings_store.update(changes)
     return jsonify(public_settings())
 
@@ -320,7 +326,9 @@ def search_game_metadata(game_id: str):
     payload = request.get_json(silent=True) or {}
     query = str(payload.get("query") or game["title"]).strip()[:160]
     try:
-        results = search_rawg(settings_store.load().get("rawg_api_key", ""), query)
+        results = search_thegamesdb(
+            settings_store.load().get("thegamesdb_api_key", ""), query
+        )
     except MetadataError as error:
         return jsonify(error=str(error)), 502
     return jsonify(query=query, results=results)
@@ -334,22 +342,32 @@ def apply_game_metadata(game_id: str):
     if not game:
         abort(404)
     payload = request.get_json(force=True)
-    if payload.get("provider") != "rawg":
+    if payload.get("provider") != "thegamesdb":
         return jsonify(error="Unbekannter Metadatenanbieter"), 400
     source_url = str(payload.get("source_url") or "")
     parsed_source = urlparse(source_url)
-    if parsed_source.scheme != "https" or parsed_source.hostname != "rawg.io" or not parsed_source.path.startswith("/games/"):
-        return jsonify(error="Ungültiger RAWG-Quellenlink"), 400
+    provider_id = str(payload.get("provider_id") or "")[:80]
+    source_id = (parse_qs(parsed_source.query).get("id") or [""])[0]
+    if (
+        parsed_source.scheme != "https"
+        or parsed_source.hostname != "thegamesdb.net"
+        or parsed_source.path != "/game.php"
+        or not provider_id.isdigit()
+        or source_id != provider_id
+    ):
+        return jsonify(error="Ungültiger TheGamesDB-Quellenlink"), 400
     for old in COVER_DIR.glob(f"{game_id}.*"):
         old.unlink(missing_ok=True)
     try:
-        name = download_rawg_image(str(payload.get("image_url") or ""), COVER_DIR / game_id)
+        name = download_thegamesdb_image(
+            str(payload.get("image_url") or ""), COVER_DIR / game_id
+        )
     except MetadataError as error:
         return jsonify(error=str(error)), 502
     database.update_game(game_id, {
         "cover_name": name,
-        "metadata_provider": "rawg",
-        "metadata_provider_id": str(payload.get("provider_id") or "")[:80],
+        "metadata_provider": "thegamesdb",
+        "metadata_provider_id": provider_id,
         "metadata_source_url": source_url[:500],
     })
     return jsonify(database.get_game(game_id))
