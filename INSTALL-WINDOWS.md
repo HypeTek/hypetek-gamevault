@@ -1,6 +1,6 @@
 # Windows-Agent installieren
 
-## Empfohlen: EXE-Installer
+## Empfohlen: Windows-Agent installieren
 
 Der GitHub-Workflow erzeugt:
 
@@ -23,7 +23,7 @@ Anleitung zum Verbinden des Netzlaufwerks, zu gespeicherten Windows-Anmeldedaten
 zum sicheren Zugriff über ein bestehendes Tailscale-Netz. SMB-Port 445 darf niemals
 direkt am Router ins Internet freigegeben werden.
 
-## PowerShell-Fallback
+## Manuelle PowerShell-Installation
 
 ZIP aus Mission Control herunterladen, vollständig entpacken und in einer normalen
 PowerShell ausführen:
@@ -55,7 +55,7 @@ sind normale Windows-Sicherheitsabfragen des jeweiligen Installers.
 ## Deinstallation
 
 Den Windows-Eintrag **HypeTek Mission Control Agent** unter *Installierte Apps* nutzen
-oder beim PowerShell-Fallback ausführen:
+oder bei der manuellen PowerShell-Installation ausführen:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Uninstall-Agent.ps1

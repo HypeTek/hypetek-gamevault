@@ -59,6 +59,25 @@ function Get-Ticket([string]$ServerUrl, [string]$AgentToken, [string]$Ticket) {
     }
 }
 
+function Confirm-Probe([string]$ServerUrl, [string]$AgentToken, [string]$Token) {
+    $headers = @{ Authorization = "Bearer $AgentToken" }
+    try {
+        Invoke-RestMethod -Method Post `
+            -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/probes/$([Uri]::EscapeDataString($Token))/confirm" `
+            -Headers $headers `
+            -TimeoutSec 15 | Out-Null
+    }
+    catch {
+        $status = 0
+        if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+            $status = [int]$_.Exception.Response.StatusCode
+        }
+        if ($status -eq 401) { throw "Der Agent-Token stimmt nicht mit dem Mission-Control-Server überein." }
+        if ($status -eq 404) { throw "Die Agent-Prüfung ist ungültig oder abgelaufen." }
+        throw "Mission Control ist nicht erreichbar: $($_.Exception.Message)"
+    }
+}
+
 function Find-InstallerOnMountedIso([string]$DriveLetter) {
     $root = "$($DriveLetter):\"
     $autorun = Join-Path $root "autorun.inf"
@@ -91,8 +110,23 @@ try {
     }
     if ([string]::IsNullOrWhiteSpace($ProtocolUrl)) { throw "Kein Mission-Control-Auftrag empfangen." }
     $uri = [Uri]$ProtocolUrl
-    if ($uri.Scheme -ne "hypetek-gamevault" -or $uri.Host -ne "launch") {
+    if ($uri.Scheme -ne "hypetek-gamevault" -or $uri.Host -notin @("launch", "probe")) {
         throw "Ungültiger Mission-Control-Link."
+    }
+
+    if ($uri.Host -eq "probe") {
+        $probeToken = $null
+        foreach ($pair in $uri.Query.TrimStart('?').Split('&')) {
+            if ([string]::IsNullOrWhiteSpace($pair)) { continue }
+            $parts = $pair -split '=', 2
+            if ([Uri]::UnescapeDataString($parts[0]) -eq "token" -and $parts.Count -eq 2) {
+                $probeToken = [Uri]::UnescapeDataString($parts[1])
+                break
+            }
+        }
+        if ([string]::IsNullOrWhiteSpace($probeToken)) { throw "Prüftoken fehlt im Mission-Control-Link." }
+        Confirm-Probe $config.server_url $config.agent_token $probeToken
+        exit 0
     }
     $ticket = $null
     foreach ($pair in $uri.Query.TrimStart('?').Split('&')) {

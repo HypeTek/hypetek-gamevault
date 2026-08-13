@@ -66,12 +66,21 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.2.4 muss die Antwort unter anderem `"version":"0.2.4"` und
-`"agent_api":2` enthalten. So lässt sich ein noch laufendes altes Container-Image
+Für Version 0.2.5 muss die Antwort unter anderem `"version":"0.2.5"` und
+`"agent_api":3` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
 Weder Agent-Token noch Admin-Passwort müssen beim Upgrade geändert werden. Ein geänderter
 Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
+
+## Optionaler lokaler Translator
+
+Die Datei `TRANSLATOR-TRUENAS.yml.example` enthält den zusätzlichen
+LibreTranslate-kompatiblen Dienst. Er wird unter `services:` derselben Custom App
+ergänzt und ist anschließend innerhalb des App-Netzes als
+`http://translator:5000` erreichbar. Die vollständige, bebilderte Anleitung kann
+in Mission Control unter **API-/Translator-Hilfe** als PDF heruntergeladen oder
+per QR-Code auf einem zweiten Gerät geöffnet werden.
 
 ## Berechtigungen
 

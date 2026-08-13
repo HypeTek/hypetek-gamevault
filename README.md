@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.2.4
+## Funktionen in Version 0.2.5
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -23,6 +23,10 @@ verändern oder in ein neues Format zu zwingen.
 - Windows PowerShell 5.1 und PowerShell 7
 - optionale, manuell ausgelöste TheGamesDB-Coversuche mit Vorschau und Quellenlink
 - Spiele-Infofenster mit lokal gespeichertem Spielinhalt und getrennten eigenen Bemerkungen
+- Installations- und Ordneraktionen direkt im Spiele-Infofenster
+- optionaler lokaler Mission Control Translator über eine LibreTranslate-kompatible API
+- sichere Windows-Agent-Erkennung über kurzlebige Prüftickets
+- integrierte API-/Translator-Hilfe mit PDF-Download und QR-Code
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer
@@ -49,6 +53,7 @@ und Benutzeroberfläche heißen bereits HypeTek Mission Control.
 - `.github/workflows/container.yml` – Tests, Container und Windows-Installer
 - `INSTALL-TRUENAS.md` – Installation und Upgrade auf TrueNAS SCALE
 - `INSTALL-WINDOWS.md` – Windows-Agent und Diagnose
+- `TRANSLATOR-TRUENAS.yml.example` – optionaler lokaler Translator-Dienst für TrueNAS
 
 ## Container
 
@@ -83,7 +88,7 @@ python -m unittest discover -s tests -v
 ```
 
 GitHub Actions führt die Tests vor jedem Container- und Installer-Build aus. Bei einem
-Tag wie `v0.2.4` werden ein versioniertes Container-Image und der Windows-Installer als
+Tag wie `v0.2.5` werden ein versioniertes Container-Image und der Windows-Agent als
 Release-Artefakt veröffentlicht.
 
 ## Updates nach GitHub übertragen
@@ -97,7 +102,7 @@ Für vollständige Updates unter Windows wird **GitHub Desktop** empfohlen:
 
 Damit wird auch `.github/workflows/container.yml` zuverlässig übernommen. Beim manuellen
 Upload im Browser kann der mit einem Punkt beginnende Ordner leicht übersehen werden;
-ohne diese Datei werden weder Tests noch Container oder EXE-Installer gebaut.
+ohne diese Datei werden weder Tests noch Container oder Windows-Agent gebaut.
 
 ## Sicherheitsgrenzen
 

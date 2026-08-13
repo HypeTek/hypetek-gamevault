@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS games (
     metadata_source_url TEXT,
     metadata_title TEXT,
     metadata_overview TEXT,
+    metadata_overview_original TEXT,
+    metadata_overview_language TEXT,
     metadata_release_date TEXT,
     metadata_platform TEXT,
     metadata_rating TEXT,
@@ -45,6 +47,11 @@ CREATE TABLE IF NOT EXISTS launch_tickets (
     expires_at INTEGER NOT NULL,
     used_at INTEGER,
     FOREIGN KEY(game_id) REFERENCES games(id)
+);
+CREATE TABLE IF NOT EXISTS agent_probes (
+    token TEXT PRIMARY KEY,
+    expires_at INTEGER NOT NULL,
+    confirmed_at INTEGER
 );
 """
 
@@ -72,6 +79,8 @@ class Database:
                 "metadata_source_url",
                 "metadata_title",
                 "metadata_overview",
+                "metadata_overview_original",
+                "metadata_overview_language",
                 "metadata_release_date",
                 "metadata_platform",
                 "metadata_rating",
@@ -148,6 +157,8 @@ class Database:
             "metadata_source_url",
             "metadata_title",
             "metadata_overview",
+            "metadata_overview_original",
+            "metadata_overview_language",
             "metadata_release_date",
             "metadata_platform",
             "metadata_rating",
@@ -200,6 +211,34 @@ class Database:
         game = self._row_to_game(row)
         game["requested_action"] = row["requested_action"]
         return game
+
+    def create_agent_probe(self, token: str, expires_at: int) -> None:
+        with self.connect() as connection:
+            connection.execute("DELETE FROM agent_probes WHERE expires_at < ?", (int(time.time()),))
+            connection.execute(
+                "INSERT INTO agent_probes(token, expires_at) VALUES (?, ?)",
+                (token, expires_at),
+            )
+
+    def confirm_agent_probe(self, token: str) -> bool:
+        now = int(time.time())
+        with self.connect() as connection:
+            result = connection.execute(
+                """
+                UPDATE agent_probes SET confirmed_at = ?
+                WHERE token = ? AND expires_at >= ? AND confirmed_at IS NULL
+                """,
+                (now, token, now),
+            )
+        return result.rowcount == 1
+
+    def get_agent_probe(self, token: str) -> dict | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT expires_at, confirmed_at FROM agent_probes WHERE token = ?",
+                (token,),
+            ).fetchone()
+        return dict(row) if row else None
 
     @staticmethod
     def _row_to_game(row: sqlite3.Row) -> dict:

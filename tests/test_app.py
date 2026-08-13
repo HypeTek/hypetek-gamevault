@@ -26,7 +26,7 @@ class AppTests(unittest.TestCase):
             GAMEVAULT_AGENT_DIR=str(Path(__file__).parents[1] / "windows-agent"),
         )
         sys.path.insert(0, str(Path(__file__).parents[1] / "server"))
-        for module in ("app", "database", "scanner", "settings", "metadata"):
+        for module in ("app", "database", "scanner", "settings", "metadata", "translation"):
             sys.modules.pop(module, None)
         import app
         self.module = app
@@ -107,8 +107,8 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.2.4")
-        self.assertEqual(health["agent_api"], 2)
+        self.assertEqual(health["version"], "0.2.5")
+        self.assertEqual(health["agent_api"], 3)
 
     def test_path_escape_is_rejected(self):
         self.login()
@@ -147,6 +147,8 @@ class AppTests(unittest.TestCase):
         page = self.client.get("/")
         self.assertEqual(page.status_code, 200)
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
+        self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
+        self.assertIn("Windows-Agent installieren", page.get_data(as_text=True))
         settings = self.client.get("/api/settings").get_json()
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
@@ -261,8 +263,27 @@ class AppTests(unittest.TestCase):
             self.assertEqual(updated["metadata_provider_id"], "123")
             self.assertEqual(updated["metadata_source_url"], candidate["source_url"])
             self.assertEqual(updated["metadata_overview"], "A test game overview.")
+            self.assertEqual(updated["metadata_overview_original"], "A test game overview.")
             self.assertEqual(updated["metadata_platform"], "PC")
             self.assertTrue(updated["cover_name"].endswith(".jpg"))
+
+            self.module.settings_store.update({
+                "translator_url": "http://translator:5000",
+                "content_language": "de",
+            })
+            original_translate = self.module.translate_text
+            self.module.translate_text = lambda endpoint, text, target, key="": "Ein Testspiel."
+            try:
+                translated = self.post(
+                    f"/api/games/{game['id']}/metadata/translate",
+                    json={},
+                )
+            finally:
+                self.module.translate_text = original_translate
+            self.assertEqual(translated.status_code, 200)
+            self.assertEqual(translated.get_json()["metadata_overview"], "Ein Testspiel.")
+            self.assertEqual(translated.get_json()["metadata_overview_original"], "A test game overview.")
+            self.assertEqual(translated.get_json()["metadata_overview_language"], "de")
         finally:
             self.module.search_thegamesdb = original_search
             self.module.download_thegamesdb_image = original_download
@@ -275,7 +296,62 @@ class AppTests(unittest.TestCase):
         self.post("/api/scan")
         games = self.client.get("/api/games").get_json()
         candidate = next(game for game in games if game["relative_path"].startswith("AC Valhalla"))
-        self.assertEqual(candidate["metadata_search_title"], "Assassin's Creed Valhalla")
+        self.assertEqual(candidate["metadata_search_title"], "AC Valhalla")
+
+    def test_agent_probe_requires_real_agent_confirmation(self):
+        self.login()
+        created = self.post("/api/agent/probes", json={})
+        self.assertEqual(created.status_code, 200)
+        probe = created.get_json()
+        self.assertIn("hypetek-gamevault://probe?token=", probe["protocol_url"])
+
+        pending = self.client.get(f"/api/agent/probes/{probe['token']}")
+        self.assertFalse(pending.get_json()["confirmed"])
+
+        unauthorized = self.client.post(f"/api/agent/probes/{probe['token']}/confirm")
+        self.assertEqual(unauthorized.status_code, 401)
+        confirmed = self.client.post(
+            f"/api/agent/probes/{probe['token']}/confirm",
+            headers={"Authorization": "Bearer agent-test"},
+        )
+        self.assertEqual(confirmed.status_code, 204)
+        status = self.client.get(f"/api/agent/probes/{probe['token']}").get_json()
+        self.assertTrue(status["confirmed"])
+
+    def test_api_translator_pdf_is_downloadable(self):
+        self.login()
+        response = self.client.get("/download/api-and-translator-guide.pdf")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/pdf")
+        self.assertTrue(response.data.startswith(b"%PDF-"))
+        response.close()
+        qr = self.client.get("/help/api-and-translator-guide/qr.svg")
+        self.assertEqual(qr.status_code, 200)
+        self.assertEqual(qr.mimetype, "image/svg+xml")
+        self.assertIn(b"<svg", qr.data)
+
+    def test_translator_is_validated_and_secret_is_write_only(self):
+        self.login()
+        original_validate = self.module.validate_translator
+        self.module.validate_translator = lambda url, key="": None
+        try:
+            saved = self.client.patch(
+                "/api/settings",
+                json={
+                    "translator_url": "http://translator:5000/",
+                    "translator_api_key": "translator-secret",
+                    "content_language": "ru",
+                },
+                headers={"X-CSRF-Token": self.csrf},
+            )
+        finally:
+            self.module.validate_translator = original_validate
+        self.assertEqual(saved.status_code, 200)
+        public = saved.get_json()
+        self.assertEqual(public["translator_url"], "http://translator:5000")
+        self.assertEqual(public["content_language"], "ru")
+        self.assertTrue(public["translator_configured"])
+        self.assertNotIn("translator_api_key", public)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,12 @@ from werkzeug.utils import secure_filename
 from database import Database
 from scanner import scan_library
 from settings import SettingsStore, THEMES
+from translation import (
+    TranslationError,
+    normalize_translator_url,
+    translate_text,
+    validate_translator,
+)
 from metadata import (
     MetadataError,
     download_thegamesdb_image,
@@ -41,6 +47,7 @@ CONFIG_DIR = Path(os.environ.get("GAMEVAULT_CONFIG_DIR", "/config")).resolve()
 AGENT_DIR = Path(os.environ.get("GAMEVAULT_AGENT_DIR", "/app/windows-agent")).resolve()
 COVER_DIR = CONFIG_DIR / "covers"
 BACKGROUND_DIR = CONFIG_DIR / "backgrounds"
+GUIDE_DIR = Path(__file__).with_name("static") / "docs"
 ADMIN_PASSWORD = os.environ.get("GAMEVAULT_ADMIN_PASSWORD", "")
 AGENT_TOKEN = os.environ.get("GAMEVAULT_AGENT_TOKEN", "")
 SECRET_KEY = os.environ.get("GAMEVAULT_SECRET_KEY", "")
@@ -131,7 +138,7 @@ def safe_relative_path(value: str | None) -> str | None:
 
 @app.get("/health")
 def health():
-    return jsonify(status="ok", version=APP_VERSION, agent_api=2, game_root=str(GAME_ROOT))
+    return jsonify(status="ok", version=APP_VERSION, agent_api=3, game_root=str(GAME_ROOT))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -166,8 +173,11 @@ def index():
 def public_settings() -> dict:
     values = settings_store.load()
     values["thegamesdb_configured"] = bool(values.get("thegamesdb_api_key"))
+    values["translator_configured"] = bool(values.get("translator_url"))
+    values["translator_api_key_configured"] = bool(values.get("translator_api_key"))
     values.pop("rawg_api_key", None)
     values.pop("thegamesdb_api_key", None)
+    values.pop("translator_api_key", None)
     values["background_url"] = (
         url_for("background", name=values["background_name"])
         if values.get("background_name")
@@ -196,6 +206,9 @@ def update_settings():
         "crosshair_cursor",
         "scan_exclusions",
         "thegamesdb_api_key",
+        "content_language",
+        "translator_url",
+        "translator_api_key",
     }
     changes = {key: payload[key] for key in allowed if key in payload}
     if "theme" in changes and changes["theme"] not in THEMES:
@@ -205,6 +218,20 @@ def update_settings():
             validate_thegamesdb_key(str(changes["thegamesdb_api_key"]))
         except MetadataError as error:
             return jsonify(error=f"TheGamesDB-Key wurde nicht gespeichert: {error}"), 502
+    if "translator_url" in changes:
+        try:
+            changes["translator_url"] = normalize_translator_url(changes["translator_url"])
+        except TranslationError as error:
+            return jsonify(error=f"Translator wurde nicht gespeichert: {error}"), 400
+    if {"translator_url", "translator_api_key"} & changes.keys():
+        current = settings_store.load()
+        candidate_url = changes.get("translator_url", current.get("translator_url", ""))
+        candidate_key = changes.get("translator_api_key", current.get("translator_api_key", ""))
+        if candidate_url:
+            try:
+                validate_translator(candidate_url, candidate_key or "")
+            except TranslationError as error:
+                return jsonify(error=f"Translator wurde nicht gespeichert: {error}"), 502
     settings_store.update(changes)
     return jsonify(public_settings())
 
@@ -280,6 +307,31 @@ def download_windows_agent():
 @login_required
 def download_windows_agent_exe():
     return redirect(AGENT_INSTALLER_URL)
+
+
+@app.get("/download/api-and-translator-guide.pdf")
+@login_required
+def download_api_and_translator_guide():
+    return send_from_directory(
+        GUIDE_DIR,
+        "HypeTek-Mission-Control-API-und-Translator-Anleitung.pdf",
+        as_attachment=True,
+        download_name="HypeTek-Mission-Control-API-und-Translator-Anleitung.pdf",
+    )
+
+
+@app.get("/help/api-and-translator-guide/qr.svg")
+@login_required
+def api_and_translator_guide_qr():
+    import qrcode
+    from qrcode.image.svg import SvgPathImage
+
+    target = url_for("download_api_and_translator_guide", _external=True)
+    image = qrcode.make(target, image_factory=SvgPathImage, box_size=8, border=2)
+    output = BytesIO()
+    image.save(output)
+    output.seek(0)
+    return send_file(output, mimetype="image/svg+xml", max_age=300)
 
 
 @app.get("/api/games")
@@ -392,11 +444,45 @@ def apply_game_metadata(game_id: str):
         "metadata_source_url": source_url[:500],
         "metadata_title": str(payload.get("name") or "")[:160],
         "metadata_overview": str(payload.get("overview") or "")[:12000],
+        "metadata_overview_original": str(payload.get("overview") or "")[:12000],
+        "metadata_overview_language": "original",
         "metadata_release_date": str(payload.get("released") or "")[:10],
         "metadata_platform": str(payload.get("platform") or "")[:80],
         "metadata_rating": str(payload.get("rating") or "")[:80],
         "metadata_players": str(payload.get("players") or "")[:40],
         "metadata_coop": str(payload.get("coop") or "")[:40],
+    })
+    return jsonify(database.get_game(game_id))
+
+
+@app.post("/api/games/<game_id>/metadata/translate")
+@login_required
+@csrf_required
+def translate_game_metadata(game_id: str):
+    game = database.get_game(game_id)
+    if not game:
+        abort(404)
+    source = str(game.get("metadata_overview_original") or game.get("metadata_overview") or "").strip()
+    if not source:
+        return jsonify(error="Für diesen Eintrag ist kein Spielinhalt vorhanden"), 409
+    settings = settings_store.load()
+    endpoint = settings.get("translator_url", "")
+    if not endpoint:
+        return jsonify(error="In den Einstellungen ist kein Mission Control Translator eingerichtet"), 409
+    target = settings.get("content_language", "de")
+    try:
+        translated = translate_text(
+            endpoint,
+            source,
+            target,
+            settings.get("translator_api_key", ""),
+        )
+    except TranslationError as error:
+        return jsonify(error=str(error)), 502
+    database.update_game(game_id, {
+        "metadata_overview_original": source[:12000],
+        "metadata_overview": translated[:12000],
+        "metadata_overview_language": target,
     })
     return jsonify(database.get_game(game_id))
 
@@ -432,6 +518,8 @@ def upload_cover(game_id: str):
         "metadata_source_url": None,
         "metadata_title": None,
         "metadata_overview": None,
+        "metadata_overview_original": None,
+        "metadata_overview_language": None,
         "metadata_release_date": None,
         "metadata_platform": None,
         "metadata_rating": None,
@@ -469,6 +557,43 @@ def launch_ticket(game_id: str):
     token = secrets.token_urlsafe(32)
     database.create_ticket(token, game_id, requested_action, int(time.time()) + 120)
     return jsonify(protocol_url=f"hypetek-gamevault://launch?ticket={token}", expires_in=120)
+
+
+@app.post("/api/agent/probes")
+@login_required
+@csrf_required
+def create_agent_probe():
+    token = secrets.token_urlsafe(32)
+    database.create_agent_probe(token, int(time.time()) + 45)
+    return jsonify(
+        token=token,
+        protocol_url=f"hypetek-gamevault://probe?token={token}",
+        expires_in=45,
+    )
+
+
+@app.get("/api/agent/probes/<token>")
+@login_required
+def agent_probe_status(token: str):
+    probe = database.get_agent_probe(token)
+    if not probe:
+        abort(404)
+    return jsonify(
+        confirmed=bool(probe.get("confirmed_at")),
+        expired=int(probe["expires_at"]) < int(time.time()),
+    )
+
+
+@app.post("/api/agent/probes/<token>/confirm")
+def confirm_agent_probe(token: str):
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    if not database.confirm_agent_probe(token):
+        return jsonify(error="Prüfung ungültig, abgelaufen oder bereits bestätigt"), 404
+    response = app.response_class(status=204)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.post("/api/agent/validate")

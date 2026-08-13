@@ -1,0 +1,12 @@
+# Diesen Dienst unter "services:" derselben TrueNAS Custom App ergänzen.
+# Nur tatsächlich benötigte Sprachen in LT_LOAD_ONLY eintragen.
+translator:
+  image: libretranslate/libretranslate:latest
+  restart: unless-stopped
+  environment:
+    LT_LOAD_ONLY: en,de,it
+    LT_DISABLE_WEB_UI: 'true'
+  volumes:
+    - source: /mnt/Application/mission-control-translator
+      target: /home/libretranslate/.local
+      type: bind

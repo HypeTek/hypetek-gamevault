@@ -22,4 +22,8 @@ body.crosshair,body.crosshair button,body.crosshair a,body.crosshair select{curs
 .help-content ol{margin:0;padding-left:22px;display:grid;gap:8px;line-height:1.45}
 .help-content p{line-height:1.5}.help-content code{padding:2px 5px;border-radius:5px;background:var(--panel2);color:var(--text);overflow-wrap:anywhere}
 .help-content a{color:var(--teal)}.warning-note{padding:11px 12px;border-left:4px solid var(--orange);background:rgba(242,140,40,.1)}
+.guide-download{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:center}.guide-download img{background:white;border-radius:10px;padding:8px;border:1px solid var(--line)}
+.game-info-content .dialog-actions{position:sticky;bottom:0;padding:14px;background:rgba(13,29,37,.96);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(10px)}.game-info-content .dialog-actions .primary-info-action{margin-right:auto}
+#agentProbeStatus{margin-left:5px;color:var(--teal)}
 @media(max-width:720px){.help-content{padding:16px}.help-content section{padding:13px}.inline-help{display:inline}}
+@media(max-width:620px){.guide-download{grid-template-columns:1fr}.guide-download img{justify-self:center}.game-info-content .dialog-actions>*{flex:1 1 100%}.game-info-content .dialog-actions .primary-info-action{margin-right:0}}

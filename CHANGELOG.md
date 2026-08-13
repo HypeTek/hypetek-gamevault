@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.5
+
+- Installieren, ISO einbinden, Ordner öffnen, Übersetzen und Bearbeiten sind direkt im Spiele-Infofenster erreichbar.
+- Optionale LibreTranslate-kompatible Translator-Verbindung mit lokaler Speicherung von Original und Übersetzung ergänzt.
+- Zielsprachen für Spielinhalte einschließlich Deutsch, Englisch, Russisch, Arabisch, Chinesisch und weiterer wichtiger Sprachen ergänzt.
+- Gemischtsprachige TheGamesDB-Texte werden abschnittsweise zur Übersetzung übergeben.
+- Allgemeine Fallback-Suche für kurze Titelakronyme ersetzt die bisherige spezielle AC-Titelliste.
+- Windows-Agent kann über ein kurzlebiges Prüfticket sicher erkannt werden; der Installationshinweis verschwindet anschließend in diesem Browser.
+- Agent-Bezeichnungen verständlicher in Windows-Agent, Windows-Agent installieren und Manuelle Installation umbenannt.
+- Integrierte API-/Translator-Hilfe mit downloadbarer, visuell geprüfter PDF-Anleitung und serverbezogenem QR-Code ergänzt.
+
 ## 0.2.4
 
 - Klick auf ein Cover öffnet ein eigenes Spiele-Infofenster mit lokalem Cover als Hintergrund.

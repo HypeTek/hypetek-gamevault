@@ -30,28 +30,28 @@ def clean_game_title(value: str) -> str:
 
 
 def suggest_game_title(value: str) -> str:
-    title = clean_game_title(value)
-    assassin_aliases = {
-        "valhalla": "Valhalla",
-        "odyssey": "Odyssey",
-        "origins": "Origins",
-        "mirage": "Mirage",
-        "unity": "Unity",
-        "syndicate": "Syndicate",
-        "shadows": "Shadows",
-        "brotherhood": "Brotherhood",
-        "revelations": "Revelations",
-    }
-    match = re.fullmatch(r"AC\s+(.+)", title, flags=re.I)
-    if match:
-        suffix = assassin_aliases.get(match.group(1).strip().casefold())
-        if suffix:
-            return f"Assassin's Creed {suffix}"
-    return title
+    return clean_game_title(value)
+
+
+def game_title_search_queries(value: str) -> list[str]:
+    """Build provider queries without maintaining a franchise alias table.
+
+    A short leading acronym is kept for the first attempt. If the provider has
+    no exact result, the distinctive remainder is tried as a discovery query;
+    the user still selects the authoritative catalogue title.
+    """
+    title = suggest_game_title(value)
+    queries = [title]
+    words = title.split()
+    if len(words) > 1 and re.fullmatch(r"[A-Z0-9]{2,5}", words[0]):
+        remainder = " ".join(words[1:]).strip()
+        if len(remainder) >= 3:
+            queries.append(remainder)
+    return list(dict.fromkeys(queries))
 
 
 def _get_json(url: str, timeout: int = 12) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.5"})
     try:
         with urlopen(request, timeout=timeout) as response:
             return json.load(response)
@@ -99,7 +99,7 @@ def validate_rawg_key(api_key: str) -> None:
 
 
 def _get_thegamesdb_json(url: str, timeout: int = 15) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.5"})
     try:
         with urlopen(request, timeout=timeout) as response:
             payload = json.load(response)
@@ -121,15 +121,22 @@ def search_thegamesdb(api_key: str, title: str, limit: int = 8) -> list[dict]:
     if not key:
         raise MetadataError("In den Einstellungen ist kein TheGamesDB-API-Key hinterlegt")
     query = suggest_game_title(title)
-    parameters = urlencode({
-        "apikey": key,
-        "name": query,
-        "fields": "platform,overview,rating,players,coop",
-        "include": "boxart,platform",
-    })
-    payload = _get_thegamesdb_json(
-        f"https://{THEGAMESDB_API_HOST}/v1.1/Games/ByGameName?{parameters}"
-    )
+    payload = None
+    for candidate_query in game_title_search_queries(title):
+        parameters = urlencode({
+            "apikey": key,
+            "name": candidate_query,
+            "fields": "platform,overview,rating,players,coop",
+            "include": "boxart,platform",
+        })
+        candidate_payload = _get_thegamesdb_json(
+            f"https://{THEGAMESDB_API_HOST}/v1.1/Games/ByGameName?{parameters}"
+        )
+        payload = candidate_payload
+        if ((candidate_payload.get("data") or {}).get("games") or []):
+            query = candidate_query
+            break
+    payload = payload or {}
     include = payload.get("include") or {}
     boxart = (include.get("boxart") or {})
     boxart_data = boxart.get("data") or {}
@@ -191,7 +198,7 @@ def fetch_thegamesdb_image(image_url: str) -> tuple[bytes, str]:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != THEGAMESDB_MEDIA_HOST:
         raise MetadataError("Ungültige TheGamesDB-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.5"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()
@@ -224,7 +231,7 @@ def download_rawg_image(image_url: str, destination: Path) -> str:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != RAWG_MEDIA_HOST:
         raise MetadataError("Ungültige RAWG-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.5"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()

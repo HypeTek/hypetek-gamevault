@@ -14,7 +14,7 @@
       <span>HypeTek Mission Control</span>
     </div>
     <nav>
-      <a class="button-link secondary" href="{{ url_for('download_windows_agent_exe') }}">Agent-Setup</a>
+      <a class="button-link secondary" href="{{ url_for('download_windows_agent_exe') }}">Windows-Agent</a>
       <button id="settingsButton" class="secondary" type="button">Einstellungen</button>
       <button id="scanButton" class="secondary">Bibliothek scannen</button>
       <form action="{{ url_for('logout') }}" method="post">
@@ -24,11 +24,14 @@
     </nav>
   </header>
   <div class="energy-line"><span></span></div>
-  <aside class="agent-note">
+  <aside id="agentNote" class="agent-note">
     Installieren und „Ordner öffnen“ benötigen einmalig den Windows-Agenten auf diesem PC.
-    <a href="{{ url_for('download_windows_agent_exe') }}">EXE-Installer</a>
-    · <a href="{{ url_for('download_windows_agent') }}">PowerShell-Fallback</a>
+    <a href="{{ url_for('download_windows_agent_exe') }}">Windows-Agent installieren</a>
+    · <a href="{{ url_for('download_windows_agent') }}">Manuelle Installation</a>
+    · <button id="agentProbeButton" class="inline-help" type="button">Agent prüfen</button>
     · <button id="connectionHelpButton" class="inline-help" type="button">SMB-/Tailscale-Hilfe</button>
+    · <button id="integrationHelpButton" class="inline-help" type="button">API-/Translator-Hilfe</button>
+    <span id="agentProbeStatus" role="status"></span>
   </aside>
   <main>
     <section class="hero">
@@ -87,6 +90,38 @@
     </div>
   </dialog>
 
+  <dialog id="integrationHelpDialog" class="help-dialog">
+    <div class="help-content">
+      <div class="dialog-head"><h2>APIs und Mission Control Translator</h2><button id="closeIntegrationHelp" type="button" class="ghost" aria-label="Hilfe schließen">×</button></div>
+      <section>
+        <h3>TheGamesDB für Cover und Spielinformationen</h3>
+        <ol>
+          <li>Auf <a href="https://api.thegamesdb.net/key.php" target="_blank" rel="noopener noreferrer">TheGamesDB – Request API Access</a> anmelden.</li>
+          <li>Als Anwendungsname beispielsweise <strong>HypeTek Mission Control</strong> eintragen und die private, selbst gehostete Spielebibliothek beschreiben.</li>
+          <li>Den erhaltenen API-Key unter <strong>Einstellungen → TheGamesDB-API-Key</strong> einfügen.</li>
+          <li>Mission Control prüft den Key vor dem Speichern. Der Key bleibt in der lokalen Konfiguration.</li>
+        </ol>
+      </section>
+      <section>
+        <h3>Mission Control Translator – lokal auf TrueNAS</h3>
+        <p>Der Translator ist ein optionaler eigener Container. Mission Control bleibt ohne ihn vollständig nutzbar. Mit ihm werden Spieltexte über eine LibreTranslate-kompatible API lokal übersetzt.</p>
+        <ol>
+          <li>In der TrueNAS-App einen zusätzlichen Dienst mit dem Image <code>libretranslate/libretranslate:latest</code> anlegen.</li>
+          <li><code>LT_LOAD_ONLY=en,de,it</code> setzen. Weitere mögliche Quell- oder Zielsprachen werden kommasepariert ergänzt, zum Beispiel <code>fr,es,pl,ru,ar,zh</code>.</li>
+          <li>Ein persistentes Volume nach <code>/home/libretranslate/.local</code> einbinden, damit Sprachmodelle nicht erneut geladen werden.</li>
+          <li>Mission Control und Translator im selben App-Netz betreiben. Als Translator-Adresse <code>http://translator:5000</code> eintragen.</li>
+          <li>Unter <strong>Sprache der Spielinhalte</strong> die gewünschte Zielsprache auswählen und die Verbindung speichern.</li>
+        </ol>
+        <p class="warning-note"><strong>Erster Start:</strong> Das Laden der ausgewählten Sprachmodelle kann mehrere Minuten dauern. Der Translator muss gesund und erreichbar sein, bevor Mission Control die Adresse akzeptiert.</p>
+      </section>
+      <section class="guide-download">
+        <div><h3>Anleitung auf einem zweiten Gerät</h3><p>PDF herunterladen oder den QR-Code mit Handy bzw. Tablet scannen. Auf dem zweiten Gerät ist anschließend die Mission-Control-Anmeldung erforderlich.</p><a class="button-link secondary" href="{{ url_for('download_api_and_translator_guide') }}">PDF-Anleitung herunterladen</a></div>
+        <img src="{{ url_for('api_and_translator_guide_qr') }}" alt="QR-Code zur PDF-Anleitung" width="190" height="190">
+      </section>
+      <div class="dialog-actions"><button id="integrationHelpDone" type="button">Verstanden</button></div>
+    </div>
+  </dialog>
+
   <dialog id="settingsDialog">
     <form id="settingsForm" method="dialog">
       <div class="dialog-head"><h2>Mission Control konfigurieren</h2><button value="cancel" class="ghost">×</button></div>
@@ -115,13 +150,25 @@
           <input id="settingTheGamesDbApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
           <span id="theGamesDbKeyStatus" class="field-hint"></span>
         </label>
+        <label>Sprache der Spielinhalte
+          <select id="settingContentLanguage">
+            <option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="it">Italiano</option><option value="pt">Português</option><option value="pl">Polski</option><option value="ru">Русский</option><option value="uk">Українська</option><option value="tr">Türkçe</option><option value="ar">العربية</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option>
+          </select>
+        </label>
+        <label>Mission Control Translator (optional)
+          <input id="settingTranslatorUrl" type="url" placeholder="http://translator:5000">
+          <span id="translatorStatus" class="field-hint"></span>
+        </label>
+        <label>Translator-API-Key (nur falls erforderlich)
+          <input id="settingTranslatorApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
+        </label>
         <label>Eigenes Hintergrundbild
           <input id="settingBackground" type="file" accept="image/jpeg,image/png,image/webp">
         </label>
       </div>
-      <p class="note">Der optionale TheGamesDB-Key aktiviert nur die manuelle Cover-Suche und wird ausschließlich in deiner lokalen Mission-Control-Konfiguration gespeichert. <a href="https://api.thegamesdb.net/key.php" target="_blank" rel="noopener noreferrer">TheGamesDB-Key anzeigen/anfordern</a></p>
+      <p class="note">API-Keys werden ausschließlich in deiner lokalen Mission-Control-Konfiguration gespeichert. <button id="settingsIntegrationHelpButton" class="inline-help" type="button">Einrichtung für TheGamesDB und Translator anzeigen</button></p>
       <p class="note">Ausschlüsse gelten für Namen auf der obersten Ebene des Games-Ordners. Bestehende Cover und Metadaten bleiben erhalten.</p>
-      <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeBackgroundButton" type="button" class="ghost">Hintergrund entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
+      <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button id="removeBackgroundButton" type="button" class="ghost">Hintergrund entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
     </form>
   </dialog>
 

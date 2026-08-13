@@ -15,8 +15,38 @@ class MetadataTests(unittest.TestCase):
         )
         self.assertEqual(
             metadata.suggest_game_title("AC Valhalla -- fitgirl-repacks site"),
-            "Assassin's Creed Valhalla",
+            "AC Valhalla",
         )
+        self.assertEqual(
+            metadata.game_title_search_queries("AC Valhalla -- fitgirl-repacks site"),
+            ["AC Valhalla", "Valhalla"],
+        )
+
+    def test_acronym_search_retries_with_distinctive_title(self):
+        calls = []
+        empty = {"code": 200, "data": {"games": []}, "include": {}}
+        hit = {
+            "code": 200,
+            "data": {"games": [{"id": 77, "game_title": "Assassin's Creed Valhalla", "platform": 1}]},
+            "include": {
+                "boxart": {"base_url": {"original": "https://cdn.thegamesdb.net/images/original/"}, "data": {"77": [{"type": "boxart", "side": "front", "filename": "77.jpg"}]}},
+                "platform": {"data": {"1": {"name": "PC"}}},
+            },
+        }
+        original = metadata._get_thegamesdb_json
+
+        def fake_get(url):
+            calls.append(url)
+            return empty if len(calls) == 1 else hit
+
+        metadata._get_thegamesdb_json = fake_get
+        try:
+            result = metadata.search_thegamesdb("test-key", "AC Valhalla")
+        finally:
+            metadata._get_thegamesdb_json = original
+        self.assertEqual(len(calls), 2)
+        self.assertIn("name=Valhalla", calls[1])
+        self.assertEqual(result[0]["name"], "Assassin's Creed Valhalla")
 
     def test_thegamesdb_response_becomes_safe_candidates(self):
         payload = {
