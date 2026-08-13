@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1
+
+- Kartenraster auf lesbare Mindestbreiten begrenzt und für Mobilgeräte angepasst.
+- Aktionsbuttons in eine eindeutige Hauptaktion und eine saubere zweite Zeile aufgeteilt.
+- Flachere Thumbnail-Flächen mit Monogramm-Platzhalter für Einträge ohne Cover ergänzt.
+- Navigation überdeckt beim Scrollen nicht länger die Hauptüberschrift.
+- Projektweite Zeilenenden über `.gitattributes` festgelegt.
+- Installer und Projektversion auf 0.2.1 vereinheitlicht.
+- Integrierte Windows-Anleitung für SMB-Netzlaufwerke, Windows-Anmeldeinformationen und SMB über Tailscale ergänzt.
+- Health-Endpunkt zeigt nun laufende Version und Agent-API-Version zur eindeutigen Update-Diagnose.
+
 ## 0.2.0
 
 - Der Windows-Installer prüft den Agent-Token über einen eindeutigen Server-Endpunkt und speichert bei fehlgeschlagener Prüfung keine Konfiguration.

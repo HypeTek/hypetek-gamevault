@@ -60,6 +60,16 @@ services:
 5. Browser mit `Strg+F5` aktualisieren.
 6. Unter **Einstellungen** Design, Hintergrund und Ausschlüsse festlegen.
 
+Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüfen:
+
+```text
+http://TRUENAS-IP:9998/health
+```
+
+Für Version 0.2.1 muss die Antwort unter anderem `"version":"0.2.1"` und
+`"agent_api":2` enthalten. So lässt sich ein noch laufendes altes Container-Image
+sofort von einem aktuellen Image unterscheiden.
+
 Weder Agent-Token noch Admin-Passwort müssen beim Upgrade geändert werden. Ein geänderter
 Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
 

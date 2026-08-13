@@ -1,6 +1,7 @@
 services:
   gamevault:
     image: ghcr.io/hypetek/hypetek-gamevault:latest
+    pull_policy: always
     container_name: hypetek-gamevault
     restart: unless-stopped
     ports:
@@ -15,7 +16,7 @@ services:
       MISSION_CONTROL_LIBRARY_NAME: ${MISSION_CONTROL_LIBRARY_NAME:-Mission Control Game Archive}
     volumes:
       - /mnt/Titan/Game:/games:ro
-      - /mnt/Titan/Applications/gamevault:/config
+      - /mnt/Application/gamevault:/config
     security_opt:
       - no-new-privileges:true
     cap_drop:

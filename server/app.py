@@ -40,6 +40,21 @@ AGENT_INSTALLER_URL = os.environ.get(
     "https://github.com/HypeTek/hypetek-gamevault/releases/latest/download/HypeTek-Mission-Control-Agent-Setup.exe",
 )
 
+
+def load_version() -> str:
+    candidates = (Path(__file__).with_name("VERSION"), Path(__file__).parent.parent / "VERSION")
+    for candidate in candidates:
+        try:
+            value = candidate.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if value:
+            return value
+    return "development"
+
+
+APP_VERSION = load_version()
+
 if not ADMIN_PASSWORD or not AGENT_TOKEN or not SECRET_KEY:
     raise RuntimeError(
         "GAMEVAULT_ADMIN_PASSWORD, GAMEVAULT_AGENT_TOKEN und "
@@ -107,7 +122,7 @@ def safe_relative_path(value: str | None) -> str | None:
 
 @app.get("/health")
 def health():
-    return jsonify(status="ok", game_root=str(GAME_ROOT))
+    return jsonify(status="ok", version=APP_VERSION, agent_api=2, game_root=str(GAME_ROOT))
 
 
 @app.route("/login", methods=["GET", "POST"])

@@ -102,6 +102,14 @@ class AppTests(unittest.TestCase):
         )
         self.assertEqual(valid.headers.get("Cache-Control"), "no-store")
 
+    def test_health_reports_running_version_and_agent_api(self):
+        response = self.client.get("/health")
+        self.assertEqual(response.status_code, 200)
+        health = response.get_json()
+        self.assertEqual(health["status"], "ok")
+        self.assertEqual(health["version"], "0.2.1")
+        self.assertEqual(health["agent_api"], 2)
+
     def test_path_escape_is_rejected(self):
         self.login()
         self.post("/api/scan")
@@ -136,6 +144,9 @@ class AppTests(unittest.TestCase):
 
     def test_appearance_settings_and_scan_exclusions(self):
         self.login()
+        page = self.client.get("/")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         settings = self.client.get("/api/settings").get_json()
         self.assertEqual(settings["theme"], "mission")
         response = self.client.patch(

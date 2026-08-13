@@ -18,6 +18,11 @@ Danach registriert er das Protokoll `hypetek-gamevault://`. PowerShell 7 wird
 bevorzugt; Windows PowerShell 5.1 dient als Fallback. Das Konsolenfenster bleibt beim
 normalen Aufruf verborgen.
 
+Die Weboberfläche enthält unter **SMB-/Tailscale-Hilfe** eine Schritt-für-Schritt-
+Anleitung zum Verbinden des Netzlaufwerks, zu gespeicherten Windows-Anmeldedaten und
+zum sicheren Zugriff über ein bestehendes Tailscale-Netz. SMB-Port 445 darf niemals
+direkt am Router ins Internet freigegeben werden.
+
 ## PowerShell-Fallback
 
 ZIP aus Mission Control herunterladen, vollständig entpacken und in einer normalen

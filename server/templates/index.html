@@ -28,6 +28,7 @@
     Installieren und „Ordner öffnen“ benötigen einmalig den Windows-Agenten auf diesem PC.
     <a href="{{ url_for('download_windows_agent_exe') }}">EXE-Installer</a>
     · <a href="{{ url_for('download_windows_agent') }}">PowerShell-Fallback</a>
+    · <button id="connectionHelpButton" class="inline-help" type="button">SMB-/Tailscale-Hilfe</button>
   </aside>
   <main>
     <section class="hero">
@@ -52,6 +53,39 @@
     </section>
     <section id="library" class="library" aria-live="polite"></section>
   </main>
+
+  <dialog id="connectionHelpDialog" class="help-dialog">
+    <div class="help-content">
+      <div class="dialog-head"><h2>Spielebibliothek mit Windows verbinden</h2><button id="closeConnectionHelp" type="button" class="ghost" aria-label="Hilfe schließen">×</button></div>
+      <section>
+        <h3>SMB-Netzlaufwerk im Explorer</h3>
+        <ol>
+          <li><strong>Dieser PC</strong> öffnen und <strong>Netzlaufwerk verbinden</strong> wählen.</li>
+          <li>Einen freien Laufwerksbuchstaben auswählen, zum Beispiel <code>Z:</code>.</li>
+          <li>Als Ordner beispielsweise <code>\\TRUETITAN\Game</code> eintragen.</li>
+          <li><strong>Verbindung bei Anmeldung wiederherstellen</strong> aktivieren.</li>
+          <li>Falls nötig <strong>Verbindung mit anderen Anmeldeinformationen herstellen</strong> wählen und den TrueNAS-SMB-Benutzer verwenden.</li>
+          <li>Im Agent-Installer denselben Pfad, zum Beispiel <code>Z:\Game</code>, auswählen.</li>
+        </ol>
+        <p class="note">Gespeicherte SMB-Benutzer lassen sich unter Windows in der <strong>Anmeldeinformationsverwaltung → Windows-Anmeldeinformationen</strong> ändern oder entfernen.</p>
+      </section>
+      <section>
+        <h3>SMB sicher über Tailscale</h3>
+        <ol>
+          <li>Tailscale auf TrueNAS und dem Windows-PC installieren und beide Geräte mit demselben Tailnet verbinden.</li>
+          <li>Den MagicDNS-Namen wie <code>\\truetitan\Game</code> oder die Tailscale-IP wie <code>\\100.x.x.x\Game</code> verwenden.</li>
+          <li>Bei Problemen in PowerShell testen: <code>Test-NetConnection truetitan -Port 445</code>.</li>
+        </ol>
+        <p class="warning-note"><strong>Wichtig:</strong> TCP-Port 445 niemals direkt am Router ins Internet freigeben. Mission Control speichert keine Tailscale-Auth-Keys und liefert Tailscale nicht mit.</p>
+        <p><a href="https://tailscale.com/download" target="_blank" rel="noopener noreferrer">Offizielle Tailscale-Downloadseite öffnen</a></p>
+      </section>
+      <section>
+        <h3>Warum derzeit nicht FTP?</h3>
+        <p>FTP ist unter Windows kein vollwertiges Netzlaufwerk für diesen Workflow. EXE-Dateien und ISOs müssten zuerst lokal heruntergeladen werden. Ein späterer SFTP-/Download-Cache ist möglich; für direktes Installieren und ISO-Einbinden bleibt SMB die empfohlene Lösung.</p>
+      </section>
+      <div class="dialog-actions"><button id="connectionHelpDone" type="button">Verstanden</button></div>
+    </div>
+  </dialog>
 
   <dialog id="settingsDialog">
     <form id="settingsForm" method="dialog">

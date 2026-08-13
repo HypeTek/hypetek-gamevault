@@ -5,6 +5,7 @@ const library = document.querySelector("#library");
 const statusEl = document.querySelector("#status");
 const editor = document.querySelector("#editor");
 const settingsDialog = document.querySelector("#settingsDialog");
+const connectionHelpDialog = document.querySelector("#connectionHelpDialog");
 
 const formatBytes = (value) => {
   if (!value) return "0 B";
@@ -50,6 +51,11 @@ function actionLabel(game) {
   return "Manuelle Installation";
 }
 
+function gameMonogram(title) {
+  const words = String(title || "Game").replace(/[^\p{L}\p{N}]+/gu, " ").trim().split(/\s+/).filter(Boolean);
+  return (words.slice(0, 2).map((word) => word[0]).join("") || "GV").toLocaleUpperCase();
+}
+
 function render() {
   const query = state.query.toLocaleLowerCase("de");
   const games = state.games.filter((game) =>
@@ -65,8 +71,10 @@ function render() {
     `<div class="stat"><strong>${counts.iso || 0}</strong>ISOs</div>`;
   library.innerHTML = games.map((game) => {
     const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
-    const cover = game.cover_name ? `background-image:url('/covers/${encodeURIComponent(game.cover_name)}')` : "";
-    return `<article class="card"><div class="cover" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div><div class="card-body"><h3>${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
+    const hasCover = Boolean(game.cover_name);
+    const cover = hasCover ? `background-image:url('/covers/${encodeURIComponent(game.cover_name)}')` : "";
+    const monogram = escapeHtml(gameMonogram(game.title));
+    return `<article class="card"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
   }).join("") || "<p>Keine passenden Einträge.</p>";
 }
 
@@ -184,6 +192,9 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
   } catch (error) { statusEl.textContent = error.message; }
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
+document.querySelector("#connectionHelpButton").addEventListener("click", () => connectionHelpDialog.showModal());
+document.querySelector("#closeConnectionHelp").addEventListener("click", () => connectionHelpDialog.close());
+document.querySelector("#connectionHelpDone").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#settingOpacity").addEventListener("input", updateRangeOutputs);
 document.querySelector("#settingBlur").addEventListener("input", updateRangeOutputs);
 document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; render(); });

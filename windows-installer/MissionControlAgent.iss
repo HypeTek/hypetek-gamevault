@@ -1,5 +1,5 @@
 #define MyAppName "HypeTek Mission Control Agent"
-#define MyAppVersion "0.2.0.1"
+#define MyAppVersion "0.2.1"
 #define MyAppPublisher "HypeTek"
 #define MyAppExeName "GameVaultAgent.ps1"
 
@@ -20,7 +20,7 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=mission-control.ico
 UninstallDisplayIcon={app}\mission-control.ico
-VersionInfoVersion=0.2.0.1
+VersionInfoVersion=0.2.1.0
 VersionInfoDescription=HypeTek Mission Control Windows Agent Setup
 
 [Files]
@@ -79,7 +79,7 @@ begin
     Request.SetRequestHeader('Authorization', 'Bearer ' + Trim(TokenPage.Values[0]));
     Request.SetRequestHeader('Cache-Control', 'no-cache, no-store');
     Request.SetRequestHeader('Pragma', 'no-cache');
-    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.2.0.1');
+    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.2.1');
     Request.Send('');
     StatusCode := Request.Status;
 
