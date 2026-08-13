@@ -110,7 +110,7 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ConfigPath: String;
-  ConfigJson: String;
+  ConfigLines: TArrayOfString;
   PowerShellExecutable: String;
   ProtocolCommand: String;
 begin
@@ -118,13 +118,14 @@ begin
     Exit;
 
   ConfigPath := ExpandConstant('{app}\agent.json');
-  ConfigJson :=
-    '{' + #13#10 +
-    '  "server_url": "' + JsonEscape(RemoveBackslashUnlessRoot(Trim(ServerPage.Values[0]))) + '",' + #13#10 +
-    '  "agent_token": "' + JsonEscape(Trim(TokenPage.Values[0])) + '",' + #13#10 +
-    '  "game_root": "' + JsonEscape(Trim(PathPage.Values[0])) + '"' + #13#10 +
-    '}' + #13#10;
-  SaveStringToUTF8File(ConfigPath, ConfigJson, False);
+  SetArrayLength(ConfigLines, 5);
+  ConfigLines[0] := '{';
+  ConfigLines[1] := '  "server_url": "' + JsonEscape(RemoveBackslashUnlessRoot(Trim(ServerPage.Values[0]))) + '",';
+  ConfigLines[2] := '  "agent_token": "' + JsonEscape(Trim(TokenPage.Values[0])) + '",';
+  ConfigLines[3] := '  "game_root": "' + JsonEscape(Trim(PathPage.Values[0])) + '"';
+  ConfigLines[4] := '}';
+  if not SaveStringsToUTF8File(ConfigPath, ConfigLines, False) then
+    RaiseException('Die Agent-Konfiguration konnte nicht gespeichert werden.');
 
   PowerShellExecutable := ExpandConstant('{pf}\PowerShell\7\pwsh.exe');
   if not FileExists(PowerShellExecutable) then
