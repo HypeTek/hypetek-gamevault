@@ -1,4 +1,13 @@
-const state = {games: [], query: "", filter: "all", settings: null};
+const savedPageSize = Number(localStorage.getItem("missionControlPageSize"));
+const state = {
+  games: [],
+  query: "",
+  filter: "all",
+  settings: null,
+  page: 1,
+  pageSize: [12, 24, 48, 96].includes(savedPageSize) ? savedPageSize : 24,
+  view: localStorage.getItem("missionControlLibraryView") === "list" ? "list" : "grid",
+};
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
 const labels = {direct_setup: "Direktes Setup", iso: "ISO", manual: "Manuell", archive: "Archiv", manual_image: "Sonderabbild", ignore: "Ausgeblendet"};
 const library = document.querySelector("#library");
@@ -37,6 +46,7 @@ function applySettings(settings) {
   document.body.style.setProperty("--background-opacity", settings.background_opacity);
   document.body.style.setProperty("--background-blur", `${settings.background_blur}px`);
   document.querySelector("#libraryName").textContent = settings.library_name;
+  document.querySelector("#appVersion").textContent = `v${settings.version || "development"}`;
   document.title = `HypeTek Mission Control · ${settings.server_name}`;
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
   document.querySelector("#agentNote").hidden = agentValidated;
@@ -80,9 +90,13 @@ function coverPosition(game) {
 
 function render() {
   const query = state.query.toLocaleLowerCase("de");
-  const games = state.games.filter((game) =>
+  const filteredGames = state.games.filter((game) =>
     (state.filter === "all" || game.action === state.filter) &&
     `${game.title} ${game.platform} ${game.relative_path}`.toLocaleLowerCase("de").includes(query));
+  const pageCount = Math.max(1, Math.ceil(filteredGames.length / state.pageSize));
+  state.page = Math.max(1, Math.min(state.page, pageCount));
+  const firstIndex = (state.page - 1) * state.pageSize;
+  const games = filteredGames.slice(firstIndex, firstIndex + state.pageSize);
   const counts = state.games.reduce((result, game) => {
     result[game.action] = (result[game.action] || 0) + 1;
     return result;
@@ -91,6 +105,10 @@ function render() {
     `<div class="stat"><strong>${state.games.length}</strong>Einträge</div>` +
     `<div class="stat"><strong>${counts.direct_setup || 0}</strong>Setups</div>` +
     `<div class="stat"><strong>${counts.iso || 0}</strong>ISOs</div>`;
+  library.classList.toggle("view-list", state.view === "list");
+  document.querySelector("#viewGridButton").setAttribute("aria-pressed", String(state.view === "grid"));
+  document.querySelector("#viewListButton").setAttribute("aria-pressed", String(state.view === "list"));
+  document.querySelector("#pageSize").value = String(state.pageSize);
   library.innerHTML = games.map((game) => {
     const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
     const hasCover = Boolean(game.cover_name);
@@ -102,6 +120,34 @@ function render() {
       ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Cover: ${sourceName}</a>` : "";
     return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="Informationen zu ${escapeHtml(game.title)}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
   }).join("") || "<p>Keine passenden Einträge.</p>";
+  renderPagination(filteredGames.length, pageCount, firstIndex, games.length);
+}
+
+function renderPagination(total, pageCount, firstIndex, shown) {
+  const pagination = document.querySelector("#pagination");
+  if (!total) {
+    pagination.innerHTML = "";
+    pagination.hidden = true;
+    return;
+  }
+  pagination.hidden = false;
+  const start = firstIndex + 1;
+  const end = firstIndex + shown;
+  pagination.innerHTML = `<span>${start}–${end} von ${total}</span><div><button type="button" class="secondary" data-page="previous" ${state.page <= 1 ? "disabled" : ""}>← Zurück</button><strong>Seite ${state.page} von ${pageCount}</strong><button type="button" class="secondary" data-page="next" ${state.page >= pageCount ? "disabled" : ""}>Weiter →</button></div>`;
+  pagination.querySelector('[data-page="previous"]')?.addEventListener("click", () => changePage(state.page - 1));
+  pagination.querySelector('[data-page="next"]')?.addEventListener("click", () => changePage(state.page + 1));
+}
+
+function changePage(page) {
+  state.page = page;
+  render();
+  document.querySelector("#library").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+function setLibraryView(view) {
+  state.view = view === "list" ? "list" : "grid";
+  localStorage.setItem("missionControlLibraryView", state.view);
+  render();
 }
 
 function escapeHtml(value) {
@@ -257,7 +303,7 @@ function openSettings() {
   document.querySelector("#settingContentLanguage").value = settings.content_language || "de";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
-  document.querySelector("#translatorStatus").textContent = settings.translator_configured ? "Translator-Verbindung ist eingerichtet." : "Noch kein Translator eingerichtet.";
+  document.querySelector("#translatorStatus").textContent = settings.translator_configured ? "Translator-Verbindung ist eingerichtet." : "Nicht eingerichtet – der Platzhalter ist nur eine Beispieladresse.";
   document.querySelector("#settingBackground").value = "";
   updateRangeOutputs();
   settingsDialog.showModal();
@@ -369,7 +415,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.2.7 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.2.8 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
@@ -438,7 +484,16 @@ document.querySelector("#coverPositionPreview").addEventListener("pointermove", 
 document.querySelector("#coverPositionPreview").addEventListener("pointerup", stopCoverDrag);
 document.querySelector("#coverPositionPreview").addEventListener("pointercancel", stopCoverDrag);
 document.querySelector("#coverPositionPreview").addEventListener("keydown", nudgeCoverPosition);
-document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; render(); });
-document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; render(); });
+document.querySelector("#brandHomeButton").addEventListener("click", () => window.scrollTo({top: 0, behavior: "smooth"}));
+document.querySelector("#viewGridButton").addEventListener("click", () => setLibraryView("grid"));
+document.querySelector("#viewListButton").addEventListener("click", () => setLibraryView("list"));
+document.querySelector("#pageSize").addEventListener("change", (event) => {
+  state.pageSize = Number(event.target.value);
+  state.page = 1;
+  localStorage.setItem("missionControlPageSize", String(state.pageSize));
+  render();
+});
+document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; state.page = 1; render(); });
+document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; state.page = 1; render(); });
 
 load();

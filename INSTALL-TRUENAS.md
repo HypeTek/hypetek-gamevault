@@ -66,7 +66,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.2.7 muss die Antwort unter anderem `"version":"0.2.7"` und
+Für Version 0.2.8 muss die Antwort unter anderem `"version":"0.2.8"` und
 `"agent_api":3` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -88,3 +88,6 @@ Der Container läuft als UID/GID `568` (`apps`). Für `/mnt/Titan/Game` genügen
 Durchqueren; Schreib-, Änderungs- und Löschrechte sind nicht erforderlich. Der Scanner
 überspringt nicht zugängliche Ordner und zusätzlich alle unter **Einstellungen →
 Scanner-Ausschlüsse** eingetragenen Namen.
+---
+
+Copyright © 2026 Michael Härtwig · HypeTek

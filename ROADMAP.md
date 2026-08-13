@@ -1,5 +1,7 @@
 # HypeTek Mission Control – Roadmap
 
+Copyright © 2026 Michael Härtwig · HypeTek
+
 ## Nächste Ausbaustufen
 
 ### Internationalisierung

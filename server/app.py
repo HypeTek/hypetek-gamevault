@@ -179,6 +179,7 @@ def index():
 
 def public_settings() -> dict:
     values = settings_store.load()
+    values["version"] = APP_VERSION
     values["thegamesdb_configured"] = bool(values.get("thegamesdb_api_key"))
     values["translator_configured"] = bool(values.get("translator_url"))
     values["translator_api_key_configured"] = bool(values.get("translator_api_key"))
@@ -287,7 +288,12 @@ def background(name: str):
 @app.get("/download/windows-agent.zip")
 @login_required
 def download_windows_agent():
-    required = ("GameVaultAgent.ps1", "Install-Agent.ps1", "Uninstall-Agent.ps1")
+    required = (
+        "GameVaultAgent.ps1",
+        "Install-Agent.ps1",
+        "Uninstall-Agent.ps1",
+        "README.txt",
+    )
     missing = [name for name in required if not (AGENT_DIR / name).is_file()]
     if missing:
         return jsonify(error="Windows-Agent ist im Container unvollständig"), 503
@@ -295,9 +301,9 @@ def download_windows_agent():
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
         for name in required:
             content = (AGENT_DIR / name).read_bytes()
-            # Windows PowerShell 5 treats UTF-8 without a BOM as an ANSI
-            # codepage. Ship unambiguous UTF-8 so German punctuation cannot
-            # corrupt the downloaded script during parsing.
+            # Windows PowerShell 5 treats UTF-8 scripts without a BOM as an
+            # ANSI codepage. Text instructions benefit from the same clear
+            # encoding when opened in classic Windows editors.
             if not content.startswith(b"\xef\xbb\xbf"):
                 content = b"\xef\xbb\xbf" + content
             output.writestr(f"Mission-Control-Windows-Agent/{name}", content)

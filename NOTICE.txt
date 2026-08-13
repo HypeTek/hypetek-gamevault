@@ -1,0 +1,11 @@
+HypeTek Mission Control
+Copyright © 2026 Michael Härtwig · HypeTek
+
+Projekt und Markenauftritt: HypeTek
+Repository: https://github.com/HypeTek/hypetek-gamevault
+
+Dieser Besitz- und Urhebervermerk darf bei Weitergabe des Projektpakets nicht
+entfernt werden. Rechte an eingebundenen Namen, Covern und Metadaten Dritter
+verbleiben bei den jeweiligen Rechteinhabern. TheGamesDB-Inhalte werden erst
+auf ausdrückliche Auswahl des Betreibers lokal übernommen und mit Quelle
+gekennzeichnet.

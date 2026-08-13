@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.2.7
+## Funktionen in Version 0.2.8
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -31,6 +31,12 @@ verändern oder in ein neues Format zu zwingen.
 - eingeklappter PowerShell-Fallback für Experten
 - maßstabsgetreue Kartenvorschau mit direkter vertikaler Bildausrichtung per Maus oder Tastatur
 - wirklich unabhängig vom Header fixiertes HypeTek-Logo
+- umschaltbare Kachel- und Listenansicht mit gespeicherter Auswahl
+- Seitennavigation mit 12, 24, 48 oder 96 Einträgen pro Seite
+- sichtbare laufende Version und HypeTek-Urhebervermerk in den Einstellungen
+- orange glimmender Energiepunkt statt weißem Laufbalken
+- anklickbares HypeTek-Logo als Rücksprung zum Seitenanfang
+- mitgelieferte TXT-Kurzanleitung im PowerShell-Fallback-Paket
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer
@@ -123,3 +129,7 @@ ohne diese Datei werden weder Tests noch Container oder Windows-Agent gebaut.
 Für entfernten Zugriff werden Tailscale oder ein korrekt abgesicherter HTTPS-Reverse-
 Proxy empfohlen. Die App sollte nicht ungefiltert ins öffentliche Internet gestellt
 werden.
+
+---
+
+Copyright © 2026 Michael Härtwig · HypeTek

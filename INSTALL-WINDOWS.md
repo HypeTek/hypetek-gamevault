@@ -60,3 +60,6 @@ oder bei der manuellen PowerShell-Installation ausführen:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Uninstall-Agent.ps1
 ```
+---
+
+Copyright © 2026 Michael Härtwig · HypeTek

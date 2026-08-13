@@ -8,7 +8,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
-  <img class="floating-brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
+  <button id="brandHomeButton" class="floating-brand-home" type="button" aria-label="Zum Seitenanfang" title="Zum Seitenanfang">
+    <img class="floating-brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
+  </button>
   <header class="topbar">
     <div class="brand">
       <span>HypeTek Mission Control</span>
@@ -69,9 +71,22 @@
         <option value="archive">Archiv</option>
         <option value="manual_image">Sonderabbild</option>
       </select>
+      <div class="library-display-controls" aria-label="Bibliotheksdarstellung">
+        <button id="viewGridButton" class="secondary view-button" type="button" aria-pressed="true" title="Kachelansicht">▦ <span>Kacheln</span></button>
+        <button id="viewListButton" class="secondary view-button" type="button" aria-pressed="false" title="Listenansicht">☷ <span>Liste</span></button>
+        <label class="page-size-label">Pro Seite
+          <select id="pageSize">
+            <option value="12">12</option>
+            <option value="24" selected>24</option>
+            <option value="48">48</option>
+            <option value="96">96</option>
+          </select>
+        </label>
+      </div>
       <span id="status"></span>
     </section>
     <section id="library" class="library" aria-live="polite"></section>
+    <nav id="pagination" class="pagination" aria-label="Bibliotheksseiten"></nav>
   </main>
 
   <dialog id="connectionHelpDialog" class="help-dialog">
@@ -167,7 +182,7 @@
           <input id="settingTheGamesDbApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
           <span id="theGamesDbKeyStatus" class="field-hint"></span>
         </label>
-        <label>Sprache der Spielinhalte
+        <label>Sprache der Spielinhalte (optional)
           <select id="settingContentLanguage">
             <option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="it">Italiano</option><option value="pt">Português</option><option value="pl">Polski</option><option value="ru">Русский</option><option value="uk">Українська</option><option value="tr">Türkçe</option><option value="ar">العربية</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option>
           </select>
@@ -175,6 +190,7 @@
         <label>Mission Control Translator (optional)
           <input id="settingTranslatorUrl" type="url" placeholder="http://translator:5000">
           <span id="translatorStatus" class="field-hint"></span>
+          <span class="field-hint">Die sichtbare Adresse ist nur ein Beispiel. Ohne eingerichteten Translator bleiben übernommene Originaltexte unverändert.</span>
         </label>
         <label>Translator-API-Key (nur falls erforderlich)
           <input id="settingTranslatorApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
@@ -185,7 +201,10 @@
       </div>
       <p class="note">API-Keys werden ausschließlich in deiner lokalen Mission-Control-Konfiguration gespeichert. <button id="settingsIntegrationHelpButton" class="inline-help" type="button">Einrichtung für TheGamesDB und Translator anzeigen</button></p>
       <p class="note">Ausschlüsse gelten für Namen auf der obersten Ebene des Games-Ordners. Bestehende Cover und Metadaten bleiben erhalten.</p>
-      <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button id="removeBackgroundButton" type="button" class="ghost">Hintergrund entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
+      <div class="settings-footer">
+        <div class="version-mark"><strong>HypeTek Mission Control <span id="appVersion">–</span></strong><span>© 2026 Michael Härtwig · HypeTek</span></div>
+        <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button id="removeBackgroundButton" type="button" class="ghost">Hintergrund entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
+      </div>
     </form>
   </dialog>
 

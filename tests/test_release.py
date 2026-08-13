@@ -26,6 +26,10 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn(f'org.opencontainers.image.version="{version}"', dockerfile)
         self.assertIn(f"## {version}", changelog)
         self.assertIn(f"Version {version} aktualisieren", javascript)
+        self.assertIn('id="appVersion"', template)
+        self.assertIn('id="pagination"', template)
+        self.assertIn('id="viewListButton"', template)
+        self.assertIn("Michael Härtwig", template)
         self.assertIn('class="floating-brand-logo"', template)
         self.assertLess(template.index('class="floating-brand-logo"'), template.index('class="topbar"'))
 

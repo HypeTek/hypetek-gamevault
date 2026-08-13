@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.8
+
+- Laufende Serverversion links unten in den Einstellungen ergänzt.
+- HypeTek-Urhebervermerk mit Michael Härtwig dauerhaft in der Anwendung verankert.
+- Bibliothek zwischen Kachel- und Listenansicht umschaltbar; Auswahl bleibt im Browser erhalten.
+- Seitennavigation mit wählbaren 12, 24, 48 oder 96 Einträgen pro Seite ergänzt.
+- Suche und Typfilter springen kontrolliert auf die erste Ergebnisseite zurück.
+- Weißen Laufbalken durch einen orange glimmenden Energiepunkt ersetzt.
+- Festes HypeTek-Logo führt beim Anklicken weich zum Seitenanfang zurück.
+- PowerShell-Fallback-ZIP um eine sichtbare TXT-Kurzanleitung mit Sicherheits- und Urheberhinweisen ergänzt.
+- Reduzierte Animationen werden über die Betriebssystem-/Browsereinstellung berücksichtigt.
+
 ## 0.2.7
 
 - Windows-Agent-Ersteinrichtung als klare Reihenfolge aus Download, Installation und Verbindungstest dargestellt.
