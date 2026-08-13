@@ -5,6 +5,7 @@ WORKDIR /app
 COPY server/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY server/ ./
+COPY windows-agent/ /app/windows-agent/
 RUN groupadd --gid 568 gamevault \
     && useradd --system --uid 568 --gid 568 --no-create-home gamevault
 USER 568

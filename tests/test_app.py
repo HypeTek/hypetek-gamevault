@@ -21,6 +21,7 @@ class AppTests(unittest.TestCase):
             GAMEVAULT_ADMIN_PASSWORD="admin-test",
             GAMEVAULT_AGENT_TOKEN="agent-test",
             GAMEVAULT_SECRET_KEY="secret-test",
+            GAMEVAULT_AGENT_DIR=str(Path(__file__).parents[1] / "windows-agent"),
         )
         sys.path.insert(0, str(Path(__file__).parents[1] / "server"))
         for module in ("app", "database", "scanner"):
@@ -91,6 +92,13 @@ class AppTests(unittest.TestCase):
         self.login()
         response = self.client.post("/api/scan")
         self.assertEqual(response.status_code, 403)
+
+    def test_windows_agent_download(self):
+        self.login()
+        response = self.client.get("/download/windows-agent.zip")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/zip")
+        self.assertIn("attachment", response.headers["Content-Disposition"])
 
 
 if __name__ == "__main__":

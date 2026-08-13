@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import secrets
 import time
+import zipfile
+from io import BytesIO
 from functools import wraps
 from pathlib import Path, PurePosixPath
 
@@ -13,6 +15,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     send_from_directory,
     session,
     url_for,
@@ -25,6 +28,7 @@ from scanner import scan_library
 
 GAME_ROOT = Path(os.environ.get("GAMEVAULT_GAME_ROOT", "/games")).resolve()
 CONFIG_DIR = Path(os.environ.get("GAMEVAULT_CONFIG_DIR", "/config")).resolve()
+AGENT_DIR = Path(os.environ.get("GAMEVAULT_AGENT_DIR", "/app/windows-agent")).resolve()
 COVER_DIR = CONFIG_DIR / "covers"
 ADMIN_PASSWORD = os.environ.get("GAMEVAULT_ADMIN_PASSWORD", "")
 AGENT_TOKEN = os.environ.get("GAMEVAULT_AGENT_TOKEN", "")
@@ -125,6 +129,26 @@ def logout():
 @login_required
 def index():
     return render_template("index.html")
+
+
+@app.get("/download/windows-agent.zip")
+@login_required
+def download_windows_agent():
+    required = ("GameVaultAgent.ps1", "Install-Agent.ps1", "Uninstall-Agent.ps1")
+    missing = [name for name in required if not (AGENT_DIR / name).is_file()]
+    if missing:
+        return jsonify(error="Windows-Agent ist im Container unvollständig"), 503
+    archive = BytesIO()
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
+        for name in required:
+            output.write(AGENT_DIR / name, arcname=f"GameVault-Windows-Agent/{name}")
+    archive.seek(0)
+    return send_file(
+        archive,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name="HypeTek-GameVault-Windows-Agent.zip",
+    )
 
 
 @app.get("/api/games")

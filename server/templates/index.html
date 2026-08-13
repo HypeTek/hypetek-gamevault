@@ -9,8 +9,12 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-mark small">HT</span><span>HypeTek GameVault</span></div>
+    <div class="brand">
+      <img class="brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
+      <span>HypeTek GameVault</span>
+    </div>
     <nav>
+      <a class="button-link secondary" href="{{ url_for('download_windows_agent') }}">Windows-Agent</a>
       <button id="scanButton" class="secondary">Bibliothek scannen</button>
       <form action="{{ url_for('logout') }}" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -19,6 +23,10 @@
     </nav>
   </header>
   <div class="energy-line"><span></span></div>
+  <aside class="agent-note">
+    Installieren und „Ordner öffnen“ benötigen einmalig den Windows-Agenten auf diesem PC.
+    <a href="{{ url_for('download_windows_agent') }}">Agent herunterladen</a>
+  </aside>
   <main>
     <section class="hero">
       <div>
