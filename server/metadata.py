@@ -29,8 +29,29 @@ def clean_game_title(value: str) -> str:
     return title or str(value or "").strip()
 
 
+def suggest_game_title(value: str) -> str:
+    title = clean_game_title(value)
+    assassin_aliases = {
+        "valhalla": "Valhalla",
+        "odyssey": "Odyssey",
+        "origins": "Origins",
+        "mirage": "Mirage",
+        "unity": "Unity",
+        "syndicate": "Syndicate",
+        "shadows": "Shadows",
+        "brotherhood": "Brotherhood",
+        "revelations": "Revelations",
+    }
+    match = re.fullmatch(r"AC\s+(.+)", title, flags=re.I)
+    if match:
+        suffix = assassin_aliases.get(match.group(1).strip().casefold())
+        if suffix:
+            return f"Assassin's Creed {suffix}"
+    return title
+
+
 def _get_json(url: str, timeout: int = 12) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.3"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
     try:
         with urlopen(request, timeout=timeout) as response:
             return json.load(response)
@@ -48,7 +69,7 @@ def search_rawg(api_key: str, title: str, limit: int = 6) -> list[dict]:
     key = str(api_key or "").strip()
     if not key:
         raise MetadataError("In den Einstellungen ist kein RAWG-API-Key hinterlegt")
-    query = clean_game_title(title)
+    query = suggest_game_title(title)
     parameters = urlencode({"key": key, "search": query, "search_precise": "true", "page_size": min(10, max(1, limit))})
     payload = _get_json(f"https://{RAWG_API_HOST}/api/games?{parameters}")
     results = []
@@ -78,7 +99,7 @@ def validate_rawg_key(api_key: str) -> None:
 
 
 def _get_thegamesdb_json(url: str, timeout: int = 15) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.3"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
     try:
         with urlopen(request, timeout=timeout) as response:
             payload = json.load(response)
@@ -99,11 +120,11 @@ def search_thegamesdb(api_key: str, title: str, limit: int = 8) -> list[dict]:
     key = str(api_key or "").strip()
     if not key:
         raise MetadataError("In den Einstellungen ist kein TheGamesDB-API-Key hinterlegt")
-    query = clean_game_title(title)
+    query = suggest_game_title(title)
     parameters = urlencode({
         "apikey": key,
         "name": query,
-        "fields": "platform",
+        "fields": "platform,overview,rating,players,coop",
         "include": "boxart,platform",
     })
     payload = _get_thegamesdb_json(
@@ -140,9 +161,19 @@ def search_thegamesdb(api_key: str, title: str, limit: int = 8) -> list[dict]:
             "name": str(item.get("game_title") or query)[:160],
             "released": str(item.get("release_date") or "")[:10],
             "platform": str(platform.get("name") or "")[:80],
+            "overview": str(item.get("overview") or "")[:12000],
+            "rating": str(item.get("rating") or "")[:80],
+            "players": str(item.get("players") or "")[:40],
+            "coop": str(item.get("coop") or "")[:40],
             "image_url": image_base.rstrip("/") + "/" + str(front["filename"]).lstrip("/"),
             "source_url": f"https://thegamesdb.net/game.php?id={game_id}",
         })
+    def platform_priority(result: dict) -> tuple[int, str, str]:
+        platform_name = str(result.get("platform") or "").casefold()
+        priority = 0 if platform_name in {"pc", "windows", "dos"} else 1
+        return priority, str(result.get("name") or "").casefold(), str(result.get("released") or "")
+
+    results.sort(key=platform_priority)
     return results[: max(1, min(12, limit))]
 
 
@@ -156,11 +187,11 @@ def validate_thegamesdb_key(api_key: str) -> None:
     )
 
 
-def download_thegamesdb_image(image_url: str, destination: Path) -> str:
+def fetch_thegamesdb_image(image_url: str) -> tuple[bytes, str]:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != THEGAMESDB_MEDIA_HOST:
         raise MetadataError("Ungültige TheGamesDB-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.3"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()
@@ -173,12 +204,17 @@ def download_thegamesdb_image(image_url: str, destination: Path) -> str:
         raise MetadataError("TheGamesDB-Bild konnte nicht heruntergeladen werden") from error
     if len(data) > MAX_IMAGE_BYTES:
         raise MetadataError("TheGamesDB-Bild ist größer als 8 MiB")
-    extension = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[content_type]
     is_jpeg = data.startswith(b"\xff\xd8\xff")
     is_png = data.startswith(b"\x89PNG\r\n\x1a\n")
     is_webp = data.startswith(b"RIFF") and data[8:12] == b"WEBP"
     if not (is_jpeg or is_png or is_webp):
         raise MetadataError("TheGamesDB-Bildsignatur ist ungültig")
+    return data, content_type
+
+
+def download_thegamesdb_image(image_url: str, destination: Path) -> str:
+    data, content_type = fetch_thegamesdb_image(image_url)
+    extension = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[content_type]
     target = destination.with_suffix(extension)
     target.write_bytes(data)
     return target.name
@@ -188,7 +224,7 @@ def download_rawg_image(image_url: str, destination: Path) -> str:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != RAWG_MEDIA_HOST:
         raise MetadataError("Ungültige RAWG-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.3"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.2.4"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()

@@ -143,18 +143,38 @@
         </select>
       </label>
       <label>Relativer Startpfad<input id="editLauncher" type="text" placeholder="Spiel/setup.exe"></label>
-      <label>Beschreibung<textarea id="editDescription" rows="4"></textarea></label>
+      <label>Bemerkungen<textarea id="editDescription" rows="4" placeholder="Eigene Hinweise, Installationsnotizen, Seriennummer-Speicherort …"></textarea></label>
       <label>Cover (JPG, PNG, WEBP)<input id="editCover" type="file" accept="image/jpeg,image/png,image/webp"></label>
       <section class="metadata-search">
         <label>Cover bei TheGamesDB suchen
           <div class="metadata-searchbar"><input id="metadataQuery" type="search" maxlength="160"><button id="metadataSearchButton" type="button" class="secondary">Suchen</button></div>
         </label>
-        <p class="field-hint">Nur beim Klick auf „Suchen“ wird der eingegebene Titel an TheGamesDB übertragen. Ein Treffer wird erst nach deiner Auswahl gespeichert.</p>
+        <p class="field-hint">Nur beim Klick auf „Suchen“ wird der eingegebene Titel an TheGamesDB übertragen. Bei Abkürzungen bitte den vollständigen Namen verwenden, zum Beispiel „Assassin’s Creed Valhalla“. Ein Treffer wird erst nach deiner Auswahl gespeichert.</p>
         <div id="metadataResults" class="metadata-results"></div>
       </section>
       <div id="editNote" class="note"></div>
       <div class="dialog-actions"><button value="cancel" class="secondary">Abbrechen</button><button id="saveButton" value="default">Speichern</button></div>
     </form>
+  </dialog>
+
+  <dialog id="gameInfoDialog" class="game-info-dialog">
+    <article class="game-info-panel">
+      <header id="gameInfoHero" class="game-info-hero">
+        <div class="game-info-shade"></div>
+        <button id="closeGameInfo" type="button" class="game-info-close" aria-label="Infofenster schließen">×</button>
+        <div class="game-info-heading">
+          <p id="gameInfoProvider" class="eyebrow"></p>
+          <h2 id="gameInfoTitle"></h2>
+          <div id="gameInfoMeta" class="game-info-meta"></div>
+        </div>
+      </header>
+      <div class="game-info-content">
+        <section id="gameInfoOverviewSection"><h3>Spielinhalt</h3><p id="gameInfoOverview"></p></section>
+        <section id="gameInfoNotesSection"><h3>Bemerkungen</h3><p id="gameInfoNotes"></p></section>
+        <section><h3>Bibliothek</h3><dl id="gameInfoLibrary" class="game-info-list"></dl></section>
+        <div id="gameInfoActions" class="dialog-actions"></div>
+      </div>
+    </article>
   </dialog>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>

@@ -29,7 +29,9 @@ from settings import SettingsStore, THEMES
 from metadata import (
     MetadataError,
     download_thegamesdb_image,
+    fetch_thegamesdb_image,
     search_thegamesdb,
+    suggest_game_title,
     validate_thegamesdb_key,
 )
 
@@ -283,7 +285,10 @@ def download_windows_agent_exe():
 @app.get("/api/games")
 @login_required
 def games():
-    return jsonify(database.list_games())
+    items = database.list_games()
+    for game in items:
+        game["metadata_search_title"] = suggest_game_title(game["title"])
+    return jsonify(items)
 
 
 @app.post("/api/scan")
@@ -324,14 +329,30 @@ def search_game_metadata(game_id: str):
     if not game:
         abort(404)
     payload = request.get_json(silent=True) or {}
-    query = str(payload.get("query") or game["title"]).strip()[:160]
+    query = suggest_game_title(str(payload.get("query") or game["title"]).strip()[:160])
     try:
         results = search_thegamesdb(
             settings_store.load().get("thegamesdb_api_key", ""), query
         )
     except MetadataError as error:
         return jsonify(error=str(error)), 502
+    for result in results:
+        result["preview_url"] = url_for(
+            "metadata_preview", url=result["image_url"]
+        )
     return jsonify(query=query, results=results)
+
+
+@app.get("/api/metadata/preview")
+@login_required
+def metadata_preview():
+    try:
+        data, content_type = fetch_thegamesdb_image(request.args.get("url", ""))
+    except MetadataError as error:
+        return jsonify(error=str(error)), 502
+    response = send_file(BytesIO(data), mimetype=content_type, max_age=14400)
+    response.headers["Cache-Control"] = "private, max-age=14400"
+    return response
 
 
 @app.post("/api/games/<game_id>/metadata/apply")
@@ -369,6 +390,13 @@ def apply_game_metadata(game_id: str):
         "metadata_provider": "thegamesdb",
         "metadata_provider_id": provider_id,
         "metadata_source_url": source_url[:500],
+        "metadata_title": str(payload.get("name") or "")[:160],
+        "metadata_overview": str(payload.get("overview") or "")[:12000],
+        "metadata_release_date": str(payload.get("released") or "")[:10],
+        "metadata_platform": str(payload.get("platform") or "")[:80],
+        "metadata_rating": str(payload.get("rating") or "")[:80],
+        "metadata_players": str(payload.get("players") or "")[:40],
+        "metadata_coop": str(payload.get("coop") or "")[:40],
     })
     return jsonify(database.get_game(game_id))
 
@@ -402,6 +430,13 @@ def upload_cover(game_id: str):
         "metadata_provider": None,
         "metadata_provider_id": None,
         "metadata_source_url": None,
+        "metadata_title": None,
+        "metadata_overview": None,
+        "metadata_release_date": None,
+        "metadata_platform": None,
+        "metadata_rating": None,
+        "metadata_players": None,
+        "metadata_coop": None,
     })
     return jsonify(cover_url=url_for("cover", name=name))
 

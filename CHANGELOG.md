@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.4
+
+- Klick auf ein Cover öffnet ein eigenes Spiele-Infofenster mit lokalem Cover als Hintergrund.
+- TheGamesDB-Spielinhalt, offizieller Titel, Plattform, Erscheinungsdatum, Rating und Spielerangaben werden bei der Auswahl lokal gespeichert.
+- Das bisherige Freitextfeld „Beschreibung“ heißt in der Oberfläche nun „Bemerkungen“ und wird getrennt vom offiziellen Spielinhalt angezeigt.
+- Suchfeld zeigt den bereinigten Titel ohne Release-/Repack-Zusätze.
+- Bekannte `AC`-Kurztitel werden für die Suche zu `Assassin's Creed` erweitert.
+- PC-/Windows-Treffer werden vor Konsolenfassungen sortiert.
+- Treffer-Vorschaubilder werden über Mission Control geladen, geprüft und privat zwischengespeichert.
+- TrueNAS-Anleitung von `INSTALL-TRUETITAN.md` in `INSTALL-TRUENAS.md` umbenannt.
+
 ## 0.2.3
 
 - TheGamesDB als aktiven Hauptanbieter für die manuelle Cover-Suche ergänzt.

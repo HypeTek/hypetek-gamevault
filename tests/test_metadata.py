@@ -13,11 +13,15 @@ class MetadataTests(unittest.TestCase):
             metadata.clean_game_title("A Plague Tale - Requiem [FitGirl Repack]"),
             "A Plague Tale Requiem",
         )
+        self.assertEqual(
+            metadata.suggest_game_title("AC Valhalla -- fitgirl-repacks site"),
+            "Assassin's Creed Valhalla",
+        )
 
     def test_thegamesdb_response_becomes_safe_candidates(self):
         payload = {
             "code": 200,
-            "data": {"games": [{"id": 53, "game_title": "Sonic", "release_date": "1991-06-23", "platform": 1}]},
+            "data": {"games": [{"id": 53, "game_title": "Sonic", "release_date": "1991-06-23", "platform": 1, "overview": "Fast blue hedgehog"}]},
             "include": {
                 "boxart": {
                     "base_url": {"original": "https://cdn.thegamesdb.net/images/original/"},
@@ -35,11 +39,35 @@ class MetadataTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["provider"], "thegamesdb")
         self.assertEqual(result[0]["platform"], "PC")
+        self.assertEqual(result[0]["overview"], "Fast blue hedgehog")
         self.assertEqual(result[0]["source_url"], "https://thegamesdb.net/game.php?id=53")
         self.assertEqual(
             result[0]["image_url"],
             "https://cdn.thegamesdb.net/images/original/boxart/front/53-1.jpg",
         )
+
+    def test_pc_results_are_sorted_first(self):
+        payload = {
+            "code": 200,
+            "data": {"games": [
+                {"id": 1, "game_title": "Same", "platform": 2},
+                {"id": 2, "game_title": "Same", "platform": 1},
+            ]},
+            "include": {
+                "boxart": {"base_url": {"original": "https://cdn.thegamesdb.net/images/original/"}, "data": {
+                    "1": [{"type": "boxart", "side": "front", "filename": "one.jpg"}],
+                    "2": [{"type": "boxart", "side": "front", "filename": "two.jpg"}],
+                }},
+                "platform": {"data": {"1": {"name": "PC"}, "2": {"name": "Sony Playstation 5"}}},
+            },
+        }
+        original = metadata._get_thegamesdb_json
+        metadata._get_thegamesdb_json = lambda _url: payload
+        try:
+            result = metadata.search_thegamesdb("test-key", "Same")
+        finally:
+            metadata._get_thegamesdb_json = original
+        self.assertEqual(result[0]["platform"], "PC")
 
     def test_thegamesdb_results_without_boxart_are_skipped(self):
         payload = {"code": 200, "data": {"games": [{"id": 1, "game_title": "No Art"}]}, "include": {}}

@@ -6,6 +6,7 @@ const statusEl = document.querySelector("#status");
 const editor = document.querySelector("#editor");
 const settingsDialog = document.querySelector("#settingsDialog");
 const connectionHelpDialog = document.querySelector("#connectionHelpDialog");
+const gameInfoDialog = document.querySelector("#gameInfoDialog");
 
 const formatBytes = (value) => {
   if (!value) return "0 B";
@@ -78,7 +79,7 @@ function render() {
     const sourceName = sourceNames[game.metadata_provider];
     const attribution = sourceName && game.metadata_source_url
       ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Cover: ${sourceName}</a>` : "";
-    return `<article class="card"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
+    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="Informationen zu ${escapeHtml(game.title)}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
   }).join("") || "<p>Keine passenden Einträge.</p>";
 }
 
@@ -105,10 +106,31 @@ function editGame(id) {
   document.querySelector("#editLauncher").value = game.launcher_override || game.detected_launcher || "";
   document.querySelector("#editDescription").value = game.description || "";
   document.querySelector("#editCover").value = "";
-  document.querySelector("#metadataQuery").value = game.title;
+  document.querySelector("#metadataQuery").value = game.metadata_search_title || game.title;
   document.querySelector("#metadataResults").innerHTML = "";
   document.querySelector("#editNote").textContent = `Erkannt: ${labels[game.detected_type] || game.detected_type} · ${game.detection_note} · ${game.relative_path}`;
   editor.showModal();
+}
+
+function showGameInfo(id) {
+  const game = state.games.find((candidate) => candidate.id === id);
+  if (!game) return;
+  const hero = document.querySelector("#gameInfoHero");
+  hero.style.backgroundImage = game.cover_name ? `url('/covers/${encodeURIComponent(game.cover_name)}')` : "none";
+  document.querySelector("#gameInfoProvider").textContent = game.metadata_provider === "thegamesdb" ? "TheGamesDB" : "Mission Control";
+  document.querySelector("#gameInfoTitle").textContent = game.metadata_title || game.title;
+  const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? `${game.metadata_players} Spieler` : "", game.metadata_coop ? `Co-op: ${game.metadata_coop}` : ""].filter(Boolean);
+  document.querySelector("#gameInfoMeta").innerHTML = metadata.map((value) => `<span>${escapeHtml(value)}</span>`).join("");
+  const overview = String(game.metadata_overview || "").trim();
+  const notes = String(game.description || "").trim();
+  document.querySelector("#gameInfoOverview").textContent = overview || "Für diesen Eintrag wurde noch kein Spielinhalt übernommen.";
+  document.querySelector("#gameInfoOverviewSection").classList.toggle("is-empty", !overview);
+  document.querySelector("#gameInfoNotes").textContent = notes || "Keine eigenen Bemerkungen hinterlegt.";
+  document.querySelector("#gameInfoNotesSection").classList.toggle("is-empty", !notes);
+  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>Bibliothekstitel</dt><dd>${escapeHtml(game.title)}</dd><dt>Typ</dt><dd>${escapeHtml(labels[game.action] || game.action)}</dd><dt>Größe</dt><dd>${formatBytes(game.logical_size)}</dd>`;
+  const source = game.metadata_source_url ? `<a class="button-link secondary" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Quelle ansehen</a>` : "";
+  document.querySelector("#gameInfoActions").innerHTML = `${source}<button type="button" class="secondary" onclick="gameInfoDialog.close(); editGame('${game.id}')">Edit</button>`;
+  gameInfoDialog.showModal();
 }
 
 function updateRangeOutputs() {
@@ -206,7 +228,7 @@ document.querySelector("#removeTheGamesDbKeyButton").addEventListener("click", a
 function renderMetadataResults(results) {
   const target = document.querySelector("#metadataResults");
   if (!results.length) { target.innerHTML = '<p class="note">Keine passenden Treffer gefunden.</p>'; return; }
-  target.innerHTML = results.map((item, index) => `<article class="metadata-result"><img src="${escapeHtml(item.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.platform || "Plattform unbekannt")} · ${escapeHtml(item.released || "Jahr unbekannt")}</span><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer">Bei TheGamesDB ansehen</a></div><button type="button" data-metadata-index="${index}">Übernehmen</button></article>`).join("");
+  target.innerHTML = results.map((item, index) => `<article class="metadata-result"><img src="${escapeHtml(item.preview_url)}" alt="" loading="lazy"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.platform || "Plattform unbekannt")} · ${escapeHtml(item.released || "Jahr unbekannt")}</span><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer">Bei TheGamesDB ansehen</a></div><button type="button" data-metadata-index="${index}">Übernehmen</button></article>`).join("");
   target.querySelectorAll("[data-metadata-index]").forEach((button) => button.addEventListener("click", async () => {
     const item = results[Number(button.dataset.metadataIndex)];
     const id = document.querySelector("#editId").value;
@@ -244,6 +266,7 @@ document.querySelector("#settingsButton").addEventListener("click", openSettings
 document.querySelector("#connectionHelpButton").addEventListener("click", () => connectionHelpDialog.showModal());
 document.querySelector("#closeConnectionHelp").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#connectionHelpDone").addEventListener("click", () => connectionHelpDialog.close());
+document.querySelector("#closeGameInfo").addEventListener("click", () => gameInfoDialog.close());
 document.querySelector("#settingOpacity").addEventListener("input", updateRangeOutputs);
 document.querySelector("#settingBlur").addEventListener("input", updateRangeOutputs);
 document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; render(); });

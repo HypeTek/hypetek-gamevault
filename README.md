@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.2.3
+## Funktionen in Version 0.2.4
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -22,6 +22,7 @@ verändern oder in ein neues Format zu zwingen.
 - unsichtbarer Agentenstart; nur die Sicherheitsabfrage wird angezeigt
 - Windows PowerShell 5.1 und PowerShell 7
 - optionale, manuell ausgelöste TheGamesDB-Coversuche mit Vorschau und Quellenlink
+- Spiele-Infofenster mit lokal gespeichertem Spielinhalt und getrennten eigenen Bemerkungen
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer
@@ -46,7 +47,7 @@ und Benutzeroberfläche heißen bereits HypeTek Mission Control.
 - `windows-installer/` – Inno-Setup-Projekt für den geführten EXE-Installer
 - `tests/` – Scanner-, Einstellungs-, Ticket- und Sicherheitstests
 - `.github/workflows/container.yml` – Tests, Container und Windows-Installer
-- `INSTALL-TRUETITAN.md` – Installation und Upgrade auf TrueNAS
+- `INSTALL-TRUENAS.md` – Installation und Upgrade auf TrueNAS SCALE
 - `INSTALL-WINDOWS.md` – Windows-Agent und Diagnose
 
 ## Container
@@ -82,7 +83,7 @@ python -m unittest discover -s tests -v
 ```
 
 GitHub Actions führt die Tests vor jedem Container- und Installer-Build aus. Bei einem
-Tag wie `v0.2.3` werden ein versioniertes Container-Image und der Windows-Installer als
+Tag wie `v0.2.4` werden ein versioniertes Container-Image und der Windows-Installer als
 Release-Artefakt veröffentlicht.
 
 ## Updates nach GitHub übertragen

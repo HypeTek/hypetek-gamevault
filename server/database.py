@@ -27,6 +27,13 @@ CREATE TABLE IF NOT EXISTS games (
     metadata_provider TEXT,
     metadata_provider_id TEXT,
     metadata_source_url TEXT,
+    metadata_title TEXT,
+    metadata_overview TEXT,
+    metadata_release_date TEXT,
+    metadata_platform TEXT,
+    metadata_rating TEXT,
+    metadata_players TEXT,
+    metadata_coop TEXT,
     hidden INTEGER NOT NULL DEFAULT 0,
     present INTEGER NOT NULL DEFAULT 1,
     updated_at INTEGER NOT NULL
@@ -59,7 +66,18 @@ class Database:
             game_columns = {
                 row["name"] for row in connection.execute("PRAGMA table_info(games)").fetchall()
             }
-            for name in ("metadata_provider", "metadata_provider_id", "metadata_source_url"):
+            for name in (
+                "metadata_provider",
+                "metadata_provider_id",
+                "metadata_source_url",
+                "metadata_title",
+                "metadata_overview",
+                "metadata_release_date",
+                "metadata_platform",
+                "metadata_rating",
+                "metadata_players",
+                "metadata_coop",
+            ):
                 if name not in game_columns:
                     connection.execute(f"ALTER TABLE games ADD COLUMN {name} TEXT")
 
@@ -128,6 +146,13 @@ class Database:
             "metadata_provider",
             "metadata_provider_id",
             "metadata_source_url",
+            "metadata_title",
+            "metadata_overview",
+            "metadata_release_date",
+            "metadata_platform",
+            "metadata_rating",
+            "metadata_players",
+            "metadata_coop",
             "hidden",
         }
         updates = {key: value for key, value in values.items() if key in allowed}

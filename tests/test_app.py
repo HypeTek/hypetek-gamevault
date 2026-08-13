@@ -107,7 +107,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.2.3")
+        self.assertEqual(health["version"], "0.2.4")
         self.assertEqual(health["agent_api"], 2)
 
     def test_path_escape_is_rejected(self):
@@ -227,6 +227,10 @@ class AppTests(unittest.TestCase):
             "name": "Test Game",
             "released": "2026-08-13",
             "platform": "PC",
+            "overview": "A test game overview.",
+            "rating": "T - Teen",
+            "players": "1",
+            "coop": "No",
             "image_url": "https://cdn.thegamesdb.net/images/original/boxart/front/123-1.jpg",
             "source_url": "https://thegamesdb.net/game.php?id=123",
         }
@@ -256,10 +260,22 @@ class AppTests(unittest.TestCase):
             self.assertEqual(updated["metadata_provider"], "thegamesdb")
             self.assertEqual(updated["metadata_provider_id"], "123")
             self.assertEqual(updated["metadata_source_url"], candidate["source_url"])
+            self.assertEqual(updated["metadata_overview"], "A test game overview.")
+            self.assertEqual(updated["metadata_platform"], "PC")
             self.assertTrue(updated["cover_name"].endswith(".jpg"))
         finally:
             self.module.search_thegamesdb = original_search
             self.module.download_thegamesdb_image = original_download
+
+    def test_games_include_clean_suggested_search_title(self):
+        self.login()
+        noisy = Path(os.environ["GAMEVAULT_GAME_ROOT"]) / "AC Valhalla -- fitgirl-repacks site"
+        noisy.mkdir()
+        (noisy / "setup.exe").write_bytes(b"MZ")
+        self.post("/api/scan")
+        games = self.client.get("/api/games").get_json()
+        candidate = next(game for game in games if game["relative_path"].startswith("AC Valhalla"))
+        self.assertEqual(candidate["metadata_search_title"], "Assassin's Creed Valhalla")
 
 
 if __name__ == "__main__":
