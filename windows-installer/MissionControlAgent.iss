@@ -1,5 +1,5 @@
 #define MyAppName "HypeTek Mission Control Agent"
-#define MyAppVersion "0.2.0"
+#define MyAppVersion "0.2.0.1"
 #define MyAppPublisher "HypeTek"
 #define MyAppExeName "GameVaultAgent.ps1"
 
@@ -20,7 +20,7 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=mission-control.ico
 UninstallDisplayIcon={app}\mission-control.ico
-VersionInfoVersion=0.2.0.0
+VersionInfoVersion=0.2.0.1
 VersionInfoDescription=HypeTek Mission Control Windows Agent Setup
 
 [Files]
@@ -40,6 +40,83 @@ var
   ServerPage: TInputQueryWizardPage;
   PathPage: TInputQueryWizardPage;
   TokenPage: TInputQueryWizardPage;
+  TokenHelpButton: TNewButton;
+
+procedure ShowTokenHelp(Sender: TObject);
+begin
+  MsgBox(
+    'Agent-Token und Agent-Key meinen in älteren Versionen denselben Wert.' + #13#10 + #13#10 +
+    'Verwende ausschließlich GAMEVAULT_AGENT_TOKEN.' + #13#10 +
+    'GAMEVAULT_SECRET_KEY gehört nicht in den Windows-Agenten.' + #13#10 + #13#10 +
+    'Falls noch kein Agent-Token existiert:' + #13#10 + #13#10 +
+    '1. TrueNAS-Shell öffnen.' + #13#10 +
+    '2. Ausführen:' + #13#10 +
+    'python3 -c "import secrets; print(secrets.token_urlsafe(32))"' + #13#10 +
+    '3. Den ausgegebenen Wert kopieren.' + #13#10 +
+    '4. Apps > gamevault > Edit öffnen.' + #13#10 +
+    '5. GAMEVAULT_AGENT_TOKEN durch den neuen Wert ersetzen.' + #13#10 +
+    '6. Speichern und warten, bis die App wieder Running zeigt.' + #13#10 +
+    '7. Denselben Wert hier eintragen.' + #13#10 + #13#10 +
+    'Den Token niemals in GitHub oder einen öffentlichen Chat kopieren.',
+    mbInformation,
+    MB_OK);
+end;
+
+function ValidateAgentToken: Boolean;
+var
+  Request: Variant;
+  StatusCode: Integer;
+  ValidationHeader: String;
+  ValidationUrl: String;
+begin
+  Result := False;
+  ValidationUrl := RemoveBackslashUnlessRoot(Trim(ServerPage.Values[0])) +
+    '/api/agent/validate';
+  try
+    Request := CreateOleObject('WinHttp.WinHttpRequest.5.1');
+    Request.Open('POST', ValidationUrl, False);
+    Request.SetTimeouts(5000, 5000, 5000, 10000);
+    Request.SetRequestHeader('Authorization', 'Bearer ' + Trim(TokenPage.Values[0]));
+    Request.SetRequestHeader('Cache-Control', 'no-cache, no-store');
+    Request.SetRequestHeader('Pragma', 'no-cache');
+    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.2.0.1');
+    Request.Send('');
+    StatusCode := Request.Status;
+
+    ValidationHeader := '';
+    try
+      ValidationHeader := Request.GetResponseHeader('X-Mission-Control-Agent');
+    except
+      ValidationHeader := '';
+    end;
+
+    { Only the dedicated validation endpoint can produce both signals.
+      A generic 204/404 page or an older server version must never pass. }
+    if (StatusCode = 204) and (ValidationHeader = 'authenticated') then
+      Result := True
+    else if StatusCode = 401 then
+      MsgBox(
+        'Der Agent-Token stimmt nicht mit GAMEVAULT_AGENT_TOKEN auf dem Server überein.' + #13#10 + #13#10 + 'Es wurde noch nichts gespeichert.',
+        mbError,
+        MB_OK)
+    else
+      MsgBox(
+        'Der Server konnte den Agent-Token nicht eindeutig bestätigen.' + #13#10 +
+        'HTTP-Status: ' + IntToStr(StatusCode) + #13#10 + #13#10 +
+        'Bitte zuerst das aktuelle Mission-Control-Server-Image installieren.' + #13#10 + #13#10 +
+        'Es wurde noch nichts gespeichert.',
+        mbError,
+        MB_OK);
+  except
+    MsgBox(
+      'Der Agent-Token konnte nicht geprüft werden.' + #13#10 +
+      'Serveradresse, Netzwerkverbindung und Port kontrollieren.' + #13#10 + #13#10 +
+      'Es wurde noch nichts gespeichert.' + #13#10 + #13#10 +
+      GetExceptionMessage,
+      mbError,
+      MB_OK);
+  end;
+end;
 
 function JsonEscape(Value: String): String;
 begin
@@ -69,10 +146,20 @@ begin
 
   TokenPage := CreateInputQueryPage(
     PathPage.ID,
-    'Agent-Key',
+    'Agent-Token',
     'Sichere Verbindung zum Server',
-    'Kopiere den Agent-Key aus der TrueNAS-Konfiguration. Er wird nur lokal gespeichert.');
-  TokenPage.Add('Agent-Key:', True);
+    'Kopiere GAMEVAULT_AGENT_TOKEN aus der TrueNAS-Konfiguration. Der Wert wird vor der Installation geprüft.');
+  TokenPage.Add('Agent-Token:', True);
+
+  TokenHelpButton := TNewButton.Create(WizardForm);
+  TokenHelpButton.Parent := TokenPage.Surface;
+  TokenHelpButton.Caption := 'Hilfe zum Agent-Token';
+  TokenHelpButton.SetBounds(
+    0,
+    TokenPage.Edits[0].Top + TokenPage.Edits[0].Height + ScaleY(12),
+    ScaleX(160),
+    ScaleY(28));
+  TokenHelpButton.OnClick := @ShowTokenHelp;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -101,9 +188,11 @@ begin
   begin
     if Length(Trim(TokenPage.Values[0])) < 20 then
     begin
-      MsgBox('Der Agent-Key ist zu kurz oder fehlt.', mbError, MB_OK);
+      MsgBox('Der Agent-Token ist zu kurz oder fehlt. Es wurde noch nichts gespeichert.', mbError, MB_OK);
       Result := False;
-    end;
+    end
+    else
+      Result := ValidateAgentToken;
   end;
 end;
 

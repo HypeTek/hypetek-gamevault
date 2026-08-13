@@ -3,6 +3,7 @@
 ## 0.2.0
 
 - Der Windows-Installer prüft den Agent-Token über einen eindeutigen Server-Endpunkt und speichert bei fehlgeschlagener Prüfung keine Konfiguration.
+- Agent-Token-Prüfung auf nicht cachebaren POST umgestellt; Installer-Build 0.2.0.1 ist im Fenstertitel eindeutig erkennbar.
 
 - Rebranding zu HypeTek Mission Control
 - vier integrierte Designs und eigener Hintergrund

@@ -80,16 +80,19 @@ class AppTests(unittest.TestCase):
         self.assertEqual(manifest.get_json()["launcher"], "Test Game")
 
     def test_agent_token_validation_is_unambiguous(self):
-        missing = self.client.get("/api/agent/validate")
+        get_is_not_a_validation = self.client.get("/api/agent/validate")
+        self.assertEqual(get_is_not_a_validation.status_code, 405)
+
+        missing = self.client.post("/api/agent/validate")
         self.assertEqual(missing.status_code, 401)
 
-        wrong = self.client.get(
+        wrong = self.client.post(
             "/api/agent/validate",
             headers={"Authorization": "Bearer definitely-wrong-agent-token"},
         )
         self.assertEqual(wrong.status_code, 401)
 
-        valid = self.client.get(
+        valid = self.client.post(
             "/api/agent/validate",
             headers={"Authorization": "Bearer agent-test"},
         )
@@ -97,6 +100,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(
             valid.headers.get("X-Mission-Control-Agent"), "authenticated"
         )
+        self.assertEqual(valid.headers.get("Cache-Control"), "no-store")
 
     def test_path_escape_is_rejected(self):
         self.login()

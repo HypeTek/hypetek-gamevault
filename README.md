@@ -69,6 +69,19 @@ GitHub Actions führt die Tests vor jedem Container- und Installer-Build aus. Be
 Tag wie `v0.2.0` werden ein versioniertes Container-Image und der Windows-Installer als
 Release-Artefakt veröffentlicht.
 
+## Updates nach GitHub übertragen
+
+Für vollständige Updates unter Windows wird **GitHub Desktop** empfohlen:
+
+1. Das Repository einmal mit GitHub Desktop klonen.
+2. Den Inhalt des neuen Mission-Control-Pakets in diesen lokalen Repository-Ordner kopieren.
+3. In GitHub Desktop alle erkannten Änderungen kontrollieren, committen und mit **Push origin** hochladen.
+4. Unter **Actions** warten, bis Python-Tests, Container-Build und Windows-Installer grün sind.
+
+Damit wird auch `.github/workflows/container.yml` zuverlässig übernommen. Beim manuellen
+Upload im Browser kann der mit einem Punkt beginnende Ordner leicht übersehen werden;
+ohne diese Datei werden weder Tests noch Container oder EXE-Installer gebaut.
+
 ## Sicherheitsgrenzen
 
 - Games-Mount im Container nur lesbar
