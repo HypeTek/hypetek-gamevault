@@ -21,6 +21,7 @@ DEFAULTS = {
     "background_blur": 2,
     "crosshair_cursor": False,
     "scan_exclusions": [],
+    "rawg_api_key": "",
 }
 
 
@@ -53,6 +54,7 @@ class SettingsStore:
         temporary.write_text(
             json.dumps(values, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
+        temporary.chmod(0o600)
         temporary.replace(self.path)
 
     @staticmethod
@@ -101,4 +103,5 @@ class SettingsStore:
             "background_blur": blur,
             "crosshair_cursor": bool(values.get("crosshair_cursor", False)),
             "scan_exclusions": exclusions,
+            "rawg_api_key": str(values.get("rawg_api_key") or "").strip()[:200],
         }

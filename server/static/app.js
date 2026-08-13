@@ -74,7 +74,9 @@ function render() {
     const hasCover = Boolean(game.cover_name);
     const cover = hasCover ? `background-image:url('/covers/${encodeURIComponent(game.cover_name)}')` : "";
     const monogram = escapeHtml(gameMonogram(game.title));
-    return `<article class="card"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
+    const attribution = game.metadata_provider === "rawg" && game.metadata_source_url
+      ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Cover: RAWG</a>` : "";
+    return `<article class="card"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
   }).join("") || "<p>Keine passenden Einträge.</p>";
 }
 
@@ -101,6 +103,8 @@ function editGame(id) {
   document.querySelector("#editLauncher").value = game.launcher_override || game.detected_launcher || "";
   document.querySelector("#editDescription").value = game.description || "";
   document.querySelector("#editCover").value = "";
+  document.querySelector("#metadataQuery").value = game.title;
+  document.querySelector("#metadataResults").innerHTML = "";
   document.querySelector("#editNote").textContent = `Erkannt: ${labels[game.detected_type] || game.detected_type} · ${game.detection_note} · ${game.relative_path}`;
   editor.showModal();
 }
@@ -119,6 +123,8 @@ function openSettings() {
   document.querySelector("#settingOpacity").value = settings.background_opacity;
   document.querySelector("#settingBlur").value = settings.background_blur;
   document.querySelector("#settingExclusions").value = settings.scan_exclusions.join(", ");
+  document.querySelector("#settingRawgApiKey").value = "";
+  document.querySelector("#rawgKeyStatus").textContent = settings.rawg_configured ? "Ein API-Key ist gespeichert." : "Noch kein API-Key gespeichert.";
   document.querySelector("#settingBackground").value = "";
   updateRangeOutputs();
   settingsDialog.showModal();
@@ -159,6 +165,8 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
     background_blur: Number(document.querySelector("#settingBlur").value),
     scan_exclusions: document.querySelector("#settingExclusions").value.split(/[,\n]/).map((value) => value.trim()).filter(Boolean),
   };
+  const rawgApiKey = document.querySelector("#settingRawgApiKey").value.trim();
+  if (rawgApiKey) payload.rawg_api_key = rawgApiKey;
   try {
     let settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify(payload)});
     const background = document.querySelector("#settingBackground").files[0];
@@ -181,6 +189,45 @@ document.querySelector("#removeBackgroundButton").addEventListener("click", asyn
     applySettings(settings);
     document.querySelector("#settingBackground").value = "";
   } catch (error) { alert(error.message); }
+});
+
+document.querySelector("#removeRawgKeyButton").addEventListener("click", async () => {
+  if (!confirm("Gespeicherten RAWG-API-Key wirklich entfernen?")) return;
+  try {
+    const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify({rawg_api_key: null})});
+    applySettings(settings);
+    document.querySelector("#settingRawgApiKey").value = "";
+    document.querySelector("#rawgKeyStatus").textContent = "Noch kein API-Key gespeichert.";
+  } catch (error) { alert(error.message); }
+});
+
+function renderMetadataResults(results) {
+  const target = document.querySelector("#metadataResults");
+  if (!results.length) { target.innerHTML = '<p class="note">Keine passenden Treffer gefunden.</p>'; return; }
+  target.innerHTML = results.map((item, index) => `<article class="metadata-result"><img src="${escapeHtml(item.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.released || "Jahr unbekannt")}</span><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer">Bei RAWG ansehen</a></div><button type="button" data-metadata-index="${index}">Übernehmen</button></article>`).join("");
+  target.querySelectorAll("[data-metadata-index]").forEach((button) => button.addEventListener("click", async () => {
+    const item = results[Number(button.dataset.metadataIndex)];
+    const id = document.querySelector("#editId").value;
+    button.disabled = true;
+    button.textContent = "Lade …";
+    try {
+      await api(`/api/games/${id}/metadata/apply`, {method: "POST", body: JSON.stringify(item)});
+      await load();
+      target.innerHTML = '<p class="note">Cover übernommen. Du kannst den Dialog jetzt speichern oder schließen.</p>';
+    } catch (error) { alert(error.message); button.disabled = false; button.textContent = "Übernehmen"; }
+  }));
+}
+
+document.querySelector("#metadataSearchButton").addEventListener("click", async () => {
+  const id = document.querySelector("#editId").value;
+  const query = document.querySelector("#metadataQuery").value.trim();
+  const target = document.querySelector("#metadataResults");
+  if (!query) { alert("Bitte einen Titel für die Suche eingeben."); return; }
+  target.innerHTML = '<p class="note">Suche bei RAWG …</p>';
+  try {
+    const data = await api(`/api/games/${id}/metadata/search`, {method: "POST", body: JSON.stringify({query})});
+    renderMetadataResults(data.results);
+  } catch (error) { target.innerHTML = `<p class="note error">${escapeHtml(error.message)}</p>`; }
 });
 
 document.querySelector("#scanButton").addEventListener("click", async () => {

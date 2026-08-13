@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.2.1
+## Funktionen in Version 0.2.2
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -21,6 +21,7 @@ verändern oder in ein neues Format zu zwingen.
 - geführter Windows-EXE-Installer mit Serveradresse, Games-Pfad und Agent-Token
 - unsichtbarer Agentenstart; nur die Sicherheitsabfrage wird angezeigt
 - Windows PowerShell 5.1 und PowerShell 7
+- optionale, manuell ausgelöste RAWG-Coversuche mit Vorschau und Quellenlink
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer
@@ -59,6 +60,17 @@ ghcr.io/hypetek/hypetek-gamevault:latest
 Die alten `GAMEVAULT_*`-Umgebungsvariablen bleiben für Upgrades gültig. Neue
 Darstellungswerte werden in `/config/mission-control-settings.json` gespeichert.
 
+### Optionale RAWG-Coversuche
+
+Unter **Einstellungen** kann ein eigener RAWG-API-Key hinterlegt werden. Mission
+Control gibt den gespeicherten Key nicht an den Browser zurück. Erst wenn im
+Bearbeiten-Dialog ausdrücklich **Suchen** gewählt wird, wird der dort eingegebene
+Titel an RAWG übertragen. Ein Cover wird erst nach manueller Auswahl lokal unter
+`/config/covers` gespeichert. Die jeweilige Karte verlinkt die RAWG-Quelle. Ohne Key
+bleiben Bibliothek, manuelle Cover-Uploads und alle Startfunktionen unverändert nutzbar.
+
+API-Key und Nutzungsbedingungen: <https://rawg.io/apidocs>
+
 ## Tests
 
 ```bash
@@ -66,7 +78,7 @@ python -m unittest discover -s tests -v
 ```
 
 GitHub Actions führt die Tests vor jedem Container- und Installer-Build aus. Bei einem
-Tag wie `v0.2.1` werden ein versioniertes Container-Image und der Windows-Installer als
+Tag wie `v0.2.2` werden ein versioniertes Container-Image und der Windows-Installer als
 Release-Artefakt veröffentlicht.
 
 ## Updates nach GitHub übertragen

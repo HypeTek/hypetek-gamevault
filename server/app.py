@@ -7,6 +7,7 @@ import zipfile
 from io import BytesIO
 from functools import wraps
 from pathlib import Path, PurePosixPath
+from urllib.parse import urlparse
 
 from flask import (
     Flask,
@@ -25,6 +26,7 @@ from werkzeug.utils import secure_filename
 from database import Database
 from scanner import scan_library
 from settings import SettingsStore, THEMES
+from metadata import MetadataError, download_rawg_image, search_rawg, validate_rawg_key
 
 
 GAME_ROOT = Path(os.environ.get("GAMEVAULT_GAME_ROOT", "/games")).resolve()
@@ -156,6 +158,8 @@ def index():
 
 def public_settings() -> dict:
     values = settings_store.load()
+    values["rawg_configured"] = bool(values.get("rawg_api_key"))
+    values.pop("rawg_api_key", None)
     values["background_url"] = (
         url_for("background", name=values["background_name"])
         if values.get("background_name")
@@ -183,10 +187,16 @@ def update_settings():
         "background_blur",
         "crosshair_cursor",
         "scan_exclusions",
+        "rawg_api_key",
     }
     changes = {key: payload[key] for key in allowed if key in payload}
     if "theme" in changes and changes["theme"] not in THEMES:
         return jsonify(error="Unbekanntes Design"), 400
+    if changes.get("rawg_api_key"):
+        try:
+            validate_rawg_key(str(changes["rawg_api_key"]))
+        except MetadataError as error:
+            return jsonify(error=f"RAWG-Key wurde nicht gespeichert: {error}"), 502
     settings_store.update(changes)
     return jsonify(public_settings())
 
@@ -300,6 +310,51 @@ def update_game(game_id: str):
     return jsonify(database.get_game(game_id))
 
 
+@app.post("/api/games/<game_id>/metadata/search")
+@login_required
+@csrf_required
+def search_game_metadata(game_id: str):
+    game = database.get_game(game_id)
+    if not game:
+        abort(404)
+    payload = request.get_json(silent=True) or {}
+    query = str(payload.get("query") or game["title"]).strip()[:160]
+    try:
+        results = search_rawg(settings_store.load().get("rawg_api_key", ""), query)
+    except MetadataError as error:
+        return jsonify(error=str(error)), 502
+    return jsonify(query=query, results=results)
+
+
+@app.post("/api/games/<game_id>/metadata/apply")
+@login_required
+@csrf_required
+def apply_game_metadata(game_id: str):
+    game = database.get_game(game_id)
+    if not game:
+        abort(404)
+    payload = request.get_json(force=True)
+    if payload.get("provider") != "rawg":
+        return jsonify(error="Unbekannter Metadatenanbieter"), 400
+    source_url = str(payload.get("source_url") or "")
+    parsed_source = urlparse(source_url)
+    if parsed_source.scheme != "https" or parsed_source.hostname != "rawg.io" or not parsed_source.path.startswith("/games/"):
+        return jsonify(error="Ungültiger RAWG-Quellenlink"), 400
+    for old in COVER_DIR.glob(f"{game_id}.*"):
+        old.unlink(missing_ok=True)
+    try:
+        name = download_rawg_image(str(payload.get("image_url") or ""), COVER_DIR / game_id)
+    except MetadataError as error:
+        return jsonify(error=str(error)), 502
+    database.update_game(game_id, {
+        "cover_name": name,
+        "metadata_provider": "rawg",
+        "metadata_provider_id": str(payload.get("provider_id") or "")[:80],
+        "metadata_source_url": source_url[:500],
+    })
+    return jsonify(database.get_game(game_id))
+
+
 @app.post("/api/games/<game_id>/cover")
 @login_required
 @csrf_required
@@ -324,7 +379,12 @@ def upload_cover(game_id: str):
     for old in COVER_DIR.glob(f"{game_id}.*"):
         old.unlink(missing_ok=True)
     upload.save(COVER_DIR / name)
-    database.update_game(game_id, {"cover_name": name})
+    database.update_game(game_id, {
+        "cover_name": name,
+        "metadata_provider": None,
+        "metadata_provider_id": None,
+        "metadata_source_url": None,
+    })
     return jsonify(cover_url=url_for("cover", name=name))
 
 

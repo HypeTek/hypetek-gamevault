@@ -111,12 +111,17 @@
         <label>Scanner-Ausschlüsse
           <textarea id="settingExclusions" rows="3" placeholder="hadmin, System Volume Information"></textarea>
         </label>
+        <label>RAWG-API-Key (optional)
+          <input id="settingRawgApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
+          <span id="rawgKeyStatus" class="field-hint"></span>
+        </label>
         <label>Eigenes Hintergrundbild
           <input id="settingBackground" type="file" accept="image/jpeg,image/png,image/webp">
         </label>
       </div>
+      <p class="note">Der optionale RAWG-Key aktiviert nur die manuelle Cover-Suche und wird ausschließlich in deiner lokalen Mission-Control-Konfiguration gespeichert. <a href="https://rawg.io/apidocs" target="_blank" rel="noopener noreferrer">RAWG-Key anfordern</a></p>
       <p class="note">Ausschlüsse gelten für Namen auf der obersten Ebene des Games-Ordners. Bestehende Cover und Metadaten bleiben erhalten.</p>
-      <div class="dialog-actions"><button id="removeBackgroundButton" type="button" class="ghost">Hintergrund entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
+      <div class="dialog-actions"><button id="removeRawgKeyButton" type="button" class="ghost">RAWG-Key entfernen</button><button id="removeBackgroundButton" type="button" class="ghost">Hintergrund entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
     </form>
   </dialog>
 
@@ -140,6 +145,13 @@
       <label>Relativer Startpfad<input id="editLauncher" type="text" placeholder="Spiel/setup.exe"></label>
       <label>Beschreibung<textarea id="editDescription" rows="4"></textarea></label>
       <label>Cover (JPG, PNG, WEBP)<input id="editCover" type="file" accept="image/jpeg,image/png,image/webp"></label>
+      <section class="metadata-search">
+        <label>Cover bei RAWG suchen
+          <div class="metadata-searchbar"><input id="metadataQuery" type="search" maxlength="160"><button id="metadataSearchButton" type="button" class="secondary">Suchen</button></div>
+        </label>
+        <p class="field-hint">Nur beim Klick auf „Suchen“ wird der eingegebene Titel an RAWG übertragen. Ein Treffer wird erst nach deiner Auswahl gespeichert.</p>
+        <div id="metadataResults" class="metadata-results"></div>
+      </section>
       <div id="editNote" class="note"></div>
       <div class="dialog-actions"><button value="cancel" class="secondary">Abbrechen</button><button id="saveButton" value="default">Speichern</button></div>
     </form>

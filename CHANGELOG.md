@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2
+
+- Freiwillige RAWG-Coversuche im Bearbeiten-Dialog ergänzt.
+- Treffer werden vor der Übernahme mit Titel, Veröffentlichungsdatum und Vorschau angezeigt.
+- Externe Cover werden kontrolliert heruntergeladen, auf Typ und Größe geprüft und lokal unter `/config/covers` zwischengespeichert.
+- RAWG-API-Key wird nur serverseitig gespeichert und nie an den Browser zurückgegeben.
+- RAWG-Suche überträgt Titel ausschließlich nach einem ausdrücklichen Klick; automatische Massenabfragen bleiben deaktiviert.
+- RAWG-Quellenlink wird an jeder Karte mit einem übernommenen Cover angezeigt.
+- Manueller Cover-Upload bleibt erhalten und entfernt die externe Quellenzuordnung.
+
 ## 0.2.1
 
 - Kartenraster auf lesbare Mindestbreiten begrenzt und für Mobilgeräte angepasst.

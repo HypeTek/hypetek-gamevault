@@ -26,7 +26,7 @@ class AppTests(unittest.TestCase):
             GAMEVAULT_AGENT_DIR=str(Path(__file__).parents[1] / "windows-agent"),
         )
         sys.path.insert(0, str(Path(__file__).parents[1] / "server"))
-        for module in ("app", "database", "scanner", "settings"):
+        for module in ("app", "database", "scanner", "settings", "metadata"):
             sys.modules.pop(module, None)
         import app
         self.module = app
@@ -107,7 +107,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.2.1")
+        self.assertEqual(health["version"], "0.2.2")
         self.assertEqual(health["agent_api"], 2)
 
     def test_path_escape_is_rejected(self):
@@ -149,6 +149,8 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         settings = self.client.get("/api/settings").get_json()
         self.assertEqual(settings["theme"], "mission")
+        self.assertNotIn("rawg_api_key", settings)
+        self.assertFalse(settings["rawg_configured"])
         response = self.client.patch(
             "/api/settings",
             json={
@@ -164,6 +166,99 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.get_json()["library_name"], "HypeTek HQ")
         scan = self.post("/api/scan")
         self.assertEqual(scan.get_json()["scanned"], 0)
+
+    def test_rawg_key_is_write_only_and_blank_patch_keeps_it(self):
+        self.login()
+        original_validate = self.module.validate_rawg_key
+        self.module.validate_rawg_key = lambda key: None
+        try:
+            saved = self.client.patch(
+                "/api/settings",
+                json={"rawg_api_key": "private-test-key"},
+                headers={"X-CSRF-Token": self.csrf},
+            )
+        finally:
+            self.module.validate_rawg_key = original_validate
+        self.assertEqual(saved.status_code, 200)
+        self.assertTrue(saved.get_json()["rawg_configured"])
+        self.assertNotIn("rawg_api_key", saved.get_json())
+
+        unchanged = self.client.patch(
+            "/api/settings",
+            json={"server_name": "Another Name"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertTrue(unchanged.get_json()["rawg_configured"])
+        self.assertEqual(self.module.settings_store.load()["rawg_api_key"], "private-test-key")
+
+        removed = self.client.patch(
+            "/api/settings",
+            json={"rawg_api_key": None},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertFalse(removed.get_json()["rawg_configured"])
+
+    def test_invalid_rawg_key_is_not_saved(self):
+        self.login()
+        original_validate = self.module.validate_rawg_key
+        try:
+            def reject(_key):
+                raise self.module.MetadataError("RAWG-API-Key wurde abgelehnt")
+
+            self.module.validate_rawg_key = reject
+            response = self.client.patch(
+                "/api/settings",
+                json={"rawg_api_key": "wrong-key"},
+                headers={"X-CSRF-Token": self.csrf},
+            )
+        finally:
+            self.module.validate_rawg_key = original_validate
+        self.assertEqual(response.status_code, 502)
+        self.assertFalse(self.module.settings_store.load()["rawg_api_key"])
+
+    def test_manual_rawg_search_and_cover_selection(self):
+        self.login()
+        self.post("/api/scan")
+        game = self.client.get("/api/games").get_json()[0]
+        self.module.settings_store.update({"rawg_api_key": "private-test-key"})
+        candidate = {
+            "provider": "rawg",
+            "provider_id": "123",
+            "name": "Test Game",
+            "released": "2026-08-13",
+            "image_url": "https://media.rawg.io/media/games/test.jpg",
+            "source_url": "https://rawg.io/games/test-game",
+        }
+        original_search = self.module.search_rawg
+        original_download = self.module.download_rawg_image
+        try:
+            self.module.search_rawg = lambda key, query: [candidate]
+            search = self.post(
+                f"/api/games/{game['id']}/metadata/search",
+                json={"query": "Test Game"},
+            )
+            self.assertEqual(search.status_code, 200)
+            self.assertEqual(search.get_json()["results"], [candidate])
+
+            def fake_download(_url, destination):
+                target = destination.with_suffix(".jpg")
+                target.write_bytes(b"\xff\xd8\xfftest")
+                return target.name
+
+            self.module.download_rawg_image = fake_download
+            applied = self.post(
+                f"/api/games/{game['id']}/metadata/apply",
+                json=candidate,
+            )
+            self.assertEqual(applied.status_code, 200)
+            updated = applied.get_json()
+            self.assertEqual(updated["metadata_provider"], "rawg")
+            self.assertEqual(updated["metadata_provider_id"], "123")
+            self.assertEqual(updated["metadata_source_url"], candidate["source_url"])
+            self.assertTrue(updated["cover_name"].endswith(".jpg"))
+        finally:
+            self.module.search_rawg = original_search
+            self.module.download_rawg_image = original_download
 
 
 if __name__ == "__main__":

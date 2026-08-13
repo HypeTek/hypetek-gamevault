@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS games (
     platform TEXT NOT NULL DEFAULT 'Windows',
     description TEXT NOT NULL DEFAULT '',
     cover_name TEXT,
+    metadata_provider TEXT,
+    metadata_provider_id TEXT,
+    metadata_source_url TEXT,
     hidden INTEGER NOT NULL DEFAULT 0,
     present INTEGER NOT NULL DEFAULT 1,
     updated_at INTEGER NOT NULL
@@ -53,6 +56,12 @@ class Database:
                 connection.execute(
                     "ALTER TABLE launch_tickets ADD COLUMN requested_action TEXT NOT NULL DEFAULT 'open_folder'"
                 )
+            game_columns = {
+                row["name"] for row in connection.execute("PRAGMA table_info(games)").fetchall()
+            }
+            for name in ("metadata_provider", "metadata_provider_id", "metadata_source_url"):
+                if name not in game_columns:
+                    connection.execute(f"ALTER TABLE games ADD COLUMN {name} TEXT")
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path)
@@ -116,6 +125,9 @@ class Database:
             "platform",
             "description",
             "cover_name",
+            "metadata_provider",
+            "metadata_provider_id",
+            "metadata_source_url",
             "hidden",
         }
         updates = {key: value for key, value in values.items() if key in allowed}
