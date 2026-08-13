@@ -2,6 +2,8 @@ import os
 import re
 import tempfile
 import unittest
+import zipfile
+from io import BytesIO
 from pathlib import Path
 import sys
 
@@ -24,7 +26,7 @@ class AppTests(unittest.TestCase):
             GAMEVAULT_AGENT_DIR=str(Path(__file__).parents[1] / "windows-agent"),
         )
         sys.path.insert(0, str(Path(__file__).parents[1] / "server"))
-        for module in ("app", "database", "scanner"):
+        for module in ("app", "database", "scanner", "settings"):
             sys.modules.pop(module, None)
         import app
         self.module = app
@@ -99,6 +101,35 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.mimetype, "application/zip")
         self.assertIn("attachment", response.headers["Content-Disposition"])
+        with zipfile.ZipFile(BytesIO(response.data)) as archive:
+            expected = [
+                "Mission-Control-Windows-Agent/GameVaultAgent.ps1",
+                "Mission-Control-Windows-Agent/Install-Agent.ps1",
+                "Mission-Control-Windows-Agent/Uninstall-Agent.ps1",
+            ]
+            self.assertEqual(sorted(archive.namelist()), expected)
+            for name in expected:
+                self.assertTrue(archive.read(name).startswith(b"\xef\xbb\xbf"))
+
+    def test_appearance_settings_and_scan_exclusions(self):
+        self.login()
+        settings = self.client.get("/api/settings").get_json()
+        self.assertEqual(settings["theme"], "mission")
+        response = self.client.patch(
+            "/api/settings",
+            json={
+                "server_name": "TrueTitan",
+                "library_name": "HypeTek HQ",
+                "theme": "cyberpunk",
+                "crosshair_cursor": True,
+                "scan_exclusions": ["Test Game"],
+            },
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["library_name"], "HypeTek HQ")
+        scan = self.post("/api/scan")
+        self.assertEqual(scan.get_json()["scanned"], 0)
 
 
 if __name__ == "__main__":

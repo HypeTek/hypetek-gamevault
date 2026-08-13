@@ -1,6 +1,7 @@
 FROM python:3.12-slim
 LABEL org.opencontainers.image.source="https://github.com/HypeTek/hypetek-gamevault"
-LABEL org.opencontainers.image.description="HypeTek GameVault for TrueNAS"
+LABEL org.opencontainers.image.title="HypeTek Mission Control"
+LABEL org.opencontainers.image.description="Self-hosted game archive and secure Windows launcher for TrueNAS"
 WORKDIR /app
 COPY server/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt

@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$InstallDir = Join-Path $env:LOCALAPPDATA "HypeTek\GameVault"
+$InstallDir = Join-Path $env:LOCALAPPDATA "HypeTek\MissionControl"
 $ConfigDir = $InstallDir
 $AgentSource = Join-Path $PSScriptRoot "GameVaultAgent.ps1"
 $AgentTarget = Join-Path $InstallDir "GameVaultAgent.ps1"
@@ -25,17 +25,25 @@ $config = [ordered]@{
 }
 $config | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $ConfigDir "agent.json") -Encoding UTF8
 
-$command = '"powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "' + $AgentTarget + '" "%1"'
+$PowerShellCommand = Get-Command "pwsh.exe" -ErrorAction SilentlyContinue
+if ($PowerShellCommand) {
+    $PowerShellExecutable = $PowerShellCommand.Source
+} else {
+    $PowerShellExecutable = (Get-Command "powershell.exe" -ErrorAction Stop).Source
+}
+
+$command = '"' + $PowerShellExecutable + '" -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $AgentTarget + '" "%1"'
 $protocol = "Registry::HKEY_CURRENT_USER\Software\Classes\hypetek-gamevault"
 New-Item -Path $protocol -Force | Out-Null
-Set-Item -Path $protocol -Value "URL:HypeTek GameVault Protocol"
+Set-Item -Path $protocol -Value "URL:HypeTek Mission Control Protocol"
 New-ItemProperty -Path $protocol -Name "URL Protocol" -Value "" -PropertyType String -Force | Out-Null
 New-Item -Path "$protocol\DefaultIcon" -Force | Out-Null
 Set-Item -Path "$protocol\DefaultIcon" -Value "powershell.exe,0"
 New-Item -Path "$protocol\shell\open\command" -Force | Out-Null
 Set-Item -Path "$protocol\shell\open\command" -Value $command
 
-Write-Host "HypeTek GameVault Agent installiert." -ForegroundColor Green
+Write-Host "HypeTek Mission Control Agent installiert." -ForegroundColor Green
 Write-Host "Server:    $($config.server_url)"
 Write-Host "Games:     $($config.game_root)"
+Write-Host "PowerShell: $PowerShellExecutable"
 Write-Host "Protokoll: hypetek-gamevault://"

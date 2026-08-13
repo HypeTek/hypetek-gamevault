@@ -155,11 +155,20 @@ def scan_entry(root: Path, entry: Path) -> ScanResult:
     )
 
 
-def scan_library(root: Path) -> list[ScanResult]:
+def scan_library(root: Path, excluded_names: set[str] | None = None) -> list[ScanResult]:
     if not root.is_dir():
         raise FileNotFoundError(f"Games-Verzeichnis nicht gefunden: {root}")
-    return [
-        scan_entry(root, entry)
-        for entry in sorted(root.iterdir(), key=lambda path: path.name.casefold())
-        if entry.is_file() or entry.is_dir()
-    ]
+    excluded_names = {name.casefold() for name in (excluded_names or set())}
+    results: list[ScanResult] = []
+    for entry in sorted(root.iterdir(), key=lambda path: path.name.casefold()):
+        if entry.name.casefold() in excluded_names:
+            continue
+        if entry.is_dir() and not os.access(entry, os.R_OK | os.X_OK):
+            continue
+        if not (entry.is_file() or entry.is_dir()):
+            continue
+        try:
+            results.append(scan_entry(root, entry))
+        except (OSError, PermissionError):
+            continue
+    return results

@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HypeTek GameVault – Anmeldung</title>
+  <title>HypeTek Mission Control – Anmeldung</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body class="login-page">
   <main class="login-panel">
     <img class="login-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
-    <h1>HypeTek GameVault</h1>
-    <p>Private Spielebibliothek auf TrueTitan</p>
+    <h1>HypeTek Mission Control</h1>
+    <p>{{ appearance.server_name }} · Private Spielebibliothek</p>
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label for="password">Administratorkennwort</label>

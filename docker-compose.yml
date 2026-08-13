@@ -11,6 +11,8 @@ services:
       GAMEVAULT_ADMIN_PASSWORD: ${GAMEVAULT_ADMIN_PASSWORD}
       GAMEVAULT_AGENT_TOKEN: ${GAMEVAULT_AGENT_TOKEN}
       GAMEVAULT_SECRET_KEY: ${GAMEVAULT_SECRET_KEY}
+      MISSION_CONTROL_SERVER_NAME: ${MISSION_CONTROL_SERVER_NAME:-Mission Control}
+      MISSION_CONTROL_LIBRARY_NAME: ${MISSION_CONTROL_LIBRARY_NAME:-Mission Control Game Archive}
     volumes:
       - /mnt/Titan/Game:/games:ro
       - /mnt/Titan/Applications/gamevault:/config

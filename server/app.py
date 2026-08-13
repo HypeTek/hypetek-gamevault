@@ -24,15 +24,21 @@ from werkzeug.utils import secure_filename
 
 from database import Database
 from scanner import scan_library
+from settings import SettingsStore, THEMES
 
 
 GAME_ROOT = Path(os.environ.get("GAMEVAULT_GAME_ROOT", "/games")).resolve()
 CONFIG_DIR = Path(os.environ.get("GAMEVAULT_CONFIG_DIR", "/config")).resolve()
 AGENT_DIR = Path(os.environ.get("GAMEVAULT_AGENT_DIR", "/app/windows-agent")).resolve()
 COVER_DIR = CONFIG_DIR / "covers"
+BACKGROUND_DIR = CONFIG_DIR / "backgrounds"
 ADMIN_PASSWORD = os.environ.get("GAMEVAULT_ADMIN_PASSWORD", "")
 AGENT_TOKEN = os.environ.get("GAMEVAULT_AGENT_TOKEN", "")
 SECRET_KEY = os.environ.get("GAMEVAULT_SECRET_KEY", "")
+AGENT_INSTALLER_URL = os.environ.get(
+    "MISSION_CONTROL_AGENT_INSTALLER_URL",
+    "https://github.com/HypeTek/hypetek-gamevault/releases/latest/download/HypeTek-Mission-Control-Agent-Setup.exe",
+)
 
 if not ADMIN_PASSWORD or not AGENT_TOKEN or not SECRET_KEY:
     raise RuntimeError(
@@ -42,6 +48,7 @@ if not ADMIN_PASSWORD or not AGENT_TOKEN or not SECRET_KEY:
 
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 COVER_DIR.mkdir(parents=True, exist_ok=True)
+BACKGROUND_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -52,6 +59,7 @@ app.config.update(
     SESSION_COOKIE_SECURE=os.environ.get("GAMEVAULT_HTTPS", "0") == "1",
 )
 database = Database(CONFIG_DIR / "gamevault.sqlite3")
+settings_store = SettingsStore(CONFIG_DIR / "mission-control-settings.json")
 
 
 def login_required(function):
@@ -115,7 +123,7 @@ def login():
             csrf_token()
             return redirect(request.args.get("next") or url_for("index"))
         error = "Anmeldung fehlgeschlagen"
-    return render_template("login.html", error=error)
+    return render_template("login.html", error=error, appearance=settings_store.load())
 
 
 @app.post("/logout")
@@ -131,6 +139,84 @@ def index():
     return render_template("index.html")
 
 
+def public_settings() -> dict:
+    values = settings_store.load()
+    values["background_url"] = (
+        url_for("background", name=values["background_name"])
+        if values.get("background_name")
+        else None
+    )
+    return values
+
+
+@app.get("/api/settings")
+@login_required
+def get_settings():
+    return jsonify(public_settings())
+
+
+@app.patch("/api/settings")
+@login_required
+@csrf_required
+def update_settings():
+    payload = request.get_json(force=True)
+    allowed = {
+        "server_name",
+        "library_name",
+        "theme",
+        "background_opacity",
+        "background_blur",
+        "crosshair_cursor",
+        "scan_exclusions",
+    }
+    changes = {key: payload[key] for key in allowed if key in payload}
+    if "theme" in changes and changes["theme"] not in THEMES:
+        return jsonify(error="Unbekanntes Design"), 400
+    settings_store.update(changes)
+    return jsonify(public_settings())
+
+
+@app.post("/api/settings/background")
+@login_required
+@csrf_required
+def upload_background():
+    upload = request.files.get("background")
+    if not upload or not upload.filename:
+        return jsonify(error="Keine Hintergrunddatei empfangen"), 400
+    extension = Path(secure_filename(upload.filename)).suffix.casefold()
+    if extension not in {".jpg", ".jpeg", ".png", ".webp"}:
+        return jsonify(error="Erlaubt sind JPG, PNG und WEBP"), 400
+    signature = upload.stream.read(16)
+    upload.stream.seek(0)
+    is_jpeg = signature.startswith(b"\xff\xd8\xff")
+    is_png = signature.startswith(b"\x89PNG\r\n\x1a\n")
+    is_webp = signature.startswith(b"RIFF") and signature[8:12] == b"WEBP"
+    if not (is_jpeg or is_png or is_webp):
+        return jsonify(error="Dateiinhalt ist kein unterstütztes Bild"), 400
+    name = f"custom-background{extension}"
+    for old in BACKGROUND_DIR.glob("custom-background.*"):
+        old.unlink(missing_ok=True)
+    upload.save(BACKGROUND_DIR / name)
+    settings_store.update({"background_name": name})
+    return jsonify(public_settings())
+
+
+@app.delete("/api/settings/background")
+@login_required
+@csrf_required
+def delete_background():
+    for old in BACKGROUND_DIR.glob("custom-background.*"):
+        old.unlink(missing_ok=True)
+    settings_store.update({"background_name": None})
+    return jsonify(public_settings())
+
+
+@app.get("/backgrounds/<name>")
+@login_required
+def background(name: str):
+    return send_from_directory(BACKGROUND_DIR, secure_filename(name))
+
+
 @app.get("/download/windows-agent.zip")
 @login_required
 def download_windows_agent():
@@ -141,14 +227,26 @@ def download_windows_agent():
     archive = BytesIO()
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
         for name in required:
-            output.write(AGENT_DIR / name, arcname=f"GameVault-Windows-Agent/{name}")
+            content = (AGENT_DIR / name).read_bytes()
+            # Windows PowerShell 5 treats UTF-8 without a BOM as an ANSI
+            # codepage. Ship unambiguous UTF-8 so German punctuation cannot
+            # corrupt the downloaded script during parsing.
+            if not content.startswith(b"\xef\xbb\xbf"):
+                content = b"\xef\xbb\xbf" + content
+            output.writestr(f"Mission-Control-Windows-Agent/{name}", content)
     archive.seek(0)
     return send_file(
         archive,
         mimetype="application/zip",
         as_attachment=True,
-        download_name="HypeTek-GameVault-Windows-Agent.zip",
+        download_name="HypeTek-Mission-Control-Windows-Agent.zip",
     )
+
+
+@app.get("/download/windows-agent.exe")
+@login_required
+def download_windows_agent_exe():
+    return redirect(AGENT_INSTALLER_URL)
 
 
 @app.get("/api/games")
@@ -161,7 +259,8 @@ def games():
 @login_required
 @csrf_required
 def scan():
-    results = scan_library(GAME_ROOT)
+    exclusions = set(settings_store.load().get("scan_exclusions", []))
+    results = scan_library(GAME_ROOT, exclusions)
     database.apply_scan(results)
     return jsonify(scanned=len(results))
 

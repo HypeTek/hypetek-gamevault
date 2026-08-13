@@ -1,18 +1,21 @@
-param(
+﻿param(
     [Parameter(Position = 0)]
     [string]$ProtocolUrl
 )
 
 $ErrorActionPreference = "Stop"
-$ConfigPath = Join-Path $env:LOCALAPPDATA "HypeTek\GameVault\agent.json"
+$ConfigPath = Join-Path $env:LOCALAPPDATA "HypeTek\MissionControl\agent.json"
+$LegacyConfigPath = Join-Path $env:LOCALAPPDATA "HypeTek\GameVault\agent.json"
+if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf) -and (Test-Path -LiteralPath $LegacyConfigPath -PathType Leaf)) {
+    $ConfigPath = $LegacyConfigPath
+}
 
 Add-Type -AssemblyName PresentationFramework
-Add-Type -AssemblyName System.Web
 
 function Show-Error([string]$Message) {
     [System.Windows.MessageBox]::Show(
         $Message,
-        "HypeTek GameVault",
+        "HypeTek Mission Control",
         [System.Windows.MessageBoxButton]::OK,
         [System.Windows.MessageBoxImage]::Error
     ) | Out-Null
@@ -35,10 +38,25 @@ function Assert-PathInsideRoot([string]$Root, [string]$RelativePath) {
 
 function Get-Ticket([string]$ServerUrl, [string]$AgentToken, [string]$Ticket) {
     $headers = @{ Authorization = "Bearer $AgentToken" }
-    return Invoke-RestMethod -Method Get `
-        -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/tickets/$([Uri]::EscapeDataString($Ticket))" `
-        -Headers $headers `
-        -TimeoutSec 15
+    try {
+        return Invoke-RestMethod -Method Get `
+            -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/tickets/$([Uri]::EscapeDataString($Ticket))" `
+            -Headers $headers `
+            -TimeoutSec 15
+    }
+    catch {
+        $status = 0
+        if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+            $status = [int]$_.Exception.Response.StatusCode
+        }
+        if ($status -eq 404) {
+            throw "Der Startauftrag ist ungültig oder abgelaufen. Bitte in Mission Control erneut anklicken."
+        }
+        if ($status -eq 401) {
+            throw "Der Agent-Key stimmt nicht mit dem Mission-Control-Server überein."
+        }
+        throw "Mission Control ist nicht erreichbar: $($_.Exception.Message)"
+    }
 }
 
 function Find-InstallerOnMountedIso([string]$DriveLetter) {
@@ -71,13 +89,22 @@ try {
     foreach ($required in @("server_url", "agent_token", "game_root")) {
         if ([string]::IsNullOrWhiteSpace($config.$required)) { throw "Konfigurationswert fehlt: $required" }
     }
-    if ([string]::IsNullOrWhiteSpace($ProtocolUrl)) { throw "Kein GameVault-Auftrag empfangen." }
+    if ([string]::IsNullOrWhiteSpace($ProtocolUrl)) { throw "Kein Mission-Control-Auftrag empfangen." }
     $uri = [Uri]$ProtocolUrl
     if ($uri.Scheme -ne "hypetek-gamevault" -or $uri.Host -ne "launch") {
-        throw "Ungültiger GameVault-Link."
+        throw "Ungültiger Mission-Control-Link."
     }
-    $ticket = [System.Web.HttpUtility]::ParseQueryString($uri.Query).Get("ticket")
-    if ([string]::IsNullOrWhiteSpace($ticket)) { throw "Ticket fehlt im GameVault-Link." }
+    $ticket = $null
+    foreach ($pair in $uri.Query.TrimStart('?').Split('&')) {
+        if ([string]::IsNullOrWhiteSpace($pair)) { continue }
+        $parts = $pair -split '=', 2
+        $name = [Uri]::UnescapeDataString($parts[0])
+        if ($name -eq "ticket" -and $parts.Count -eq 2) {
+            $ticket = [Uri]::UnescapeDataString($parts[1])
+            break
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($ticket)) { throw "Ticket fehlt im Mission-Control-Link." }
 
     $manifest = Get-Ticket $config.server_url $config.agent_token $ticket
     $source = Assert-PathInsideRoot $config.game_root $manifest.launcher
@@ -91,7 +118,7 @@ try {
     $message = "Titel: $($manifest.title)`n`nAktion: $($manifest.action)`nQuelle: $source`n`nFortfahren?"
     $answer = [System.Windows.MessageBox]::Show(
         $message,
-        "HypeTek GameVault – Bestätigung",
+        "HypeTek Mission Control – Bestätigung",
         [System.Windows.MessageBoxButton]::YesNo,
         [System.Windows.MessageBoxImage]::Question
     )
@@ -102,12 +129,12 @@ try {
             $folder = if (Test-Path -LiteralPath $source -PathType Container) {
                 $source
             } else {
-                Split-Path -LiteralPath $source -Parent
+                [IO.Path]::GetDirectoryName($source)
             }
             Start-Process explorer.exe -ArgumentList @($folder)
         }
         "direct_setup" {
-            Start-Process -FilePath $source -WorkingDirectory (Split-Path -LiteralPath $source -Parent)
+            Start-Process -FilePath $source -WorkingDirectory ([IO.Path]::GetDirectoryName($source))
         }
         "iso" {
             $image = Mount-DiskImage -ImagePath $source -PassThru
@@ -118,7 +145,7 @@ try {
                 Start-Process explorer.exe "$($volume.DriveLetter):\"
                 throw "ISO eingebunden, aber kein eindeutiger Installer erkannt. Das Laufwerk wurde geöffnet."
             }
-            Start-Process -FilePath $installer -WorkingDirectory (Split-Path -LiteralPath $installer -Parent)
+            Start-Process -FilePath $installer -WorkingDirectory ([IO.Path]::GetDirectoryName($installer))
         }
         default { throw "Nicht unterstützte Aktion: $($manifest.action)" }
     }

@@ -45,6 +45,18 @@ class ScannerTests(unittest.TestCase):
             self.assertEqual(result["Game.iso"].detected_type, "iso")
             self.assertEqual(result["Old Game.rar"].detected_type, "archive")
 
+    def test_explicit_top_level_exclusion(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            excluded = root / "hadmin"
+            excluded.mkdir()
+            (excluded / "private.exe").write_bytes(b"MZ")
+            included = root / "Game"
+            included.mkdir()
+            (included / "setup.exe").write_bytes(b"MZ")
+            result = scan_library(root, {"HADMIN"})
+            self.assertEqual([item.relative_path for item in result], ["Game"])
+
 
 if __name__ == "__main__":
     unittest.main()

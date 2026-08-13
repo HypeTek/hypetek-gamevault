@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HypeTek GameVault</title>
+  <title>HypeTek Mission Control</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
@@ -11,10 +11,11 @@
   <header class="topbar">
     <div class="brand">
       <img class="brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
-      <span>HypeTek GameVault</span>
+      <span>HypeTek Mission Control</span>
     </div>
     <nav>
-      <a class="button-link secondary" href="{{ url_for('download_windows_agent') }}">Windows-Agent</a>
+      <a class="button-link secondary" href="{{ url_for('download_windows_agent_exe') }}">Agent-Setup</a>
+      <button id="settingsButton" class="secondary" type="button">Einstellungen</button>
       <button id="scanButton" class="secondary">Bibliothek scannen</button>
       <form action="{{ url_for('logout') }}" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -25,12 +26,13 @@
   <div class="energy-line"><span></span></div>
   <aside class="agent-note">
     Installieren und „Ordner öffnen“ benötigen einmalig den Windows-Agenten auf diesem PC.
-    <a href="{{ url_for('download_windows_agent') }}">Agent herunterladen</a>
+    <a href="{{ url_for('download_windows_agent_exe') }}">EXE-Installer</a>
+    · <a href="{{ url_for('download_windows_agent') }}">PowerShell-Fallback</a>
   </aside>
   <main>
     <section class="hero">
       <div>
-        <p class="eyebrow">TRUETITAN GAME ARCHIVE</p>
+        <p id="libraryName" class="eyebrow">MISSION CONTROL GAME ARCHIVE</p>
         <h1>Deine Games. Ein Klick entfernt.</h1>
         <p>Installationsmedien über das verbundene SMB-Laufwerk verwalten.</p>
       </div>
@@ -50,6 +52,39 @@
     </section>
     <section id="library" class="library" aria-live="polite"></section>
   </main>
+
+  <dialog id="settingsDialog">
+    <form id="settingsForm" method="dialog">
+      <div class="dialog-head"><h2>Mission Control konfigurieren</h2><button value="cancel" class="ghost">×</button></div>
+      <div class="settings-grid">
+        <label>Servername<input id="settingServerName" type="text" maxlength="80"></label>
+        <label>Archivname<input id="settingLibraryName" type="text" maxlength="120"></label>
+        <label>Design
+          <select id="settingTheme">
+            <option value="mission">Mission</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="lcars">LCARS</option>
+            <option value="midnight">Midnight</option>
+          </select>
+        </label>
+        <label class="checkbox-label"><input id="settingCrosshair" type="checkbox"> Fadenkreuz als Mauszeiger</label>
+        <label>Hintergrund-Abdunklung <output id="opacityValue"></output>
+          <input id="settingOpacity" type="range" min="0" max="0.85" step="0.05">
+        </label>
+        <label>Hintergrund-Unschärfe <output id="blurValue"></output>
+          <input id="settingBlur" type="range" min="0" max="20" step="1">
+        </label>
+        <label>Scanner-Ausschlüsse
+          <textarea id="settingExclusions" rows="3" placeholder="hadmin, System Volume Information"></textarea>
+        </label>
+        <label>Eigenes Hintergrundbild
+          <input id="settingBackground" type="file" accept="image/jpeg,image/png,image/webp">
+        </label>
+      </div>
+      <p class="note">Ausschlüsse gelten für Namen auf der obersten Ebene des Games-Ordners. Bestehende Cover und Metadaten bleiben erhalten.</p>
+      <div class="dialog-actions"><button id="removeBackgroundButton" type="button" class="ghost">Hintergrund entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
+    </form>
+  </dialog>
 
   <dialog id="editor">
     <form id="editorForm" method="dialog">

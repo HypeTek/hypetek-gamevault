@@ -1,65 +1,71 @@
-# TrueTitan-Rollout (TrueNAS 25.04)
+# TrueNAS-Installation und Upgrade
 
-## Vor dem Installieren
+## Persistente Pfade
 
-Das Container-Image wird nach bestandenen Tests automatisch über GitHub Actions als
-`ghcr.io/hypetek/hypetek-gamevault:latest` veröffentlicht. So bleibt die
-TrueNAS-Konfiguration innerhalb der unterstützten Wege WebUI/CLI/API und benötigt
-keine handgebauten Systemdienste.
+| Inhalt | Host | Container | Zugriff |
+| --- | --- | --- | --- |
+| Spiele | `/mnt/Titan/Game` | `/games` | nur lesen |
+| Datenbank, Cover, Designs | `/mnt/Application/gamevault` | `/config` | lesen/schreiben |
 
-Geplante Hostpfade:
+Das Upgrade von 0.1 auf 0.2 behält die bestehende SQLite-Datenbank und alle Cover. Die
+neue Datei `mission-control-settings.json` wird beim ersten Start ergänzt.
 
-| Zweck | Hostpfad | Containerpfad | Modus |
-|---|---|---|---|
-| Games | `/mnt/Titan/Game` | `/games` | read-only |
-| Datenbank/Cover | `/mnt/Titan/Applications/gamevault` | `/config` | read-write |
+## Compose-YAML für TrueTitan
 
-Geplanter Web-Port: `9998` auf TrueTitan, Container-Port `8080`.
+Vor dem Einfügen drei eigene Werte verwenden. Schlüssel niemals in GitHub oder einen
+öffentlichen Chat kopieren.
 
-## Vorbereitung
+```yaml
+services:
+  gamevault:
+    image: ghcr.io/hypetek/hypetek-gamevault:latest
+    pull_policy: always
+    restart: unless-stopped
 
-```bash
-sudo install -d -o 568 -g 568 -m 750 /mnt/Titan/Applications/gamevault
+    ports:
+      - "9998:8080"
+
+    environment:
+      GAMEVAULT_ADMIN_PASSWORD: "HIER_ADMIN_PASSWORT"
+      GAMEVAULT_AGENT_TOKEN: "HIER_AGENT_KEY"
+      GAMEVAULT_CONFIG_DIR: "/config"
+      GAMEVAULT_GAME_ROOT: "/games"
+      GAMEVAULT_SECRET_KEY: "HIER_SECRET_KEY"
+      MISSION_CONTROL_SERVER_NAME: "TrueTitan"
+      MISSION_CONTROL_LIBRARY_NAME: "TrueTitan Game Archive"
+
+    volumes:
+      - type: bind
+        source: /mnt/Titan/Game
+        target: /games
+        read_only: true
+
+      - type: bind
+        source: /mnt/Application/gamevault
+        target: /config
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
 ```
 
-Vor der Bereitstellung drei voneinander unabhängige Geheimnisse erzeugen:
+## Upgrade
 
-```bash
-python3 - <<'PY'
-import secrets
-for name in ("GAMEVAULT_ADMIN_PASSWORD", "GAMEVAULT_AGENT_TOKEN", "GAMEVAULT_SECRET_KEY"):
-    print(f"{name}={secrets.token_urlsafe(32)}")
-PY
-```
+1. In TrueNAS **Apps → gamevault → Edit** öffnen.
+2. Die beiden `MISSION_CONTROL_*`-Werte ergänzen.
+3. `pull_policy: always` beibehalten.
+4. Speichern und auf **Running** warten.
+5. Browser mit `Strg+F5` aktualisieren.
+6. Unter **Einstellungen** Design, Hintergrund und Ausschlüsse festlegen.
 
-Diese Werte nicht in Screenshots, Logs oder das Handbuch kopieren. Das Admin-Kennwort
-ist für die Weboberfläche; der Agent-Token kommt zusätzlich auf autorisierte
-Windows-PCs; der Session-Key bleibt nur am Server.
+Weder Agent-Key noch Admin-Passwort müssen beim Upgrade geändert werden. Ein geänderter
+Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
 
-## Vorgesehener Installationsweg
+## Berechtigungen
 
-In TrueNAS: **Apps → Discover → ⋮ → Install via YAML**. App-Name `gamevault` und eine
-Compose-Konfiguration mit dem Image, den beiden obigen Hostpfaden,
-Port `9998:8080`, den drei Umgebungsvariablen, `cap_drop: ALL` und
-`no-new-privileges:true` verwenden.
-
-Die mitgelieferte `docker-compose.yml` dokumentiert die vollständige Zielkonfiguration.
-Sie ist derzeit Build-Vorlage und noch nicht als fertige TrueNAS-YAML gedacht.
-
-## Abnahmetests
-
-1. Weboberfläche ausschließlich aus LAN/Tailscale öffnen und anmelden.
-2. „Bibliothek scannen“ ausführen und Anzahl/Typen mit dem bekannten Bestand prüfen.
-3. Einen manuellen Eintrag über „Ordner öffnen“ testen.
-4. Ein direktes Setup testen und die Windows-Bestätigung abbrechen.
-5. Ein kleines ISO testen.
-6. CUE/BIN und Archive müssen ohne Installationsknopf als manuell erscheinen.
-7. Container prüfen: Games-Mount muss `ro` sein und keine zusätzlichen Linux-
-   Fähigkeiten besitzen.
-
-## Netzwerkgrenze
-
-Port 9998 nicht an der FritzBox oder am Omada ins öffentliche Internet weiterleiten.
-Für Zugriff außerhalb des LANs Tailscale verwenden. Bei reinem HTTP kann ein Gerät im
-gleichen Netz theoretisch Verkehr mitlesen; für ein späteres produktives Mehrbenutzer-
-Setup ist HTTPS über den vorgesehenen Reverse Proxy sinnvoll.
+Der Container läuft als UID/GID `568` (`apps`). Für `/mnt/Titan/Game` genügen Lesen und
+Durchqueren; Schreib-, Änderungs- und Löschrechte sind nicht erforderlich. Der Scanner
+überspringt nicht zugängliche Ordner und zusätzlich alle unter **Einstellungen →
+Scanner-Ausschlüsse** eingetragenen Namen.
