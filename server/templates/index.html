@@ -8,13 +8,13 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
+  <img class="floating-brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
   <header class="topbar">
     <div class="brand">
-      <img class="brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
       <span>HypeTek Mission Control</span>
     </div>
     <nav>
-      <a class="button-link secondary" href="{{ url_for('download_windows_agent_exe') }}">Windows-Agent</a>
+      <button id="agentSetupButton" class="secondary" type="button">Agent-Setup</button>
       <button id="settingsButton" class="secondary" type="button">Einstellungen</button>
       <button id="scanButton" class="secondary">Bibliothek scannen</button>
       <form action="{{ url_for('logout') }}" method="post">
@@ -25,13 +25,30 @@
   </header>
   <div class="energy-line"><span></span></div>
   <aside id="agentNote" class="agent-note">
-    Installieren und „Ordner öffnen“ benötigen einmalig den Windows-Agenten auf diesem PC.
-    <a href="{{ url_for('download_windows_agent_exe') }}">Windows-Agent installieren</a>
-    · <a href="{{ url_for('download_windows_agent') }}">Manuelle Installation</a>
-    · <button id="agentProbeButton" class="inline-help" type="button">Agent prüfen</button>
-    · <button id="connectionHelpButton" class="inline-help" type="button">SMB-/Tailscale-Hilfe</button>
-    · <button id="integrationHelpButton" class="inline-help" type="button">API-/Translator-Hilfe</button>
-    <span id="agentProbeStatus" role="status"></span>
+    <div class="agent-note-content">
+      <div class="agent-intro">
+        <strong>Mission Control ist bereit.</strong>
+        <p>Nur für „Installieren“, „ISO einbinden“ und „Ordner öffnen“ wird auf diesem Windows-PC einmalig der lokale Agent benötigt.</p>
+        <div class="agent-help-links">
+          <button id="connectionHelpButton" class="inline-help" type="button">SMB-/Tailscale-Hilfe</button>
+          <button id="integrationHelpButton" class="inline-help" type="button">API-/Translator-Hilfe</button>
+        </div>
+      </div>
+      <section id="agentSetup" class="agent-setup-card" aria-labelledby="agentSetupTitle">
+        <h2 id="agentSetupTitle">Windows-Agent einrichten</h2>
+        <ol class="agent-setup-steps">
+          <li><a class="button-link agent-download" href="{{ url_for('download_windows_agent_exe') }}">EXE-Agent herunterladen</a></li>
+          <li><span>Heruntergeladene EXE starten und einrichten</span></li>
+          <li><button id="agentProbeButton" type="button" class="secondary">Verbindung prüfen</button></li>
+        </ol>
+        <span id="agentProbeStatus" role="status"></span>
+        <details class="agent-fallback">
+          <summary>Alternative für Experten: PowerShell-Fallback</summary>
+          <p>Nur verwenden, wenn die EXE-Installation nicht möglich ist.</p>
+          <a href="{{ url_for('download_windows_agent') }}">Manuelle PowerShell-Installation öffnen</a>
+        </details>
+      </section>
+    </div>
   </aside>
   <main>
     <section class="hero">
@@ -192,11 +209,13 @@
       <label>Relativer Startpfad<input id="editLauncher" type="text" placeholder="Spiel/setup.exe"></label>
       <label>Bemerkungen<textarea id="editDescription" rows="4" placeholder="Eigene Hinweise, Installationsnotizen, Seriennummer-Speicherort …"></textarea></label>
       <label>Cover (JPG, PNG, WEBP)<input id="editCover" type="file" accept="image/jpeg,image/png,image/webp"></label>
-      <label id="coverPositionControl">Cover-Ausschnitt in den Karten <output id="coverPositionValue">50 %</output>
-        <input id="editCoverPosition" type="range" min="0" max="100" step="1" value="50">
-        <span class="field-hint">0 % zeigt mehr vom oberen Bildrand, 100 % mehr vom unteren.</span>
-      </label>
-      <div id="coverPositionPreview" class="cover-position-preview" aria-label="Vorschau des Kartencovers"><span>Cover-Vorschau</span></div>
+      <section id="coverPositionControl" class="cover-framing">
+        <div><strong>Kartenbild ausrichten</strong><span class="field-hint">Bild nach oben oder unten ziehen. Die Vorschau entspricht exakt der späteren Karte.</span></div>
+        <input id="editCoverPosition" type="hidden" value="50">
+        <div id="coverPositionPreview" class="cover cover-position-preview" role="slider" tabindex="0" aria-label="Vertikale Position des Kartenbildes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <div id="coverPositionPreviewTitle" class="cover-title">Cover-Vorschau</div>
+        </div>
+      </section>
       <section class="metadata-search">
         <label>Cover bei TheGamesDB suchen
           <div class="metadata-searchbar"><input id="metadataQuery" type="search" maxlength="160"><button id="metadataSearchButton" type="button" class="secondary">Suchen</button></div>

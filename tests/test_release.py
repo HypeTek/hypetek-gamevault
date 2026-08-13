@@ -14,6 +14,8 @@ class ReleaseMetadataTests(unittest.TestCase):
         )
         dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        javascript = (ROOT / "server" / "static" / "app.js").read_text(encoding="utf-8")
+        template = (ROOT / "server" / "templates" / "index.html").read_text(encoding="utf-8")
 
         installer_version = re.search(
             r'^#define MyAppVersion "([^"]+)"$', installer, re.MULTILINE
@@ -23,12 +25,17 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn(f'VersionInfoVersion={version}.0', installer)
         self.assertIn(f'org.opencontainers.image.version="{version}"', dockerfile)
         self.assertIn(f"## {version}", changelog)
+        self.assertIn(f"Version {version} aktualisieren", javascript)
+        self.assertIn('class="floating-brand-logo"', template)
+        self.assertLess(template.index('class="floating-brand-logo"'), template.index('class="topbar"'))
 
         workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(
             encoding="utf-8"
         )
         self.assertIn('version=$(tr -d', workflow)
         self.assertIn('gh release upload $tag', workflow)
+        self.assertIn('catch {', workflow)
+        self.assertIn('if (-not $releaseExists)', workflow)
         self.assertIn('type=raw,value=${{ steps.version.outputs.version }}', workflow)
 
     def test_line_endings_are_declared_for_cross_platform_builds(self):

@@ -29,3 +29,16 @@
 - TrueNAS-Catalog-App mit gepflegten Metadaten und Upgrade-Pfad
 - erweiterte Migrations-, Sicherheits- und Oberflächentests
 - mehrsprachige SMB-, Tailscale- und Installationsanleitungen
+
+### Windows-Client und Standalone-App
+
+- nativer Mission-Control-Desktop-Client, bevorzugt als schlanke Tauri-Anwendung
+- Weboberfläche parallel als Browser- und installierbare PWA-Version erhalten
+- Dashboard und Agent in der Desktop-App verbinden, damit Windows-Aktionen ohne
+  externe Browser-Protokollabfrage ausgelöst werden können
+- Geräte-Pairing mit eigenen Geräteschlüsseln und dauerhaft vertrauenswürdigen Servern
+- kurzlebige signierte Aufträge, Schutz vor Wiederholung und widerrufbare Geräte
+- wählbare Sicherheitsstufen: immer fragen, nur Programmstarts bestätigen oder nie fragen
+- sinnvolle Standardwerte: Ordner ohne Nachfrage, ISO optional, Installer mit Bestätigung
+- eigener Tray-Betrieb, verständlicher App-Name und eigenes Symbol statt PowerShell-Anzeige
+- Browser-Protokoll und PowerShell-Agent während der Migration kompatibel halten

@@ -8,6 +8,8 @@ const settingsDialog = document.querySelector("#settingsDialog");
 const connectionHelpDialog = document.querySelector("#connectionHelpDialog");
 const integrationHelpDialog = document.querySelector("#integrationHelpDialog");
 const gameInfoDialog = document.querySelector("#gameInfoDialog");
+let coverPreviewObjectUrl = null;
+let coverDrag = null;
 
 const formatBytes = (value) => {
   if (!value) return "0 B";
@@ -36,7 +38,15 @@ function applySettings(settings) {
   document.body.style.setProperty("--background-blur", `${settings.background_blur}px`);
   document.querySelector("#libraryName").textContent = settings.library_name;
   document.title = `HypeTek Mission Control · ${settings.server_name}`;
-  document.querySelector("#agentNote").hidden = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
+  const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
+  document.querySelector("#agentNote").hidden = agentValidated;
+  document.querySelector("#agentSetupButton").textContent = agentValidated ? "Agent eingerichtet" : "Agent-Setup";
+}
+
+function showAgentSetup() {
+  const note = document.querySelector("#agentNote");
+  note.hidden = false;
+  document.querySelector("#agentSetup").scrollIntoView({behavior: "smooth", block: "start"});
 }
 
 async function load() {
@@ -117,6 +127,8 @@ function editGame(id) {
   document.querySelector("#editLauncher").value = game.launcher_override || game.detected_launcher || "";
   document.querySelector("#editDescription").value = game.description || "";
   document.querySelector("#editCover").value = "";
+  if (coverPreviewObjectUrl) URL.revokeObjectURL(coverPreviewObjectUrl);
+  coverPreviewObjectUrl = null;
   document.querySelector("#editCoverPosition").value = coverPosition(game);
   document.querySelector("#metadataQuery").value = game.metadata_search_title || game.title;
   document.querySelector("#metadataResults").innerHTML = "";
@@ -128,12 +140,54 @@ function editGame(id) {
 function updateCoverPositionPreview() {
   const id = document.querySelector("#editId").value;
   const game = state.games.find((candidate) => candidate.id === id);
-  const value = Number(document.querySelector("#editCoverPosition").value || 50);
-  document.querySelector("#coverPositionValue").textContent = `${value} %`;
+  const value = Math.max(0, Math.min(100, Number(document.querySelector("#editCoverPosition").value || 50)));
   const preview = document.querySelector("#coverPositionPreview");
-  preview.style.backgroundImage = game?.cover_name ? `url('${coverUrl(game)}')` : "none";
+  const imageUrl = coverPreviewObjectUrl || (game?.cover_name ? coverUrl(game) : "");
+  preview.style.backgroundImage = imageUrl ? `url('${imageUrl}')` : "none";
   preview.style.backgroundPosition = `center ${value}%`;
-  preview.classList.toggle("is-empty", !game?.cover_name);
+  preview.setAttribute("aria-valuenow", String(Math.round(value)));
+  preview.classList.toggle("is-empty", !imageUrl);
+  document.querySelector("#coverPositionPreviewTitle").textContent = document.querySelector("#editTitle").value.trim() || game?.title || "Cover-Vorschau";
+}
+
+function setCoverPosition(value) {
+  document.querySelector("#editCoverPosition").value = String(Math.max(0, Math.min(100, Math.round(value))));
+  updateCoverPositionPreview();
+}
+
+function startCoverDrag(event) {
+  const preview = document.querySelector("#coverPositionPreview");
+  if (preview.classList.contains("is-empty") || event.button !== 0) return;
+  coverDrag = {
+    pointerId: event.pointerId,
+    startY: event.clientY,
+    startValue: Number(document.querySelector("#editCoverPosition").value || 50),
+  };
+  preview.setPointerCapture(event.pointerId);
+  preview.classList.add("is-dragging");
+  event.preventDefault();
+}
+
+function moveCoverDrag(event) {
+  if (!coverDrag || event.pointerId !== coverDrag.pointerId) return;
+  const preview = document.querySelector("#coverPositionPreview");
+  const deltaPercent = ((coverDrag.startY - event.clientY) / Math.max(1, preview.clientHeight)) * 100;
+  setCoverPosition(coverDrag.startValue + deltaPercent);
+}
+
+function stopCoverDrag(event) {
+  if (!coverDrag || event.pointerId !== coverDrag.pointerId) return;
+  document.querySelector("#coverPositionPreview").classList.remove("is-dragging");
+  coverDrag = null;
+}
+
+function nudgeCoverPosition(event) {
+  if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+  const current = Number(document.querySelector("#editCoverPosition").value || 50);
+  if (event.key === "Home") setCoverPosition(0);
+  else if (event.key === "End") setCoverPosition(100);
+  else setCoverPosition(current + (event.key === "ArrowUp" ? 2 : -2));
+  event.preventDefault();
 }
 
 function showGameInfo(id) {
@@ -315,7 +369,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.2.6 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.2.7 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
@@ -361,6 +415,7 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
   } catch (error) { statusEl.textContent = error.message; }
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
+document.querySelector("#agentSetupButton").addEventListener("click", showAgentSetup);
 document.querySelector("#connectionHelpButton").addEventListener("click", () => connectionHelpDialog.showModal());
 document.querySelector("#integrationHelpButton").addEventListener("click", () => integrationHelpDialog.showModal());
 document.querySelector("#settingsIntegrationHelpButton").addEventListener("click", () => integrationHelpDialog.showModal());
@@ -372,7 +427,17 @@ document.querySelector("#connectionHelpDone").addEventListener("click", () => co
 document.querySelector("#closeGameInfo").addEventListener("click", () => gameInfoDialog.close());
 document.querySelector("#settingOpacity").addEventListener("input", updateRangeOutputs);
 document.querySelector("#settingBlur").addEventListener("input", updateRangeOutputs);
-document.querySelector("#editCoverPosition").addEventListener("input", updateCoverPositionPreview);
+document.querySelector("#editTitle").addEventListener("input", updateCoverPositionPreview);
+document.querySelector("#editCover").addEventListener("change", (event) => {
+  if (coverPreviewObjectUrl) URL.revokeObjectURL(coverPreviewObjectUrl);
+  coverPreviewObjectUrl = event.target.files[0] ? URL.createObjectURL(event.target.files[0]) : null;
+  updateCoverPositionPreview();
+});
+document.querySelector("#coverPositionPreview").addEventListener("pointerdown", startCoverDrag);
+document.querySelector("#coverPositionPreview").addEventListener("pointermove", moveCoverDrag);
+document.querySelector("#coverPositionPreview").addEventListener("pointerup", stopCoverDrag);
+document.querySelector("#coverPositionPreview").addEventListener("pointercancel", stopCoverDrag);
+document.querySelector("#coverPositionPreview").addEventListener("keydown", nudgeCoverPosition);
 document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; render(); });
 document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; render(); });
 

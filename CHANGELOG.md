@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.7
+
+- Windows-Agent-Ersteinrichtung als klare Reihenfolge aus Download, Installation und Verbindungstest dargestellt.
+- PowerShell-Fallback in einen eingeklappten Expertenbereich verschoben.
+- HypeTek-Logo aus dem gefilterten Header gelöst, damit es unabhängig vom Seiteninhalt fest positioniert bleibt.
+- Missverständliche Prozentanzeige für den Cover-Ausschnitt entfernt.
+- Cover-Ausrichtung erfolgt direkt durch vertikales Ziehen in einer maßstabsgetreuen Kartenvorschau.
+- Tastatursteuerung für die Cover-Ausrichtung mit Pfeiltasten, Pos1 und Ende ergänzt.
+- Roadmap um nativen Standalone-/Tray-Client, PWA, Geräte-Pairing und wählbare Sicherheitsstufen erweitert.
+- Release-Erzeugung fängt ein noch nicht vorhandenes GitHub-Release unter Windows PowerShell kontrolliert ab.
+
 ## 0.2.6
 
 - Installer-Download zeigt auf das exakte versionierte Release statt auf einen möglicherweise fehlenden Latest-Asset.
