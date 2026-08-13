@@ -27,7 +27,7 @@ services:
 
     environment:
       GAMEVAULT_ADMIN_PASSWORD: "HIER_ADMIN_PASSWORT"
-      GAMEVAULT_AGENT_TOKEN: "HIER_AGENT_KEY"
+      GAMEVAULT_AGENT_TOKEN: "HIER_AGENT_TOKEN"
       GAMEVAULT_CONFIG_DIR: "/config"
       GAMEVAULT_GAME_ROOT: "/games"
       GAMEVAULT_SECRET_KEY: "HIER_SECRET_KEY"
@@ -60,7 +60,7 @@ services:
 5. Browser mit `Strg+F5` aktualisieren.
 6. Unter **Einstellungen** Design, Hintergrund und Ausschlüsse festlegen.
 
-Weder Agent-Key noch Admin-Passwort müssen beim Upgrade geändert werden. Ein geänderter
+Weder Agent-Token noch Admin-Passwort müssen beim Upgrade geändert werden. Ein geänderter
 Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
 
 ## Berechtigungen

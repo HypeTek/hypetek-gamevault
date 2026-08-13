@@ -53,7 +53,7 @@ function Get-Ticket([string]$ServerUrl, [string]$AgentToken, [string]$Ticket) {
             throw "Der Startauftrag ist ungültig oder abgelaufen. Bitte in Mission Control erneut anklicken."
         }
         if ($status -eq 401) {
-            throw "Der Agent-Key stimmt nicht mit dem Mission-Control-Server überein."
+            throw "Der Agent-Token stimmt nicht mit dem Mission-Control-Server überein."
         }
         throw "Mission Control ist nicht erreichbar: $($_.Exception.Message)"
     }

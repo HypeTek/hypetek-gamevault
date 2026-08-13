@@ -18,7 +18,7 @@ verändern oder in ein neues Format zu zwingen.
 - konfigurierbare Scanner-Ausschlüsse
 - Ordner öffnen, Setup starten und ISO einbinden
 - einmalige, 120 Sekunden gültige Starttickets
-- geführter Windows-EXE-Installer mit Serveradresse, Games-Pfad und Agent-Key
+- geführter Windows-EXE-Installer mit Serveradresse, Games-Pfad und Agent-Token
 - unsichtbarer Agentenstart; nur die Sicherheitsabfrage wird angezeigt
 - Windows PowerShell 5.1 und PowerShell 7
 
@@ -75,7 +75,7 @@ Release-Artefakt veröffentlicht.
 - keine beliebigen Browserpfade ausführbar
 - Pfadnormalisierung auf Server und Agent
 - kurzlebige Einmal-Tickets
-- separater Agent-Key
+- separater Agent-Token mit Prüfung vor der Installation
 - lokale Bestätigung vor jedem Start
 - CSRF-geschützte Änderungen
 - Uploadprüfung für Cover und Hintergründe

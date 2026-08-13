@@ -343,6 +343,16 @@ def launch_ticket(game_id: str):
     return jsonify(protocol_url=f"hypetek-gamevault://launch?ticket={token}", expires_in=120)
 
 
+@app.get("/api/agent/validate")
+def validate_agent_token():
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    response = app.response_class(status=204)
+    response.headers["X-Mission-Control-Agent"] = "authenticated"
+    return response
+
+
 @app.get("/api/agent/tickets/<token>")
 def agent_ticket(token: str):
     authorization = request.headers.get("Authorization", "")

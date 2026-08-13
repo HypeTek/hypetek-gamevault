@@ -2,6 +2,8 @@
 
 ## 0.2.0
 
+- Der Windows-Installer prüft den Agent-Token über einen eindeutigen Server-Endpunkt und speichert bei fehlgeschlagener Prüfung keine Konfiguration.
+
 - Rebranding zu HypeTek Mission Control
 - vier integrierte Designs und eigener Hintergrund
 - konfigurierbarer Server- und Archivname
@@ -12,8 +14,9 @@
 - PowerShell 5.1 und PowerShell 7 unterstützt
 - UTF-8-BOM-Fehler des Agent-Downloads behoben
 - PowerShell-5-Pfadfehler bei Setup und ISO behoben
-- verständliche Ticket- und Agent-Key-Fehlermeldungen
+- verständliche Ticket- und Agent-Token-Fehlermeldungen
 - geführter Windows-EXE-Installer
+- einheitliche Bezeichnung Agent-Token, integrierte Hilfe und Serverprüfung vor Speicherung
 - aktuelle Node-24-kompatible GitHub Actions
 - zusätzliche Einstellungs- und Ausschlusstests
 

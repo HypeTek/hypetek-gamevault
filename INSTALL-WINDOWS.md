@@ -12,7 +12,7 @@ Der Installer läuft ohne Administratorrechte für den aktuellen Benutzer und fr
 
 1. Mission-Control-Adresse, zum Beispiel `http://10.69.78.143:9998`
 2. lokalen SMB-Pfad, zum Beispiel `Z:\Game`
-3. Agent-Key aus der TrueNAS-App-Konfiguration
+3. Agent-Token (`GAMEVAULT_AGENT_TOKEN`) aus der TrueNAS-App-Konfiguration
 
 Danach registriert er das Protokoll `hypetek-gamevault://`. PowerShell 7 wird
 bevorzugt; Windows PowerShell 5.1 dient als Fallback. Das Konsolenfenster bleibt beim
@@ -26,7 +26,7 @@ PowerShell ausführen:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Install-Agent.ps1 `
   -ServerUrl "http://10.69.78.143:9998" `
-  -AgentToken "HIER_DEN_AGENT_KEY_EINTRAGEN" `
+  -AgentToken "HIER_DEN_AGENT_TOKEN_EINTRAGEN" `
   -GameRoot "Z:\Game"
 ```
 
