@@ -192,6 +192,11 @@
       <label>Relativer Startpfad<input id="editLauncher" type="text" placeholder="Spiel/setup.exe"></label>
       <label>Bemerkungen<textarea id="editDescription" rows="4" placeholder="Eigene Hinweise, Installationsnotizen, Seriennummer-Speicherort …"></textarea></label>
       <label>Cover (JPG, PNG, WEBP)<input id="editCover" type="file" accept="image/jpeg,image/png,image/webp"></label>
+      <label id="coverPositionControl">Cover-Ausschnitt in den Karten <output id="coverPositionValue">50 %</output>
+        <input id="editCoverPosition" type="range" min="0" max="100" step="1" value="50">
+        <span class="field-hint">0 % zeigt mehr vom oberen Bildrand, 100 % mehr vom unteren.</span>
+      </label>
+      <div id="coverPositionPreview" class="cover-position-preview" aria-label="Vorschau des Kartencovers"><span>Cover-Vorschau</span></div>
       <section class="metadata-search">
         <label>Cover bei TheGamesDB suchen
           <div class="metadata-searchbar"><input id="metadataQuery" type="search" maxlength="160"><button id="metadataSearchButton" type="button" class="secondary">Suchen</button></div>

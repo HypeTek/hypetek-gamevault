@@ -107,7 +107,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.2.5")
+        self.assertEqual(health["version"], "0.2.6")
         self.assertEqual(health["agent_api"], 3)
 
     def test_path_escape_is_rejected(self):
@@ -141,6 +141,13 @@ class AppTests(unittest.TestCase):
             self.assertEqual(sorted(archive.namelist()), expected)
             for name in expected:
                 self.assertTrue(archive.read(name).startswith(b"\xef\xbb\xbf"))
+
+        installer = self.client.get("/download/windows-agent.exe")
+        self.assertEqual(installer.status_code, 302)
+        self.assertEqual(
+            installer.headers["Location"],
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.2.6/HypeTek-Mission-Control-Agent-Setup.exe",
+        )
 
     def test_appearance_settings_and_scan_exclusions(self):
         self.login()
@@ -266,6 +273,13 @@ class AppTests(unittest.TestCase):
             self.assertEqual(updated["metadata_overview_original"], "A test game overview.")
             self.assertEqual(updated["metadata_platform"], "PC")
             self.assertTrue(updated["cover_name"].endswith(".jpg"))
+            first_cover = updated["cover_name"]
+
+            replaced = self.post(
+                f"/api/games/{game['id']}/metadata/apply",
+                json=candidate,
+            ).get_json()
+            self.assertNotEqual(replaced["cover_name"], first_cover)
 
             self.module.settings_store.update({
                 "translator_url": "http://translator:5000",
@@ -287,6 +301,24 @@ class AppTests(unittest.TestCase):
         finally:
             self.module.search_thegamesdb = original_search
             self.module.download_thegamesdb_image = original_download
+
+    def test_cover_position_is_stored_and_clamped(self):
+        self.login()
+        self.post("/api/scan")
+        game = self.client.get("/api/games").get_json()[0]
+        updated = self.client.patch(
+            f"/api/games/{game['id']}",
+            json={"cover_position_y": 88},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.get_json()["cover_position_y"], 88)
+        clamped = self.client.patch(
+            f"/api/games/{game['id']}",
+            json={"cover_position_y": 999},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(clamped.get_json()["cover_position_y"], 100)
 
     def test_games_include_clean_suggested_search_title(self):
         self.login()

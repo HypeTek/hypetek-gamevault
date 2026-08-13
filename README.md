@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.2.5
+## Funktionen in Version 0.2.6
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -88,8 +88,8 @@ python -m unittest discover -s tests -v
 ```
 
 GitHub Actions führt die Tests vor jedem Container- und Installer-Build aus. Bei einem
-Tag wie `v0.2.5` werden ein versioniertes Container-Image und der Windows-Agent als
-Release-Artefakt veröffentlicht.
+Push erzeugt der Workflow aus `VERSION` automatisch ein versioniertes Container-Image
+und Release; der Windows-Agent wird als Release-Artefakt veröffentlicht.
 
 ## Updates nach GitHub übertragen
 

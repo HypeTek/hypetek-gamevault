@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS games (
     platform TEXT NOT NULL DEFAULT 'Windows',
     description TEXT NOT NULL DEFAULT '',
     cover_name TEXT,
+    cover_position_y INTEGER NOT NULL DEFAULT 50,
     metadata_provider TEXT,
     metadata_provider_id TEXT,
     metadata_source_url TEXT,
@@ -73,6 +74,10 @@ class Database:
             game_columns = {
                 row["name"] for row in connection.execute("PRAGMA table_info(games)").fetchall()
             }
+            if "cover_position_y" not in game_columns:
+                connection.execute(
+                    "ALTER TABLE games ADD COLUMN cover_position_y INTEGER NOT NULL DEFAULT 50"
+                )
             for name in (
                 "metadata_provider",
                 "metadata_provider_id",
@@ -152,6 +157,7 @@ class Database:
             "platform",
             "description",
             "cover_name",
+            "cover_position_y",
             "metadata_provider",
             "metadata_provider_id",
             "metadata_source_url",

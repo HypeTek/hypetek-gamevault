@@ -53,7 +53,7 @@ AGENT_TOKEN = os.environ.get("GAMEVAULT_AGENT_TOKEN", "")
 SECRET_KEY = os.environ.get("GAMEVAULT_SECRET_KEY", "")
 AGENT_INSTALLER_URL = os.environ.get(
     "MISSION_CONTROL_AGENT_INSTALLER_URL",
-    "https://github.com/HypeTek/hypetek-gamevault/releases/latest/download/HypeTek-Mission-Control-Agent-Setup.exe",
+    "",
 )
 
 
@@ -134,6 +134,13 @@ def safe_relative_path(value: str | None) -> str | None:
     if not resolved.exists():
         raise ValueError("Pfad existiert nicht")
     return path.as_posix()
+
+
+def delete_game_covers(game_id: str, keep_name: str | None = None) -> None:
+    for pattern in (f"{game_id}.*", f"{game_id}-*.*"):
+        for old in COVER_DIR.glob(pattern):
+            if old.name != keep_name:
+                old.unlink(missing_ok=True)
 
 
 @app.get("/health")
@@ -306,7 +313,11 @@ def download_windows_agent():
 @app.get("/download/windows-agent.exe")
 @login_required
 def download_windows_agent_exe():
-    return redirect(AGENT_INSTALLER_URL)
+    installer_url = AGENT_INSTALLER_URL or (
+        "https://github.com/HypeTek/hypetek-gamevault/releases/download/"
+        f"v{APP_VERSION}/HypeTek-Mission-Control-Agent-Setup.exe"
+    )
+    return redirect(installer_url)
 
 
 @app.get("/download/api-and-translator-guide.pdf")
@@ -369,6 +380,11 @@ def update_game(game_id: str):
             payload["launcher_override"] = safe_relative_path(payload.get("launcher_override"))
     except ValueError as error:
         return jsonify(error=str(error)), 400
+    if "cover_position_y" in payload:
+        try:
+            payload["cover_position_y"] = max(0, min(100, int(payload["cover_position_y"])))
+        except (TypeError, ValueError):
+            return jsonify(error="Ungültige Coverposition"), 400
     database.update_game(game_id, payload)
     return jsonify(database.get_game(game_id))
 
@@ -429,14 +445,14 @@ def apply_game_metadata(game_id: str):
         or source_id != provider_id
     ):
         return jsonify(error="Ungültiger TheGamesDB-Quellenlink"), 400
-    for old in COVER_DIR.glob(f"{game_id}.*"):
-        old.unlink(missing_ok=True)
     try:
         name = download_thegamesdb_image(
-            str(payload.get("image_url") or ""), COVER_DIR / game_id
+            str(payload.get("image_url") or ""),
+            COVER_DIR / f"{game_id}-{secrets.token_hex(5)}",
         )
     except MetadataError as error:
         return jsonify(error=str(error)), 502
+    delete_game_covers(game_id, keep_name=name)
     database.update_game(game_id, {
         "cover_name": name,
         "metadata_provider": "thegamesdb",
@@ -507,10 +523,9 @@ def upload_cover(game_id: str):
     is_webp = signature.startswith(b"RIFF") and signature[8:12] == b"WEBP"
     if not (is_jpeg or is_png or is_webp):
         return jsonify(error="Dateiinhalt ist kein unterstütztes Bild"), 400
-    name = f"{game_id}{extension}"
-    for old in COVER_DIR.glob(f"{game_id}.*"):
-        old.unlink(missing_ok=True)
+    name = f"{game_id}-{secrets.token_hex(5)}{extension}"
     upload.save(COVER_DIR / name)
+    delete_game_covers(game_id, keep_name=name)
     database.update_game(game_id, {
         "cover_name": name,
         "metadata_provider": None,

@@ -27,3 +27,10 @@ body.crosshair,body.crosshair button,body.crosshair a,body.crosshair select{curs
 #agentProbeStatus{margin-left:5px;color:var(--teal)}
 @media(max-width:720px){.help-content{padding:16px}.help-content section{padding:13px}.inline-help{display:inline}}
 @media(max-width:620px){.guide-download{grid-template-columns:1fr}.guide-download img{justify-self:center}.game-info-content .dialog-actions>*{flex:1 1 100%}.game-info-content .dialog-actions .primary-info-action{margin-right:0}}
+
+/* Per-game cover framing and a logo that remains available while scrolling. */
+.brand{padding-left:64px}.brand-logo{position:fixed;top:10px;left:4vw;z-index:40;background:#061117}
+.cover-position-preview{height:210px;border:1px solid var(--line);border-radius:10px;background-color:#091820;background-size:cover;background-repeat:no-repeat;display:flex;align-items:end;overflow:hidden;transition:background-position .08s linear}
+.cover-position-preview span{width:100%;padding:9px 12px;background:linear-gradient(transparent,rgba(2,9,12,.94));color:var(--muted);font-size:.8rem}
+.cover-position-preview.is-empty{display:none}
+@media(max-width:720px){.brand{padding-left:60px}.brand-logo{left:14px}}

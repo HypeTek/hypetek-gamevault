@@ -59,6 +59,15 @@ function gameMonogram(title) {
   return (words.slice(0, 2).map((word) => word[0]).join("") || "GV").toLocaleUpperCase();
 }
 
+function coverUrl(game) {
+  return game.cover_name ? `/covers/${encodeURIComponent(game.cover_name)}` : "";
+}
+
+function coverPosition(game) {
+  const value = Number(game.cover_position_y);
+  return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 50;
+}
+
 function render() {
   const query = state.query.toLocaleLowerCase("de");
   const games = state.games.filter((game) =>
@@ -75,7 +84,7 @@ function render() {
   library.innerHTML = games.map((game) => {
     const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
     const hasCover = Boolean(game.cover_name);
-    const cover = hasCover ? `background-image:url('/covers/${encodeURIComponent(game.cover_name)}')` : "";
+    const cover = hasCover ? `background-image:url('${coverUrl(game)}');background-position:center ${coverPosition(game)}%` : "";
     const monogram = escapeHtml(gameMonogram(game.title));
     const sourceNames = {rawg: "RAWG", thegamesdb: "TheGamesDB"};
     const sourceName = sourceNames[game.metadata_provider];
@@ -108,17 +117,31 @@ function editGame(id) {
   document.querySelector("#editLauncher").value = game.launcher_override || game.detected_launcher || "";
   document.querySelector("#editDescription").value = game.description || "";
   document.querySelector("#editCover").value = "";
+  document.querySelector("#editCoverPosition").value = coverPosition(game);
   document.querySelector("#metadataQuery").value = game.metadata_search_title || game.title;
   document.querySelector("#metadataResults").innerHTML = "";
   document.querySelector("#editNote").textContent = `Erkannt: ${labels[game.detected_type] || game.detected_type} · ${game.detection_note} · ${game.relative_path}`;
+  updateCoverPositionPreview();
   editor.showModal();
+}
+
+function updateCoverPositionPreview() {
+  const id = document.querySelector("#editId").value;
+  const game = state.games.find((candidate) => candidate.id === id);
+  const value = Number(document.querySelector("#editCoverPosition").value || 50);
+  document.querySelector("#coverPositionValue").textContent = `${value} %`;
+  const preview = document.querySelector("#coverPositionPreview");
+  preview.style.backgroundImage = game?.cover_name ? `url('${coverUrl(game)}')` : "none";
+  preview.style.backgroundPosition = `center ${value}%`;
+  preview.classList.toggle("is-empty", !game?.cover_name);
 }
 
 function showGameInfo(id) {
   const game = state.games.find((candidate) => candidate.id === id);
   if (!game) return;
   const hero = document.querySelector("#gameInfoHero");
-  hero.style.backgroundImage = game.cover_name ? `url('/covers/${encodeURIComponent(game.cover_name)}')` : "none";
+  hero.style.backgroundImage = game.cover_name ? `url('${coverUrl(game)}')` : "none";
+  hero.style.backgroundPosition = `center ${coverPosition(game)}%`;
   document.querySelector("#gameInfoProvider").textContent = game.metadata_provider === "thegamesdb" ? "TheGamesDB" : "Mission Control";
   document.querySelector("#gameInfoTitle").textContent = game.metadata_title || game.title;
   const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? `${game.metadata_players} Spieler` : "", game.metadata_coop ? `Co-op: ${game.metadata_coop}` : ""].filter(Boolean);
@@ -195,6 +218,7 @@ document.querySelector("#editorForm").addEventListener("submit", async (event) =
     action_override: document.querySelector("#editAction").value || null,
     launcher_override: document.querySelector("#editLauncher").value.trim() || null,
     description: document.querySelector("#editDescription").value.trim(),
+    cover_position_y: Number(document.querySelector("#editCoverPosition").value),
   };
   try {
     await api(`/api/games/${id}`, {method: "PATCH", body: JSON.stringify(body)});
@@ -291,7 +315,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.2.5 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.2.6 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
@@ -310,6 +334,7 @@ function renderMetadataResults(results) {
     try {
       await api(`/api/games/${id}/metadata/apply`, {method: "POST", body: JSON.stringify(item)});
       await load();
+      updateCoverPositionPreview();
       target.innerHTML = '<p class="note">Cover übernommen. Du kannst den Dialog jetzt speichern oder schließen.</p>';
     } catch (error) { alert(error.message); button.disabled = false; button.textContent = "Übernehmen"; }
   }));
@@ -347,6 +372,7 @@ document.querySelector("#connectionHelpDone").addEventListener("click", () => co
 document.querySelector("#closeGameInfo").addEventListener("click", () => gameInfoDialog.close());
 document.querySelector("#settingOpacity").addEventListener("input", updateRangeOutputs);
 document.querySelector("#settingBlur").addEventListener("input", updateRangeOutputs);
+document.querySelector("#editCoverPosition").addEventListener("input", updateCoverPositionPreview);
 document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; render(); });
 document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; render(); });
 

@@ -24,6 +24,13 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn(f'org.opencontainers.image.version="{version}"', dockerfile)
         self.assertIn(f"## {version}", changelog)
 
+        workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('version=$(tr -d', workflow)
+        self.assertIn('gh release upload $tag', workflow)
+        self.assertIn('type=raw,value=${{ steps.version.outputs.version }}', workflow)
+
     def test_line_endings_are_declared_for_cross_platform_builds(self):
         attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
         self.assertIn("*.py text eol=lf", attributes)

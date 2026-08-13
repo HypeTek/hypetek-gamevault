@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.6
+
+- Installer-Download zeigt auf das exakte versionierte Release statt auf einen möglicherweise fehlenden Latest-Asset.
+- GitHub Actions erzeugt beim Push automatisch das Release aus `VERSION` und lädt den Windows-Agenten dort hoch.
+- Container werden zusätzlich mit der in `VERSION` angegebenen Versionsnummer veröffentlicht.
+- Cover-Ausschnitt kann pro Spiel vertikal zwischen oberem und unterem Bildrand positioniert werden.
+- Cover-Dateinamen erhalten bei jeder Übernahme eine neue Revision, damit Änderungen ohne Browser-Refresh sichtbar werden.
+- Nur das HypeTek-Logo bleibt beim Scrollen sichtbar; die restliche Navigationsleiste scrollt weiterhin normal.
+- Hinweis zur Agent-Prüfung nennt die erforderliche aktuelle Agent-Version eindeutiger.
+
 ## 0.2.5
 
 - Installieren, ISO einbinden, Ordner öffnen, Übersetzen und Bearbeiten sind direkt im Spiele-Infofenster erreichbar.

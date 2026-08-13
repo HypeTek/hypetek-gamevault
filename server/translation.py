@@ -37,7 +37,7 @@ def _json_request(url: str, payload: dict | None = None, timeout: int = 25):
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "HypeTek-Mission-Control/0.2.5",
+            "User-Agent": "HypeTek-Mission-Control/0.2.6",
         },
     )
     try:
