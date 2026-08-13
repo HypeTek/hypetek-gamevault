@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.9
+
+- Energiepunkt als flachere, glühende orange Linse dargestellt.
+- Durchlauf gegenüber 0.2.8 leicht beschleunigt.
+- Nach jedem vollständigen Durchlauf exakt 1,75 Sekunden Pause ergänzt.
+- Erfolgreiche manuelle Abnahme von Versionsanzeige, Ansichtswechsel, Seitennavigation, Logo-Rücksprung und Einstellungen aus 0.2.8 dokumentiert.
+
 ## 0.2.8
 
 - Laufende Serverversion links unten in den Einstellungen ergänzt.
