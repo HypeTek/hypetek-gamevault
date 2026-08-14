@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.11
+
+- Nach erfolgreicher Agent-Prüfung klappt die Einrichtung weiterhin automatisch ein.
+- Beim späteren erneuten Öffnen erscheint ein kleiner lokalisierter Zurück-Button, mit dem sich der bereits erledigte Agent-Bereich wieder schließen lässt.
+- Die übrige Agent-Einrichtung und alle Fixes aus 0.3.10 bleiben unverändert.
+
 ## 0.3.10
 
 - LCARS reserviert sein linkes Systemband nun auch für den Agent-Einrichtungsbereich und das Einstellungsfenster; Inhalte liegen nicht mehr unter Uhr oder Band.

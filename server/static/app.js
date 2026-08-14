@@ -68,6 +68,7 @@ function applySettings(settings) {
   document.title = `HypeTek Mission Control · ${settings.server_name}`;
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
   document.querySelector("#agentNote").hidden = agentValidated;
+  document.querySelector("#agentSetupBackButton").hidden = !agentValidated;
   document.querySelector("#agentSetupButton").textContent = agentValidated ? tr("agent.ready") : tr("nav.agent");
   requestAnimationFrame(updateLcarsLayout);
 }
@@ -105,8 +106,14 @@ function animateEnergyColor(timestamp) {
 
 function showAgentSetup() {
   const note = document.querySelector("#agentNote");
+  const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
+  document.querySelector("#agentSetupBackButton").hidden = !agentValidated;
   note.hidden = false;
   document.querySelector("#agentSetup").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+function closeAgentSetup() {
+  document.querySelector("#agentNote").hidden = true;
 }
 
 async function load() {
@@ -573,6 +580,7 @@ async function probeWindowsAgent() {
       if (result.confirmed) {
         localStorage.setItem("missionControlAgentValidatedFor", window.location.origin);
         output.textContent = ` · ${tr("agent.probeFound")}`;
+        document.querySelector("#agentSetupBackButton").hidden = false;
         setTimeout(() => { document.querySelector("#agentNote").hidden = true; }, 800);
         return;
       }
@@ -693,6 +701,7 @@ document.querySelector("#designProfileForm").addEventListener("submit", async (e
   }
 });
 document.querySelector("#agentSetupButton").addEventListener("click", showAgentSetup);
+document.querySelector("#agentSetupBackButton").addEventListener("click", closeAgentSetup);
 document.querySelector("#connectionHelpButton").addEventListener("click", () => connectionHelpDialog.showModal());
 document.querySelector("#integrationHelpButton").addEventListener("click", () => integrationHelpDialog.showModal());
 document.querySelector("#settingsIntegrationHelpButton").addEventListener("click", () => integrationHelpDialog.showModal());

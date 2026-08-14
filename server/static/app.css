@@ -167,6 +167,7 @@ body[data-style="lcars"] .hero{
 .translator-status-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .translator-status-row .field-hint{flex:1;min-width:180px}
 .translator-status-row button{padding:7px 10px;font-size:.78rem}
+.agent-setup-close{display:flex;justify-content:flex-end;margin-top:8px}.agent-setup-close button{padding:7px 12px;font-size:.78rem}
 
 /* 0.3.10: LCARS reserves its system rail for every top-level panel. */
 body[data-style="lcars"] .agent-note-content{
