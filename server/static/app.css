@@ -164,3 +164,6 @@ body[data-style="lcars"] .energy-line{
 body[data-style="lcars"] .hero{
   border-top:0;
 }
+.translator-status-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.translator-status-row .field-hint{flex:1;min-width:180px}
+.translator-status-row button{padding:7px 10px;font-size:.78rem}

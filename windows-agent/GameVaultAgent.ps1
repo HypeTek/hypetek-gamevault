@@ -149,7 +149,11 @@ try {
         throw "Die erwartete Quelldatei ist kein regulärer Datenträger bzw. Installer:`n$source"
     }
 
-    $language = if ($manifest.ui_language -in @("en", "ru")) { $manifest.ui_language } else { "de" }
+    $language = [string]$manifest.ui_language
+    if ($language -eq "auto") {
+        $language = [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
+    }
+    if ($language -notin @("de", "en", "ru")) { $language = "en" }
     $actionLabels = @{
         de = @{ direct_setup = "Direktes Setup"; iso = "ISO einbinden und installieren"; open_folder = "Ordner öffnen" }
         en = @{ direct_setup = "Direct setup"; iso = "Mount ISO and install"; open_folder = "Open folder" }

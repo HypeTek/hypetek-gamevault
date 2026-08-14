@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.3.8
+## Funktionen in Version 0.3.9
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -41,7 +41,9 @@ verändern oder in ein neues Format zu zwingen.
 - zum Linienverlauf farbsynchron glimmender Energiepunkt statt weißem Laufbalken
 - anklickbares HypeTek-Logo als Rücksprung zum Seitenanfang
 - mitgelieferte TXT-Kurzanleitung im PowerShell-Fallback-Paket
-- integrierte Oberflächensprachen Deutsch, Englisch und Russisch; unabhängig von der Sprache der Spielinhalte
+- vollständiger integrierter Oberflächenkern für Deutsch, Englisch und Russisch; unabhängig von der Sprache der Spielinhalte
+- automatische Browser-Spracherkennung mit Fallback von Region zu Basissprache und anschließend Englisch
+- direkt prüfbarer Status des optionalen Mission Control Translators
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer

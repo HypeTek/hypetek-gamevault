@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.9
+
+- Deutsche, englische und russische Oberflächentexte für Editor, Spiele-Infofenster, Metadatensuche, Profilverwaltung, Hilfen und dynamische Statusmeldungen vervollständigt.
+- Automatische Browser-Spracherkennung mit sauberer Fallback-Kette Regionalsprache → Basissprache → Englisch ergänzt.
+- Die automatische Sprache wird auch an den Windows-Agent weitergegeben; dieser verwendet dafür die Windows-Oberflächensprache.
+- Live-Prüfung für den optionalen Mission Control Translator in den Einstellungen ergänzt, ohne API-Schlüssel an den Browser auszugeben.
+- Translator-Statusendpunkt ist anmeldungsgeschützt und prüft die gespeicherte Verbindung serverseitig.
+- Sprachwechsel aktualisiert Uhr, dynamische Karten, Dialoginhalte und Hilfetexte ohne Browser-Neustart.
+
 ## 0.3.8
 
 - LCARS verwendet nur noch einen durchgehenden Querbalken über die vollständige Seitenbreite; der zusätzliche Hero-Rand wurde entfernt.

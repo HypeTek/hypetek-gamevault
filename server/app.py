@@ -212,6 +212,22 @@ def get_settings():
     return jsonify(public_settings())
 
 
+@app.get("/api/translator/status")
+@login_required
+def translator_status():
+    settings = settings_store.load()
+    endpoint = settings.get("translator_url", "")
+    if not endpoint:
+        return jsonify(configured=False, reachable=False, error="Translator ist nicht eingerichtet")
+    try:
+        validate_translator(endpoint, settings.get("translator_api_key", ""))
+    except TranslationError as error:
+        return jsonify(configured=True, reachable=False, error=str(error)), 502
+    response = jsonify(configured=True, reachable=True)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.patch("/api/settings")
 @login_required
 @csrf_required
@@ -764,7 +780,7 @@ def agent_ticket(token: str):
         action=requested_action,
         relative_path=game["relative_path"],
         launcher=launcher,
-        ui_language=settings_store.load().get("ui_language", "de"),
+        ui_language=settings_store.load().get("ui_language", "auto"),
     )
 
 

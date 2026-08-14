@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css', v=asset_version) }}">
 </head>
 <body>
-  <button id="brandHomeButton" class="floating-brand-home" type="button" aria-label="Zum Seitenanfang" title="Zum Seitenanfang">
+  <button id="brandHomeButton" class="floating-brand-home" type="button" aria-label="Zum Seitenanfang" title="Zum Seitenanfang" data-i18n-aria="accessibility.top" data-i18n-title="accessibility.top">
     <img class="floating-brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
   </button>
   <aside id="lcarsSystemRail" class="lcars-system-rail" aria-label="LCARS-Systemzeit">
@@ -80,7 +80,7 @@
         <option value="archive">Archiv</option>
         <option value="manual_image">Sonderabbild</option>
       </select>
-      <div class="library-display-controls" aria-label="Bibliotheksdarstellung">
+      <div class="library-display-controls" aria-label="Bibliotheksdarstellung" data-i18n-aria="accessibility.libraryDisplay">
         <button id="viewGridButton" class="secondary view-button" type="button" aria-pressed="true" title="Kachelansicht">▦ <span>Kacheln</span></button>
         <button id="viewListButton" class="secondary view-button" type="button" aria-pressed="false" title="Listenansicht">☷ <span>Liste</span></button>
         <label class="page-size-label">Pro Seite
@@ -95,15 +95,15 @@
       <span id="status"></span>
     </section>
     <section id="library" class="library" aria-live="polite"></section>
-    <nav id="pagination" class="pagination" aria-label="Bibliotheksseiten"></nav>
+    <nav id="pagination" class="pagination" aria-label="Bibliotheksseiten" data-i18n-aria="accessibility.libraryPages"></nav>
   </main>
 
   <dialog id="connectionHelpDialog" class="help-dialog">
     <div class="help-content">
-      <div class="dialog-head"><h2>Spielebibliothek mit Windows verbinden</h2><button id="closeConnectionHelp" type="button" class="ghost" aria-label="Hilfe schließen">×</button></div>
+      <div class="dialog-head"><h2 data-i18n="help.connectionTitle">Spielebibliothek mit Windows verbinden</h2><button id="closeConnectionHelp" type="button" class="ghost" aria-label="Hilfe schließen" data-i18n-aria="accessibility.closeHelp">×</button></div>
       <section>
-        <h3>SMB-Netzlaufwerk im Explorer</h3>
-        <ol>
+        <h3 data-i18n="help.smbTitle">SMB-Netzlaufwerk im Explorer</h3>
+        <ol id="helpSmbSteps">
           <li><strong>Dieser PC</strong> öffnen und <strong>Netzlaufwerk verbinden</strong> wählen.</li>
           <li>Einen freien Laufwerksbuchstaben auswählen, zum Beispiel <code>Z:</code>.</li>
           <li>Als Ordner beispielsweise <code>\\TRUETITAN\Game</code> eintragen.</li>
@@ -111,32 +111,32 @@
           <li>Falls nötig <strong>Verbindung mit anderen Anmeldeinformationen herstellen</strong> wählen und den TrueNAS-SMB-Benutzer verwenden.</li>
           <li>Im Agent-Installer denselben Pfad, zum Beispiel <code>Z:\Game</code>, auswählen.</li>
         </ol>
-        <p class="note">Gespeicherte SMB-Benutzer lassen sich unter Windows in der <strong>Anmeldeinformationsverwaltung → Windows-Anmeldeinformationen</strong> ändern oder entfernen.</p>
+        <p id="helpSmbCredentials" class="note">Gespeicherte SMB-Benutzer lassen sich unter Windows in der <strong>Anmeldeinformationsverwaltung → Windows-Anmeldeinformationen</strong> ändern oder entfernen.</p>
       </section>
       <section>
-        <h3>SMB sicher über Tailscale</h3>
-        <ol>
+        <h3 data-i18n="help.tailscaleTitle">SMB sicher über Tailscale</h3>
+        <ol id="helpTailscaleSteps">
           <li>Tailscale auf TrueNAS und dem Windows-PC installieren und beide Geräte mit demselben Tailnet verbinden.</li>
           <li>Den MagicDNS-Namen wie <code>\\truetitan\Game</code> oder die Tailscale-IP wie <code>\\100.x.x.x\Game</code> verwenden.</li>
           <li>Bei Problemen in PowerShell testen: <code>Test-NetConnection truetitan -Port 445</code>.</li>
         </ol>
-        <p class="warning-note"><strong>Wichtig:</strong> TCP-Port 445 niemals direkt am Router ins Internet freigeben. Mission Control speichert keine Tailscale-Auth-Keys und liefert Tailscale nicht mit.</p>
-        <p><a href="https://tailscale.com/download" target="_blank" rel="noopener noreferrer">Offizielle Tailscale-Downloadseite öffnen</a></p>
+        <p id="helpTailscaleWarning" class="warning-note"><strong>Wichtig:</strong> TCP-Port 445 niemals direkt am Router ins Internet freigeben. Mission Control speichert keine Tailscale-Auth-Keys und liefert Tailscale nicht mit.</p>
+        <p><a id="helpTailscaleDownload" href="https://tailscale.com/download" target="_blank" rel="noopener noreferrer">Offizielle Tailscale-Downloadseite öffnen</a></p>
       </section>
       <section>
-        <h3>Warum derzeit nicht FTP?</h3>
-        <p>FTP ist unter Windows kein vollwertiges Netzlaufwerk für diesen Workflow. EXE-Dateien und ISOs müssten zuerst lokal heruntergeladen werden. Ein späterer SFTP-/Download-Cache ist möglich; für direktes Installieren und ISO-Einbinden bleibt SMB die empfohlene Lösung.</p>
+        <h3 data-i18n="help.ftpTitle">Warum derzeit nicht FTP?</h3>
+        <p data-i18n="help.ftpText">FTP ist unter Windows kein vollwertiges Netzlaufwerk für diesen Workflow. EXE-Dateien und ISOs müssten zuerst lokal heruntergeladen werden. Ein späterer SFTP-/Download-Cache ist möglich; für direktes Installieren und ISO-Einbinden bleibt SMB die empfohlene Lösung.</p>
       </section>
-      <div class="dialog-actions"><button id="connectionHelpDone" type="button">Verstanden</button></div>
+      <div class="dialog-actions"><button id="connectionHelpDone" type="button" data-i18n="common.understood">Verstanden</button></div>
     </div>
   </dialog>
 
   <dialog id="integrationHelpDialog" class="help-dialog">
     <div class="help-content">
-      <div class="dialog-head"><h2>APIs und Mission Control Translator</h2><button id="closeIntegrationHelp" type="button" class="ghost" aria-label="Hilfe schließen">×</button></div>
+      <div class="dialog-head"><h2 data-i18n="help.integrationTitle">APIs und Mission Control Translator</h2><button id="closeIntegrationHelp" type="button" class="ghost" aria-label="Hilfe schließen" data-i18n-aria="accessibility.closeHelp">×</button></div>
       <section>
-        <h3>TheGamesDB für Cover und Spielinformationen</h3>
-        <ol>
+        <h3 data-i18n="help.gamesDbTitle">TheGamesDB für Cover und Spielinformationen</h3>
+        <ol id="helpGamesDbSteps">
           <li>Auf <a href="https://api.thegamesdb.net/key.php" target="_blank" rel="noopener noreferrer">TheGamesDB – Request API Access</a> anmelden.</li>
           <li>Als Anwendungsname beispielsweise <strong>HypeTek Mission Control</strong> eintragen und die private, selbst gehostete Spielebibliothek beschreiben.</li>
           <li>Den erhaltenen API-Key unter <strong>Einstellungen → TheGamesDB-API-Key</strong> einfügen.</li>
@@ -144,22 +144,22 @@
         </ol>
       </section>
       <section>
-        <h3>Mission Control Translator – lokal auf TrueNAS</h3>
-        <p>Der Translator ist ein optionaler eigener Container. Mission Control bleibt ohne ihn vollständig nutzbar. Mit ihm werden Spieltexte über eine LibreTranslate-kompatible API lokal übersetzt.</p>
-        <ol>
+        <h3 data-i18n="help.translatorTitle">Mission Control Translator – lokal auf TrueNAS</h3>
+        <p data-i18n="help.translatorText">Der Translator ist ein optionaler eigener Container. Mission Control bleibt ohne ihn vollständig nutzbar. Mit ihm werden Spieltexte über eine LibreTranslate-kompatible API lokal übersetzt.</p>
+        <ol id="helpTranslatorSteps">
           <li>In der TrueNAS-App einen zusätzlichen Dienst mit dem Image <code>libretranslate/libretranslate:latest</code> anlegen.</li>
           <li><code>LT_LOAD_ONLY=en,de,it</code> setzen. Weitere mögliche Quell- oder Zielsprachen werden kommasepariert ergänzt, zum Beispiel <code>fr,es,pl,ru,ar,zh</code>.</li>
           <li>Ein persistentes Volume nach <code>/home/libretranslate/.local</code> einbinden, damit Sprachmodelle nicht erneut geladen werden.</li>
           <li>Mission Control und Translator im selben App-Netz betreiben. Als Translator-Adresse <code>http://translator:5000</code> eintragen.</li>
           <li>Unter <strong>Sprache der Spielinhalte</strong> die gewünschte Zielsprache auswählen und die Verbindung speichern.</li>
         </ol>
-        <p class="warning-note"><strong>Erster Start:</strong> Das Laden der ausgewählten Sprachmodelle kann mehrere Minuten dauern. Der Translator muss gesund und erreichbar sein, bevor Mission Control die Adresse akzeptiert.</p>
+        <p id="helpTranslatorWarning" class="warning-note"><strong>Erster Start:</strong> Das Laden der ausgewählten Sprachmodelle kann mehrere Minuten dauern. Der Translator muss gesund und erreichbar sein, bevor Mission Control die Adresse akzeptiert.</p>
       </section>
       <section class="guide-download">
-        <div><h3>Anleitung auf einem zweiten Gerät</h3><p>PDF herunterladen oder den QR-Code mit Handy bzw. Tablet scannen. Auf dem zweiten Gerät ist anschließend die Mission-Control-Anmeldung erforderlich.</p><a class="button-link secondary" href="{{ url_for('download_api_and_translator_guide') }}">PDF-Anleitung herunterladen</a></div>
-        <img src="{{ url_for('api_and_translator_guide_qr') }}" alt="QR-Code zur PDF-Anleitung" width="190" height="190">
+        <div><h3 data-i18n="help.guideTitle">Anleitung auf einem zweiten Gerät</h3><p data-i18n="help.guideText">PDF herunterladen oder den QR-Code mit Handy bzw. Tablet scannen. Auf dem zweiten Gerät ist anschließend die Mission-Control-Anmeldung erforderlich.</p><a class="button-link secondary" href="{{ url_for('download_api_and_translator_guide') }}" data-i18n="help.guideDownload">PDF-Anleitung herunterladen</a></div>
+        <img src="{{ url_for('api_and_translator_guide_qr') }}" alt="QR-Code zur PDF-Anleitung" data-i18n-alt="help.guideQr" width="190" height="190">
       </section>
-      <div class="dialog-actions"><button id="integrationHelpDone" type="button">Verstanden</button></div>
+      <div class="dialog-actions"><button id="integrationHelpDone" type="button" data-i18n="common.understood">Verstanden</button></div>
     </div>
   </dialog>
 
@@ -188,13 +188,13 @@
         </label>
         <label>Sprache der Oberfläche
           <select id="settingUiLanguage">
-            <option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option>
+            <option value="auto">Automatisch (Browser)</option><option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option>
           </select>
           <span id="settingsUiLanguageHint" class="field-hint">Integrierte Sprachpakete; unabhängig von der Übersetzung der Spielinhalte.</span>
         </label>
         <label>Mission Control Translator (optional)
           <input id="settingTranslatorUrl" type="url" placeholder="http://translator:5000">
-          <span id="translatorStatus" class="field-hint"></span>
+          <span class="translator-status-row"><span id="translatorStatus" class="field-hint"></span><button id="testTranslatorButton" type="button" class="secondary" data-i18n="translator.test">Verbindung testen</button></span>
           <span id="settingsTranslatorHint" class="field-hint">Die sichtbare Adresse ist nur ein Beispiel. Ohne eingerichteten Translator bleiben übernommene Originaltexte unverändert.</span>
         </label>
         <label>Translator-API-Key (nur falls erforderlich)
@@ -212,7 +212,7 @@
 
   <dialog id="designProfilesDialog" class="design-profiles-dialog">
     <div class="design-profile-content">
-      <div class="dialog-head"><div><p class="eyebrow">VISUAL CONFIGURATION</p><h2>Designprofile</h2></div><button id="closeDesignProfiles" type="button" class="ghost" aria-label="Designprofile schließen">×</button></div>
+      <div class="dialog-head"><div><p class="eyebrow">VISUAL CONFIGURATION</p><h2>Designprofile</h2></div><button id="closeDesignProfiles" type="button" class="ghost" aria-label="Designprofile schließen" data-i18n-aria="accessibility.closeProfiles">×</button></div>
       <div id="designProfileList" class="design-profile-list"></div>
       <div id="designProfileListActions" class="profile-list-actions"><button id="newDesignProfileButton" type="button" class="profile-add">+ Neues Profil</button><button id="designProfilesBackButton" type="button" class="secondary">Zurück</button></div>
       <form id="designProfileForm" class="design-profile-editor" hidden>
@@ -221,16 +221,16 @@
           <div class="profile-fields">
             <label>Profilname<input id="designProfileName" maxlength="48" required placeholder="z. B. HypeTek Blue"></label>
             <fieldset class="profile-style-picker"><legend>Stil</legend>
-              <label><input type="radio" name="profileStyle" value="soft" checked><span><strong>Soft Grid</strong><small>Runde, ruhige Karten</small></span></label>
-              <label><input type="radio" name="profileStyle" value="angular"><span><strong>Angular Deck</strong><small>Kantige technische Flächen</small></span></label>
-              <label><input type="radio" name="profileStyle" value="glass"><span><strong>Glass Panels</strong><small>Transparente schwebende Fenster</small></span></label>
-              <label><input type="radio" name="profileStyle" value="terminal"><span><strong>Terminal</strong><small>Monochrom und kompakt</small></span></label>
-              <label><input type="radio" name="profileStyle" value="pill"><span><strong>Orbital</strong><small>Stark gerundete Bedienelemente</small></span></label>
-              <label><input type="radio" name="profileStyle" value="frame"><span><strong>Tactical Frame</strong><small>Eckrahmen und HUD-Anmutung</small></span></label>
-              <label><input type="radio" name="profileStyle" value="lcars"><span><strong>LCARS Console</strong><small>Farbbänder, Kapselenden und schwarze Funktionsflächen</small></span></label>
+              <label><input type="radio" name="profileStyle" value="soft" checked><span><strong>Soft Grid</strong><small data-i18n="profiles.softDescription">Runde, ruhige Karten</small></span></label>
+              <label><input type="radio" name="profileStyle" value="angular"><span><strong>Angular Deck</strong><small data-i18n="profiles.angularDescription">Kantige technische Flächen</small></span></label>
+              <label><input type="radio" name="profileStyle" value="glass"><span><strong>Glass Panels</strong><small data-i18n="profiles.glassDescription">Transparente schwebende Fenster</small></span></label>
+              <label><input type="radio" name="profileStyle" value="terminal"><span><strong>Terminal</strong><small data-i18n="profiles.terminalDescription">Monochrom und kompakt</small></span></label>
+              <label><input type="radio" name="profileStyle" value="pill"><span><strong>Orbital</strong><small data-i18n="profiles.pillDescription">Stark gerundete Bedienelemente</small></span></label>
+              <label><input type="radio" name="profileStyle" value="frame"><span><strong>Tactical Frame</strong><small data-i18n="profiles.frameDescription">Eckrahmen und HUD-Anmutung</small></span></label>
+              <label><input type="radio" name="profileStyle" value="lcars"><span><strong>LCARS Console</strong><small data-i18n="profiles.lcarsDescription">Farbbänder, Kapselenden und schwarze Funktionsflächen</small></span></label>
             </fieldset>
             <label>Schriftstil<select id="designProfileFont"><option value="system">System</option><option value="technical">Technical</option><option value="rounded">Rounded</option><option value="mono">Monospace</option><option value="compact">Compact</option></select></label>
-            <label>Eigenes Profil-Hintergrundbild<input id="designProfileBackground" type="file" accept="image/jpeg,image/png,image/webp"><span class="field-hint">Ohne neue Auswahl wird das aktuell zugeordnete Bild übernommen.</span></label>
+            <label>Eigenes Profil-Hintergrundbild<input id="designProfileBackground" type="file" accept="image/jpeg,image/png,image/webp"><span id="profileBackgroundHint" class="field-hint">Ohne neue Auswahl wird das aktuell zugeordnete Bild übernommen.</span></label>
             <input id="designProfileBackgroundName" type="hidden">
             <button id="removeDesignProfileBackground" class="ghost" type="button">Profil-Hintergrund entfernen</button>
             <div class="profile-color-grid">
@@ -244,7 +244,7 @@
             <label>Hintergrund-Unschärfe <output id="profileBlurValue"></output><input id="designProfileBlur" type="range" min="0" max="20" step="1"></label>
           </div>
           <section id="designProfilePreview" class="profile-live-preview" data-style="soft" data-font="technical">
-            <p class="eyebrow">LIVE PREVIEW</p><div class="profile-preview-energy"></div><article><div class="preview-cover">MISSION CONTROL</div><h3>Assassin’s Creed Valhalla</h3><p>ISO · Windows · 42.69 GiB</p><button type="button">Einbinden & installieren</button><div><button type="button">Ordner öffnen</button><button type="button">Edit</button></div></article>
+            <p class="eyebrow">LIVE PREVIEW</p><div class="profile-preview-energy"></div><article><div class="preview-cover">MISSION CONTROL</div><h3>Assassin’s Creed Valhalla</h3><p>ISO · Windows · 42.69 GiB</p><button type="button" data-i18n="game.mountInstall">Einbinden & installieren</button><div><button type="button" data-i18n="game.folder">Ordner öffnen</button><button type="button" data-i18n="game.edit">Edit</button></div></article>
           </section>
         </div>
         <div class="dialog-actions profile-save-actions"><span id="designProfileSaveStatus" class="save-confirmation" role="status" aria-live="polite"></span><button id="cancelDesignProfileEdit" class="secondary" type="button">Zurück</button><button id="saveDesignProfileButton" type="submit">Profil speichern</button></div>
@@ -283,7 +283,7 @@
         <label>Cover bei TheGamesDB suchen
           <div class="metadata-searchbar"><input id="metadataQuery" type="search" maxlength="160"><button id="metadataSearchButton" type="button" class="secondary">Suchen</button></div>
         </label>
-        <p class="field-hint">Nur beim Klick auf „Suchen“ wird der eingegebene Titel an TheGamesDB übertragen. Bei Abkürzungen bitte den vollständigen Namen verwenden, zum Beispiel „Assassin’s Creed Valhalla“. Ein Treffer wird erst nach deiner Auswahl gespeichert.</p>
+        <p id="metadataSearchHint" class="field-hint">Nur beim Klick auf „Suchen“ wird der eingegebene Titel an TheGamesDB übertragen. Bei Abkürzungen bitte den vollständigen Namen verwenden, zum Beispiel „Assassin’s Creed Valhalla“. Ein Treffer wird erst nach deiner Auswahl gespeichert.</p>
         <div id="metadataResults" class="metadata-results"></div>
       </section>
       <div id="editNote" class="note"></div>
@@ -295,7 +295,7 @@
     <article class="game-info-panel">
       <header id="gameInfoHero" class="game-info-hero">
         <div class="game-info-shade"></div>
-        <button id="closeGameInfo" type="button" class="game-info-close" aria-label="Infofenster schließen">×</button>
+        <button id="closeGameInfo" type="button" class="game-info-close" aria-label="Infofenster schließen" data-i18n-aria="accessibility.closeInfo">×</button>
         <div class="game-info-heading">
           <p id="gameInfoProvider" class="eyebrow"></p>
           <h2 id="gameInfoTitle"></h2>
@@ -305,7 +305,7 @@
       <div class="game-info-content">
         <section id="gameInfoOverviewSection"><h3>Spielinhalt</h3><p id="gameInfoOverview"></p></section>
         <section id="gameInfoNotesSection"><h3>Bemerkungen</h3><p id="gameInfoNotes"></p></section>
-        <section><h3>Bibliothek</h3><dl id="gameInfoLibrary" class="game-info-list"></dl></section>
+        <section id="gameInfoLibrarySection"><h3>Bibliothek</h3><dl id="gameInfoLibrary" class="game-info-list"></dl></section>
         <div id="gameInfoActions" class="dialog-actions"></div>
       </div>
     </article>

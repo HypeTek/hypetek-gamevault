@@ -49,7 +49,7 @@ async function api(url, options = {}) {
 
 function applySettings(settings) {
   state.settings = settings;
-  applyUiLanguage(settings.ui_language || "de");
+  applyUiLanguage(settings.ui_language || "auto");
   const profile = settings.design_profile || {};
   const colors = profile.colors || {};
   document.body.dataset.theme = settings.active_design_profile || settings.theme;
@@ -110,7 +110,7 @@ function showAgentSetup() {
 }
 
 async function load() {
-  statusEl.textContent = "Lade …";
+  statusEl.textContent = tr("common.loading");
   const [games, settings] = await Promise.all([api("/api/games"), api("/api/settings")]);
   state.games = games;
   applySettings(settings);
@@ -232,7 +232,7 @@ function editGame(id) {
   document.querySelector("#editCoverPosition").value = coverPosition(game);
   document.querySelector("#metadataQuery").value = game.metadata_search_title || game.title;
   document.querySelector("#metadataResults").innerHTML = "";
-  document.querySelector("#editNote").textContent = `Erkannt: ${typeLabel(game.detected_type)} · ${game.detection_note} · ${game.relative_path}`;
+  document.querySelector("#editNote").textContent = tr("editor.detected", {type: typeLabel(game.detected_type), note: game.detection_note, path: game.relative_path});
   updateCoverPositionPreview();
   editor.showModal();
 }
@@ -247,7 +247,7 @@ function updateCoverPositionPreview() {
   preview.style.backgroundPosition = `center ${value}%`;
   preview.setAttribute("aria-valuenow", String(Math.round(value)));
   preview.classList.toggle("is-empty", !imageUrl);
-  document.querySelector("#coverPositionPreviewTitle").textContent = document.querySelector("#editTitle").value.trim() || game?.title || "Cover-Vorschau";
+  document.querySelector("#coverPositionPreviewTitle").textContent = document.querySelector("#editTitle").value.trim() || game?.title || tr("editor.coverPreview");
 }
 
 function setCoverPosition(value) {
@@ -298,22 +298,22 @@ function showGameInfo(id) {
   hero.style.backgroundPosition = `center ${coverPosition(game)}%`;
   document.querySelector("#gameInfoProvider").textContent = game.metadata_provider === "thegamesdb" ? "TheGamesDB" : "Mission Control";
   document.querySelector("#gameInfoTitle").textContent = game.metadata_title || game.title;
-  const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? `${game.metadata_players} Spieler` : "", game.metadata_coop ? `Co-op: ${game.metadata_coop}` : ""].filter(Boolean);
+  const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? tr("info.players", {count: game.metadata_players}) : "", game.metadata_coop ? tr("info.coop", {value: game.metadata_coop}) : ""].filter(Boolean);
   document.querySelector("#gameInfoMeta").innerHTML = metadata.map((value) => `<span>${escapeHtml(value)}</span>`).join("");
   const overview = String(game.metadata_overview || "").trim();
   const notes = String(game.description || "").trim();
-  document.querySelector("#gameInfoOverview").textContent = overview || "Für diesen Eintrag wurde noch kein Spielinhalt übernommen.";
+  document.querySelector("#gameInfoOverview").textContent = overview || tr("info.noOverview");
   document.querySelector("#gameInfoOverviewSection").classList.toggle("is-empty", !overview);
-  document.querySelector("#gameInfoNotes").textContent = notes || "Keine eigenen Bemerkungen hinterlegt.";
+  document.querySelector("#gameInfoNotes").textContent = notes || tr("info.noNotes");
   document.querySelector("#gameInfoNotesSection").classList.toggle("is-empty", !notes);
-  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>Bibliothekstitel</dt><dd>${escapeHtml(game.title)}</dd><dt>Typ</dt><dd>${escapeHtml(typeLabel(game.action))}</dd><dt>Größe</dt><dd>${formatBytes(game.logical_size)}</dd>`;
-  const source = game.metadata_source_url ? `<a class="button-link secondary" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Quelle ansehen</a>` : "";
+  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>${tr("info.libraryTitle")}</dt><dd>${escapeHtml(game.title)}</dd><dt>${tr("info.type")}</dt><dd>${escapeHtml(typeLabel(game.action))}</dd><dt>${tr("info.size")}</dt><dd>${formatBytes(game.logical_size)}</dd>`;
+  const source = game.metadata_source_url ? `<a class="button-link secondary" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">${tr("info.source")}</a>` : "";
   const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
   const launch = launchable ? `<button type="button" class="primary-info-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : "";
   const translate = state.settings?.translator_configured && overview
-    ? `<button type="button" class="secondary" onclick="translateGameInfo('${game.id}')">Spielinhalt übersetzen</button>` : "";
+    ? `<button type="button" class="secondary" onclick="translateGameInfo('${game.id}')">${tr("info.translate")}</button>` : "";
   const original = game.metadata_overview_original && game.metadata_overview_original !== game.metadata_overview
-    ? `<button id="gameInfoOriginalButton" type="button" class="secondary" onclick="toggleGameInfoOriginal('${game.id}')">Original anzeigen</button>` : "";
+    ? `<button id="gameInfoOriginalButton" type="button" class="secondary" onclick="toggleGameInfoOriginal('${game.id}')">${tr("info.original")}</button>` : "";
   const favorite = `<button type="button" class="favorite-action ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? tr("game.favorite") : tr("game.makeFavorite")}</button>`;
   document.querySelector("#gameInfoActions").innerHTML = `${launch}${favorite}<button type="button" class="secondary" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button>${translate}${original}${source}<button type="button" class="secondary" onclick="gameInfoDialog.close(); editGame('${game.id}')">${tr("game.edit")}</button>`;
   if (!gameInfoDialog.open) gameInfoDialog.showModal();
@@ -347,7 +347,7 @@ function toggleGameInfoOriginal(id) {
   const showingOriginal = button.dataset.showingOriginal === "true";
   overview.textContent = showingOriginal ? game.metadata_overview : game.metadata_overview_original;
   button.dataset.showingOriginal = showingOriginal ? "false" : "true";
-  button.textContent = showingOriginal ? "Original anzeigen" : "Übersetzung anzeigen";
+  button.textContent = showingOriginal ? tr("info.original") : tr("info.translation");
 }
 
 function openSettings() {
@@ -359,11 +359,32 @@ function openSettings() {
   document.querySelector("#settingTheGamesDbApiKey").value = "";
   document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? tr("settings.keyStored") : tr("settings.keyMissing");
   document.querySelector("#settingContentLanguage").value = settings.content_language || "de";
-  document.querySelector("#settingUiLanguage").value = settings.ui_language || "de";
+  document.querySelector("#settingUiLanguage").value = settings.ui_language || "auto";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
   document.querySelector("#translatorStatus").textContent = settings.translator_configured ? tr("settings.translatorReady") : tr("settings.translatorMissing");
   settingsDialog.showModal();
+}
+
+async function testTranslatorConnection() {
+  const button = document.querySelector("#testTranslatorButton");
+  const output = document.querySelector("#translatorStatus");
+  if (!state.settings?.translator_configured) {
+    output.textContent = tr("translator.notConfigured");
+    return;
+  }
+  button.disabled = true;
+  output.textContent = tr("translator.checking");
+  try {
+    const result = await api("/api/translator/status");
+    output.textContent = result.reachable
+      ? tr("translator.reachable")
+      : tr("translator.unavailable", {error: result.error || "HTTP 502"});
+  } catch (error) {
+    output.textContent = tr("translator.unavailable", {error: error.message});
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function profilePayloadFromForm() {
@@ -409,7 +430,7 @@ function renderDesignProfilePreview() {
 function fillDesignProfileForm(profile = state.settings.design_profile, id = "") {
   document.querySelector("#designProfileSaveStatus").textContent = "";
   document.querySelector("#designProfileId").value = id;
-  document.querySelector("#designProfileName").value = id ? profile.name : `${profile.name} Kopie`;
+  document.querySelector("#designProfileName").value = id ? profile.name : tr("profiles.copySuffix", {name: profile.name});
   document.querySelector(`input[name="profileStyle"][value="${profile.style || "soft"}"]`).checked = true;
   document.querySelector("#designProfileFont").value = profile.font || "system";
   document.querySelector("#designProfileBackground").value = "";
@@ -450,7 +471,7 @@ async function activateDesignProfile(id) {
 }
 
 async function deleteDesignProfile(id) {
-  if (!confirm("Dieses eigene Designprofil wirklich löschen?")) return;
+  if (!confirm(tr("confirm.deleteProfile"))) return;
   const wasActive = designProfileState.active === id;
   designProfileState = await api(`/api/design-profiles/${encodeURIComponent(id)}`, {method: "DELETE"});
   if (wasActive) applySettings(await api("/api/settings"));
@@ -506,7 +527,7 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
 });
 
 document.querySelector("#removeTheGamesDbKeyButton").addEventListener("click", async () => {
-  if (!confirm("Gespeicherten TheGamesDB-API-Key wirklich entfernen?")) return;
+  if (!confirm(tr("confirm.removeGamesDb"))) return;
   try {
     const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify({thegamesdb_api_key: null})});
     applySettings(settings);
@@ -516,7 +537,7 @@ document.querySelector("#removeTheGamesDbKeyButton").addEventListener("click", a
 });
 
 document.querySelector("#removeTranslatorButton").addEventListener("click", async () => {
-  if (!confirm("Translator-Verbindung und gespeicherten Translator-API-Key wirklich entfernen?")) return;
+  if (!confirm(tr("confirm.removeTranslator"))) return;
   try {
     const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify({translator_url: "", translator_api_key: null})});
     applySettings(settings);
@@ -530,7 +551,7 @@ async function probeWindowsAgent() {
   const button = document.querySelector("#agentProbeButton");
   const output = document.querySelector("#agentProbeStatus");
   button.disabled = true;
-  output.textContent = " · Prüfung läuft …";
+  output.textContent = ` · ${tr("agent.probeRunning")}`;
   try {
     const probe = await api("/api/agent/probes", {method: "POST", body: "{}"});
     window.location.href = probe.protocol_url;
@@ -539,13 +560,13 @@ async function probeWindowsAgent() {
       const result = await api(`/api/agent/probes/${encodeURIComponent(probe.token)}`);
       if (result.confirmed) {
         localStorage.setItem("missionControlAgentValidatedFor", window.location.origin);
-        output.textContent = " · Agent erkannt";
+        output.textContent = ` · ${tr("agent.probeFound")}`;
         setTimeout(() => { document.querySelector("#agentNote").hidden = true; }, 800);
         return;
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.8 aktualisieren.");
+    throw new Error(tr("agent.probeFailed"));
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
@@ -561,7 +582,7 @@ function updateLcarsSystemClock() {
   const date = document.querySelector("#lcarsSystemDate");
   if (!clock || !date) return;
   const now = new Date();
-  const language = state.settings?.ui_language || document.documentElement.lang || "de";
+  const language = document.documentElement.lang || "en";
   clock.textContent = now.toLocaleTimeString(language, {hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false});
   clock.dateTime = now.toISOString();
   date.textContent = now.toLocaleDateString(language, {day: "2-digit", month: "2-digit", year: "numeric"});
@@ -569,19 +590,19 @@ function updateLcarsSystemClock() {
 
 function renderMetadataResults(results) {
   const target = document.querySelector("#metadataResults");
-  if (!results.length) { target.innerHTML = '<p class="note">Keine passenden Treffer gefunden.</p>'; return; }
-  target.innerHTML = results.map((item, index) => `<article class="metadata-result"><img src="${escapeHtml(item.preview_url)}" alt="" loading="lazy"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.platform || "Plattform unbekannt")} · ${escapeHtml(item.released || "Jahr unbekannt")}</span><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer">Bei TheGamesDB ansehen</a></div><button type="button" data-metadata-index="${index}">Übernehmen</button></article>`).join("");
+  if (!results.length) { target.innerHTML = `<p class="note">${tr("metadata.none")}</p>`; return; }
+  target.innerHTML = results.map((item, index) => `<article class="metadata-result"><img src="${escapeHtml(item.preview_url)}" alt="" loading="lazy"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.platform || tr("metadata.unknownPlatform"))} · ${escapeHtml(item.released || tr("metadata.unknownYear"))}</span><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer">${tr("metadata.view")}</a></div><button type="button" data-metadata-index="${index}">${tr("metadata.apply")}</button></article>`).join("");
   target.querySelectorAll("[data-metadata-index]").forEach((button) => button.addEventListener("click", async () => {
     const item = results[Number(button.dataset.metadataIndex)];
     const id = document.querySelector("#editId").value;
     button.disabled = true;
-    button.textContent = "Lade …";
+    button.textContent = tr("metadata.loading");
     try {
       await api(`/api/games/${id}/metadata/apply`, {method: "POST", body: JSON.stringify(item)});
       await load();
       updateCoverPositionPreview();
-      target.innerHTML = '<p class="note">Cover übernommen. Du kannst den Dialog jetzt speichern oder schließen.</p>';
-    } catch (error) { alert(error.message); button.disabled = false; button.textContent = "Übernehmen"; }
+      target.innerHTML = `<p class="note">${tr("metadata.applied")}</p>`;
+    } catch (error) { alert(error.message); button.disabled = false; button.textContent = tr("metadata.apply"); }
   }));
 }
 
@@ -589,8 +610,8 @@ document.querySelector("#metadataSearchButton").addEventListener("click", async 
   const id = document.querySelector("#editId").value;
   const query = document.querySelector("#metadataQuery").value.trim();
   const target = document.querySelector("#metadataResults");
-  if (!query) { alert("Bitte einen Titel für die Suche eingeben."); return; }
-  target.innerHTML = '<p class="note">Suche bei TheGamesDB …</p>';
+  if (!query) { alert(tr("metadata.queryRequired")); return; }
+  target.innerHTML = `<p class="note">${tr("metadata.searching")}</p>`;
   try {
     const data = await api(`/api/games/${id}/metadata/search`, {method: "POST", body: JSON.stringify({query})});
     renderMetadataResults(data.results);
@@ -606,6 +627,7 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
   } catch (error) { statusEl.textContent = error.message; }
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
+document.querySelector("#testTranslatorButton").addEventListener("click", testTranslatorConnection);
 document.querySelector("#designProfilesButton").addEventListener("click", openDesignProfiles);
 document.querySelector("#closeDesignProfiles").addEventListener("click", () => designProfilesDialog.close());
 document.querySelector("#newDesignProfileButton").addEventListener("click", () => fillDesignProfileForm(state.settings.design_profile, ""));
@@ -649,9 +671,9 @@ document.querySelector("#designProfileForm").addEventListener("submit", async (e
     if (isNew) applySettings(await api(`/api/design-profiles/${encodeURIComponent(saved.id)}/activate`, {method: "POST", body: "{}"}));
     designProfileState = await api("/api/design-profiles");
     if (!isNew && designProfileState.active === saved.id) applySettings(await api("/api/settings"));
-    saveStatus.textContent = isNew ? tr("profiles.saved") : "✓ Profil gespeichert";
+    saveStatus.textContent = isNew ? tr("profiles.saved") : tr("profiles.savedExisting");
   } catch (error) {
-    saveStatus.textContent = "Speichern fehlgeschlagen";
+    saveStatus.textContent = tr("profiles.saveFailed");
     alert(error.message);
   } finally {
     saveButton.disabled = false;
@@ -695,4 +717,5 @@ requestAnimationFrame(animateEnergyColor);
 updateLcarsLayout();
 updateLcarsSystemClock();
 setInterval(updateLcarsSystemClock, 1000);
+document.addEventListener("mission-control-language-changed", updateLcarsSystemClock);
 load();
