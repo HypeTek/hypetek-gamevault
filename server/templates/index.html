@@ -65,6 +65,7 @@
       <input id="search" type="search" placeholder="Titel durchsuchen …">
       <select id="filter">
         <option value="all">Alle Typen</option>
+        <option value="favorites">★ Favoriten</option>
         <option value="direct_setup">Direktes Setup</option>
         <option value="iso">ISO</option>
         <option value="manual">Nur anzeigen</option>
@@ -212,6 +213,7 @@
               <label><input type="radio" name="profileStyle" value="terminal"><span><strong>Terminal</strong><small>Monochrom und kompakt</small></span></label>
               <label><input type="radio" name="profileStyle" value="pill"><span><strong>Orbital</strong><small>Stark gerundete Bedienelemente</small></span></label>
               <label><input type="radio" name="profileStyle" value="frame"><span><strong>Tactical Frame</strong><small>Eckrahmen und HUD-Anmutung</small></span></label>
+              <label><input type="radio" name="profileStyle" value="lcars"><span><strong>LCARS Console</strong><small>Farbbänder, Kapselenden und schwarze Funktionsflächen</small></span></label>
             </fieldset>
             <label>Schriftstil<select id="designProfileFont"><option value="system">System</option><option value="technical">Technical</option><option value="rounded">Rounded</option><option value="mono">Monospace</option><option value="compact">Compact</option></select></label>
             <label>Eigenes Profil-Hintergrundbild<input id="designProfileBackground" type="file" accept="image/jpeg,image/png,image/webp"><span class="field-hint">Ohne neue Auswahl wird das aktuell zugeordnete Bild übernommen.</span></label>
@@ -222,15 +224,16 @@
               <label>Karten<input type="color" data-profile-color="panel_alt"></label><label>Text<input type="color" data-profile-color="text"></label>
               <label>Gedämpft<input type="color" data-profile-color="muted"></label><label>Primär<input type="color" data-profile-color="primary"></label>
               <label>Sekundär<input type="color" data-profile-color="secondary"></label><label>Rahmen<input type="color" data-profile-color="line"></label>
+              <label>Streifen: von<input type="color" data-profile-color="energy_start"></label><label>Streifen: bis<input type="color" data-profile-color="energy_end"></label>
             </div>
             <label>Hintergrund-Abdunklung <output id="profileOpacityValue"></output><input id="designProfileOpacity" type="range" min="0" max="0.85" step="0.05"></label>
             <label>Hintergrund-Unschärfe <output id="profileBlurValue"></output><input id="designProfileBlur" type="range" min="0" max="20" step="1"></label>
           </div>
           <section id="designProfilePreview" class="profile-live-preview" data-style="soft" data-font="technical">
-            <p class="eyebrow">LIVE PREVIEW</p><article><div class="preview-cover">MISSION CONTROL</div><h3>Assassin’s Creed Valhalla</h3><p>ISO · Windows · 42.69 GiB</p><button type="button">Einbinden & installieren</button><div><button type="button">Ordner öffnen</button><button type="button">Edit</button></div></article>
+            <p class="eyebrow">LIVE PREVIEW</p><div class="profile-preview-energy"></div><article><div class="preview-cover">MISSION CONTROL</div><h3>Assassin’s Creed Valhalla</h3><p>ISO · Windows · 42.69 GiB</p><button type="button">Einbinden & installieren</button><div><button type="button">Ordner öffnen</button><button type="button">Edit</button></div></article>
           </section>
         </div>
-        <div class="dialog-actions"><button id="cancelDesignProfileEdit" class="secondary" type="button">Abbrechen</button><button id="saveDesignProfileButton" type="submit">Profil speichern</button></div>
+        <div class="dialog-actions profile-save-actions"><span id="designProfileSaveStatus" class="save-confirmation" role="status" aria-live="polite"></span><button id="cancelDesignProfileEdit" class="secondary" type="button">Abbrechen</button><button id="saveDesignProfileButton" type="submit">Profil speichern</button></div>
       </form>
     </div>
   </dialog>

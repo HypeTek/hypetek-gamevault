@@ -107,7 +107,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.3.0")
+        self.assertEqual(health["version"], "0.3.1")
         self.assertEqual(health["agent_api"], 3)
 
     def test_path_escape_is_rejected(self):
@@ -147,7 +147,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.0/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.1/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -163,7 +163,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.3.0")
+        self.assertEqual(settings["version"], "0.3.1")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -191,6 +191,9 @@ class AppTests(unittest.TestCase):
         self.assertEqual(overview["active"], "mission")
         self.assertEqual(len(overview["profiles"]), 4)
         mission = next(item for item in overview["profiles"] if item["id"] == "mission")
+        lcars = next(item for item in overview["profiles"] if item["id"] == "lcars")
+        self.assertEqual(lcars["name"], "LCARS Console")
+        self.assertEqual(lcars["style"], "lcars")
         created_payload = {
             **mission,
             "name": "HypeTek Test",
@@ -384,6 +387,32 @@ class AppTests(unittest.TestCase):
             headers={"X-CSRF-Token": self.csrf},
         )
         self.assertEqual(clamped.get_json()["cover_position_y"], 100)
+
+    def test_favorite_survives_rescan_and_rejects_invalid_values(self):
+        self.login()
+        self.post("/api/scan")
+        game = self.client.get("/api/games").get_json()[0]
+        marked = self.client.patch(
+            f"/api/games/{game['id']}",
+            json={"favorite": True},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(marked.status_code, 200)
+        self.assertTrue(marked.get_json()["favorite"])
+
+        self.post("/api/scan")
+        rescanned = next(
+            candidate for candidate in self.client.get("/api/games").get_json()
+            if candidate["id"] == game["id"]
+        )
+        self.assertTrue(rescanned["favorite"])
+
+        invalid = self.client.patch(
+            f"/api/games/{game['id']}",
+            json={"favorite": "yes"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(invalid.status_code, 400)
 
     def test_games_include_clean_suggested_search_title(self):
         self.login()

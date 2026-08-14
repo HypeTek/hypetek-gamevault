@@ -1,5 +1,5 @@
 HYPETEK MISSION CONTROL – WINDOWS-AGENT
-Version 0.3.0
+Version 0.3.1
 
 © 2026 Michael Härtwig · HypeTek
 

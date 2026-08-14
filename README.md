@@ -5,14 +5,16 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.3.0
+## Funktionen in Version 0.3.1
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
 - vorhandene SMB-Bibliothek schreibgeschützt einbinden
 - Suche, Filter, manuelle Metadaten und Cover-Uploads
-- Mission-, Cyberpunk-, LCARS- und Midnight-Ausgangsprofile
+- Favoritenmarkierung im Spiele-Infofenster und eigener Favoritenfilter
+- Mission-, Cyberpunk-, LCARS-Console- und Midnight-Ausgangsprofile
 - eigene speicherbare Designprofile mit Farben, Hintergrundbild und Effekten
+- frei wählbarer Farbverlauf für den Energiestreifen je Designprofil
 - Design unabhängig mit Karten-/Fensterstil und Schriftgruppe kombinieren
 - Live-Vorschau vor dem Speichern eines Profils
 - optionales Fadenkreuz als Mauszeiger

@@ -14,9 +14,12 @@ from uuid import uuid4
 COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
 PROFILE_NAME_PATTERN = re.compile(r"^[\w .()\-]{1,48}$", re.UNICODE)
 PROFILE_ID_PATTERN = re.compile(r"^[a-z0-9-]{1,64}$")
-STYLES = {"soft", "angular", "glass", "terminal", "pill", "frame"}
+STYLES = {"soft", "angular", "glass", "terminal", "pill", "frame", "lcars"}
 FONTS = {"system", "technical", "rounded", "mono", "compact"}
-COLOR_KEYS = {"background", "panel", "panel_alt", "text", "muted", "primary", "secondary", "line"}
+COLOR_KEYS = (
+    "background", "panel", "panel_alt", "text", "muted", "primary",
+    "secondary", "line", "energy_start", "energy_end",
+)
 
 
 def _profile(name: str, style: str, font: str, colors: dict[str, str]) -> dict:
@@ -37,21 +40,25 @@ BUILTIN_PROFILES = {
         "background": "#061117", "panel": "#0d1d25", "panel_alt": "#142832",
         "text": "#e8f3f4", "muted": "#8ca5aa", "primary": "#00d1c7",
         "secondary": "#f28c28", "line": "#24434c",
+        "energy_start": "#00d1c7", "energy_end": "#f28c28",
     }),
     "cyberpunk": _profile("Cyberpunk", "angular", "technical", {
         "background": "#090516", "panel": "#171027", "panel_alt": "#21163a",
         "text": "#f5efff", "muted": "#b7a8cf", "primary": "#00f6ff",
         "secondary": "#ff3cac", "line": "#52356f",
+        "energy_start": "#00f6ff", "energy_end": "#ff3cac",
     }),
-    "lcars": _profile("LCARS", "pill", "rounded", {
-        "background": "#090b18", "panel": "#15172b", "panel_alt": "#25223b",
-        "text": "#fff7e8", "muted": "#c8b9d9", "primary": "#cc99ff",
-        "secondary": "#ff9f5a", "line": "#6b4f92",
+    "lcars": _profile("LCARS Console", "lcars", "compact", {
+        "background": "#050505", "panel": "#111111", "panel_alt": "#83b5f5",
+        "text": "#f7f7f7", "muted": "#a8b8cc", "primary": "#448aff",
+        "secondary": "#ff9d16", "line": "#9cc7ff",
+        "energy_start": "#448aff", "energy_end": "#ff9d16",
     }),
     "midnight": _profile("Midnight", "glass", "system", {
         "background": "#05070c", "panel": "#0c111b", "panel_alt": "#141d2b",
         "text": "#e7edf7", "muted": "#8794a8", "primary": "#70a5ff",
         "secondary": "#a78bfa", "line": "#26374e",
+        "energy_start": "#70a5ff", "energy_end": "#a78bfa",
     }),
 }
 
@@ -139,7 +146,12 @@ class DesignProfileStore:
         fallback = BUILTIN_PROFILES["mission"]["colors"]
         colors = {}
         for key in COLOR_KEYS:
-            value = str(source_colors.get(key) or fallback[key])
+            migration_fallback = (
+                source_colors.get("primary") if key == "energy_start"
+                else source_colors.get("secondary") if key == "energy_end"
+                else fallback[key]
+            )
+            value = str(source_colors.get(key) or migration_fallback or fallback[key])
             if not COLOR_PATTERN.fullmatch(value):
                 raise ValueError(f"Ungültiger Farbwert für {key}.")
             colors[key] = value.lower()

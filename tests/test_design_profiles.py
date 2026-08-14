@@ -30,6 +30,26 @@ class DesignProfileStoreTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 store.create(invalid)
 
+    def test_old_custom_profile_inherits_its_own_gradient_colors(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = DesignProfileStore(Path(temporary) / "designs.json")
+            mission = store.load()["profiles"]["mission"]
+            legacy_colors = {
+                key: value for key, value in mission["colors"].items()
+                if key not in {"energy_start", "energy_end"}
+            }
+            legacy_colors["primary"] = "#123456"
+            legacy_colors["secondary"] = "#abcdef"
+            normalized = store.normalize({
+                **mission,
+                "id": "legacy-gradient",
+                "name": "Legacy Gradient",
+                "builtin": False,
+                "colors": legacy_colors,
+            })
+            self.assertEqual(normalized["colors"]["energy_start"], "#123456")
+            self.assertEqual(normalized["colors"]["energy_end"], "#abcdef")
+
 
 if __name__ == "__main__":
     unittest.main()

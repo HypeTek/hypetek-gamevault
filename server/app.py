@@ -494,6 +494,10 @@ def update_game(game_id: str):
             payload["cover_position_y"] = max(0, min(100, int(payload["cover_position_y"])))
         except (TypeError, ValueError):
             return jsonify(error="Ungültige Coverposition"), 400
+    if "favorite" in payload:
+        if not isinstance(payload["favorite"], bool):
+            return jsonify(error="Ungültiger Favoritenstatus"), 400
+        payload["favorite"] = 1 if payload["favorite"] else 0
     database.update_game(game_id, payload)
     return jsonify(database.get_game(game_id))
 

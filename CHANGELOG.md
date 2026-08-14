@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.1
+
+- Spiele können direkt im Infofenster als Favorit markiert und über den neuen Favoritenfilter angezeigt werden.
+- Favoriten werden in SQLite gespeichert und bleiben bei erneuten Bibliotheksscans erhalten.
+- Farben des Energiestreifens lassen sich unabhängig als Verlauf „von“ und „bis“ je Designprofil festlegen.
+- Der Energiepunkt bleibt vollständig innerhalb der Bildschirmbreite und erzeugt keinen horizontalen Überlauf mehr.
+- Schriftgruppen „System“ und „Technical“ visuell klar voneinander getrennt.
+- Erfolgreiches Speichern eines Designprofils wird direkt am Speichern-Button bestätigt.
+- Abbrechen und der Wechsel zwischen Profilliste und Editor funktionieren durch eine robuste Behandlung versteckter Bereiche wieder zuverlässig.
+- Das bisherige LCARS-Profil zu einer eigenständigen „LCARS Console“ mit schwarzen Funktionsflächen, Farbbändern und Kapselenden ausgebaut.
+- Bestehende eigene Profile erhalten beim Upgrade automatisch einen Energiestreifen aus ihren bisherigen Primär- und Sekundärfarben.
+
 ## 0.3.0
 
 - Designprofile als eigene persistente Ebene für Farben, Hintergrundbild und Hintergrundeffekte ergänzt.

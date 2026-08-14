@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS games (
     metadata_rating TEXT,
     metadata_players TEXT,
     metadata_coop TEXT,
+    favorite INTEGER NOT NULL DEFAULT 0,
     hidden INTEGER NOT NULL DEFAULT 0,
     present INTEGER NOT NULL DEFAULT 1,
     updated_at INTEGER NOT NULL
@@ -77,6 +78,10 @@ class Database:
             if "cover_position_y" not in game_columns:
                 connection.execute(
                     "ALTER TABLE games ADD COLUMN cover_position_y INTEGER NOT NULL DEFAULT 50"
+                )
+            if "favorite" not in game_columns:
+                connection.execute(
+                    "ALTER TABLE games ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0"
                 )
             for name in (
                 "metadata_provider",
@@ -170,6 +175,7 @@ class Database:
             "metadata_rating",
             "metadata_players",
             "metadata_coop",
+            "favorite",
             "hidden",
         }
         updates = {key: value for key, value in values.items() if key in allowed}
@@ -252,4 +258,5 @@ class Database:
         game["title"] = game["custom_title"] or game["detected_title"]
         game["action"] = game["action_override"] or game["detected_type"]
         game["launcher"] = game["launcher_override"] or game["detected_launcher"]
+        game["favorite"] = bool(game.get("favorite", 0))
         return game

@@ -47,7 +47,7 @@ function applySettings(settings) {
   document.body.dataset.theme = settings.active_design_profile || settings.theme;
   document.body.dataset.style = profile.style || "soft";
   document.body.dataset.font = profile.font || "system";
-  const colorVariables = {background: "--bg", panel: "--panel", panel_alt: "--panel2", text: "--text", muted: "--muted", primary: "--teal", secondary: "--orange", line: "--line"};
+  const colorVariables = {background: "--bg", panel: "--panel", panel_alt: "--panel2", text: "--text", muted: "--muted", primary: "--teal", secondary: "--orange", line: "--line", energy_start: "--energy-start", energy_end: "--energy-end"};
   Object.entries(colorVariables).forEach(([key, variable]) => {
     if (colors[key]) document.body.style.setProperty(variable, colors[key]);
   });
@@ -75,8 +75,8 @@ function animateEnergyColor(timestamp) {
   const point = document.querySelector(".energy-line span");
   if (!point || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const styles = getComputedStyle(document.body);
-  const start = parseProfileColor(styles.getPropertyValue("--teal"));
-  const end = parseProfileColor(styles.getPropertyValue("--orange"));
+  const start = parseProfileColor(styles.getPropertyValue("--energy-start"));
+  const end = parseProfileColor(styles.getPropertyValue("--energy-end"));
   const elapsed = timestamp % 6500;
   const ratio = Math.min(1, elapsed / 4750);
   const mixed = start.map((component, index) => Math.round(component + ((end[index] - component) * ratio)));
@@ -122,7 +122,7 @@ function coverPosition(game) {
 function render() {
   const query = state.query.toLocaleLowerCase("de");
   const filteredGames = state.games.filter((game) =>
-    (state.filter === "all" || game.action === state.filter) &&
+    (state.filter === "all" || (state.filter === "favorites" ? game.favorite : game.action === state.filter)) &&
     `${game.title} ${game.platform} ${game.relative_path}`.toLocaleLowerCase("de").includes(query));
   const pageCount = Math.max(1, Math.ceil(filteredGames.length / state.pageSize));
   state.page = Math.max(1, Math.min(state.page, pageCount));
@@ -149,7 +149,7 @@ function render() {
     const sourceName = sourceNames[game.metadata_provider];
     const attribution = sourceName && game.metadata_source_url
       ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Cover: ${sourceName}</a>` : "";
-    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="Informationen zu ${escapeHtml(game.title)}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}"><div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
+    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="Informationen zu ${escapeHtml(game.title)}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
   }).join("") || "<p>Keine passenden Einträge.</p>";
   renderPagination(filteredGames.length, pageCount, firstIndex, games.length);
 }
@@ -291,8 +291,20 @@ function showGameInfo(id) {
     ? `<button type="button" class="secondary" onclick="translateGameInfo('${game.id}')">Spielinhalt übersetzen</button>` : "";
   const original = game.metadata_overview_original && game.metadata_overview_original !== game.metadata_overview
     ? `<button id="gameInfoOriginalButton" type="button" class="secondary" onclick="toggleGameInfoOriginal('${game.id}')">Original anzeigen</button>` : "";
-  document.querySelector("#gameInfoActions").innerHTML = `${launch}<button type="button" class="secondary" onclick="openGameFolder('${game.id}')">Ordner öffnen</button>${translate}${original}${source}<button type="button" class="secondary" onclick="gameInfoDialog.close(); editGame('${game.id}')">Edit</button>`;
-  gameInfoDialog.showModal();
+  const favorite = `<button type="button" class="favorite-action ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? "★ Favorit" : "☆ Als Favorit markieren"}</button>`;
+  document.querySelector("#gameInfoActions").innerHTML = `${launch}${favorite}<button type="button" class="secondary" onclick="openGameFolder('${game.id}')">Ordner öffnen</button>${translate}${original}${source}<button type="button" class="secondary" onclick="gameInfoDialog.close(); editGame('${game.id}')">Edit</button>`;
+  if (!gameInfoDialog.open) gameInfoDialog.showModal();
+}
+
+async function toggleFavorite(id) {
+  const index = state.games.findIndex((game) => game.id === id);
+  if (index < 0) return;
+  try {
+    const updated = await api(`/api/games/${id}`, {method: "PATCH", body: JSON.stringify({favorite: !state.games[index].favorite})});
+    state.games[index] = {...state.games[index], ...updated};
+    render();
+    showGameInfo(id);
+  } catch (error) { alert(error.message); }
 }
 
 async function translateGameInfo(id) {
@@ -349,7 +361,7 @@ function renderDesignProfilePreview() {
   const preview = document.querySelector("#designProfilePreview");
   preview.dataset.style = profile.style;
   preview.dataset.font = profile.font;
-  const variables = {background: "--preview-bg", panel: "--preview-panel", panel_alt: "--preview-panel2", text: "--preview-text", muted: "--preview-muted", primary: "--preview-primary", secondary: "--preview-secondary", line: "--preview-line"};
+  const variables = {background: "--preview-bg", panel: "--preview-panel", panel_alt: "--preview-panel2", text: "--preview-text", muted: "--preview-muted", primary: "--preview-primary", secondary: "--preview-secondary", line: "--preview-line", energy_start: "--preview-energy-start", energy_end: "--preview-energy-end"};
   Object.entries(variables).forEach(([key, variable]) => preview.style.setProperty(variable, profile.colors[key]));
   const selectedBackground = document.querySelector("#designProfileBackground").files[0];
   if (preview.dataset.objectUrl) URL.revokeObjectURL(preview.dataset.objectUrl);
@@ -371,6 +383,7 @@ function renderDesignProfilePreview() {
 }
 
 function fillDesignProfileForm(profile = state.settings.design_profile, id = "") {
+  document.querySelector("#designProfileSaveStatus").textContent = "";
   document.querySelector("#designProfileId").value = id;
   document.querySelector("#designProfileName").value = id ? profile.name : `${profile.name} Kopie`;
   document.querySelector(`input[name="profileStyle"][value="${profile.style || "soft"}"]`).checked = true;
@@ -387,6 +400,7 @@ function fillDesignProfileForm(profile = state.settings.design_profile, id = "")
 }
 
 function renderDesignProfiles() {
+  document.querySelector("#designProfileSaveStatus").textContent = "";
   const list = document.querySelector("#designProfileList");
   list.hidden = false;
   document.querySelector("#newDesignProfileButton").hidden = false;
@@ -505,7 +519,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.0 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.1 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
@@ -555,7 +569,10 @@ document.querySelector("#designProfilesButton").addEventListener("click", openDe
 document.querySelector("#closeDesignProfiles").addEventListener("click", () => designProfilesDialog.close());
 document.querySelector("#newDesignProfileButton").addEventListener("click", () => fillDesignProfileForm(state.settings.design_profile, ""));
 document.querySelector("#cancelDesignProfileEdit").addEventListener("click", renderDesignProfiles);
-document.querySelector("#designProfileForm").addEventListener("input", renderDesignProfilePreview);
+document.querySelector("#designProfileForm").addEventListener("input", () => {
+  document.querySelector("#designProfileSaveStatus").textContent = "";
+  renderDesignProfilePreview();
+});
 document.querySelector("#designProfileBackground").addEventListener("change", renderDesignProfilePreview);
 document.querySelector("#removeDesignProfileBackground").addEventListener("click", () => {
   document.querySelector("#designProfileBackground").value = "";
@@ -565,6 +582,10 @@ document.querySelector("#removeDesignProfileBackground").addEventListener("click
 document.querySelector("#designProfileForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const id = document.querySelector("#designProfileId").value;
+  const saveButton = document.querySelector("#saveDesignProfileButton");
+  const saveStatus = document.querySelector("#designProfileSaveStatus");
+  saveButton.disabled = true;
+  saveStatus.textContent = "Speichert …";
   try {
     const background = document.querySelector("#designProfileBackground").files[0];
     if (background) {
@@ -575,11 +596,19 @@ document.querySelector("#designProfileForm").addEventListener("submit", async (e
       if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
       document.querySelector("#designProfileBackgroundName").value = result.name;
     }
-    if (id) await api(`/api/design-profiles/${encodeURIComponent(id)}`, {method: "PUT", body: JSON.stringify(profilePayloadFromForm())});
-    else await api("/api/design-profiles", {method: "POST", body: JSON.stringify(profilePayloadFromForm())});
+    const saved = id
+      ? await api(`/api/design-profiles/${encodeURIComponent(id)}`, {method: "PUT", body: JSON.stringify(profilePayloadFromForm())})
+      : await api("/api/design-profiles", {method: "POST", body: JSON.stringify(profilePayloadFromForm())});
+    document.querySelector("#designProfileId").value = saved.id;
     designProfileState = await api("/api/design-profiles");
-    renderDesignProfiles();
-  } catch (error) { alert(error.message); }
+    if (designProfileState.active === saved.id) applySettings(await api("/api/settings"));
+    saveStatus.textContent = "✓ Profil gespeichert";
+  } catch (error) {
+    saveStatus.textContent = "Speichern fehlgeschlagen";
+    alert(error.message);
+  } finally {
+    saveButton.disabled = false;
+  }
 });
 document.querySelector("#agentSetupButton").addEventListener("click", showAgentSetup);
 document.querySelector("#connectionHelpButton").addEventListener("click", () => connectionHelpDialog.showModal());
