@@ -37,6 +37,10 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('id="designProfileSaveStatus"', template)
         self.assertIn('id="settingUiLanguage"', template)
         self.assertIn('id="designProfilesBackButton"', template)
+        self.assertIn('id="lcarsSystemClock"', template)
+        self.assertIn('onclick="probeWindowsAgent()"', template)
+        self.assertIn("filename='app.js', v=asset_version", template)
+        self.assertIn("SMB-Netzlaufwerk zuerst", template)
         self.assertIn('ru: {', translations)
         self.assertIn('applyUiLanguage', translations)
         self.assertIn('if (isNew) applySettings(await api(', javascript)
@@ -48,6 +52,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             "CreateInputDirPage",
             (ROOT / "windows-installer" / "MissionControlAgent.iss").read_text(encoding="utf-8"),
         )
+        self.assertIn("Verbinde das SMB-Netzlaufwerk zuerst", installer)
 
         workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(
             encoding="utf-8"

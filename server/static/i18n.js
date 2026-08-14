@@ -44,7 +44,7 @@ function tr(key, variables = {}) {
   const pack = UI_PACKS[currentUiLanguage] || UI_PACKS.de;
   let value = pack[key] || UI_PACKS.de[key] || key;
   Object.entries(variables).forEach(([name, replacement]) => {
-    value = value.replaceAll(`{${name}}`, String(replacement));
+    value = value.split(`{${name}}`).join(String(replacement));
   });
   return value;
 }
@@ -62,7 +62,7 @@ function setLabelLead(selector, key) {
 }
 
 function applyUiLanguage(language) {
-  currentUiLanguage = Object.hasOwn(UI_PACKS, language) ? language : "de";
+  currentUiLanguage = Object.prototype.hasOwnProperty.call(UI_PACKS, language) ? language : "de";
   document.documentElement.lang = currentUiLanguage;
   document.documentElement.dir = "ltr";
   const text = {
@@ -79,7 +79,12 @@ function applyUiLanguage(language) {
     "label:has(#settingServerName)": "settings.server", "label:has(#settingLibraryName)": "settings.archive", "label:has(#settingExclusions)": "settings.exclusions", "label:has(#settingContentLanguage)": "settings.contentLanguage", "label:has(#settingUiLanguage)": "settings.uiLanguage", "label:has(#settingTranslatorUrl)": "settings.translator", "label:has(#settingTranslatorApiKey)": "settings.translatorKey", ".page-size-label": "view.perPage",
     "label:has(#designProfileName)": "profiles.name", "label:has(#designProfileFont)": "profiles.font", "label:has(#designProfileBackground)": "profiles.background", "label:has([data-profile-color='background'])": "profiles.colorBackground", "label:has([data-profile-color='panel'])": "profiles.colorWindow", "label:has([data-profile-color='panel_alt'])": "profiles.colorCards", "label:has([data-profile-color='text'])": "profiles.colorText", "label:has([data-profile-color='muted'])": "profiles.colorMuted", "label:has([data-profile-color='primary'])": "profiles.colorPrimary", "label:has([data-profile-color='secondary'])": "profiles.colorSecondary", "label:has([data-profile-color='line'])": "profiles.colorFrame", "label:has([data-profile-color='energy_start'])": "profiles.colorFrom", "label:has([data-profile-color='energy_end'])": "profiles.colorTo", "label:has(#designProfileOpacity)": "profiles.dim", "label:has(#designProfileBlur)": "profiles.blur"
   };
-  Object.entries(leads).forEach(([selector, key]) => setLabelLead(selector, key));
+  // :has() is supported by current browsers. An older browser must still be
+  // able to initialize every functional control, so translation selectors are
+  // isolated and may never abort the application bootstrap.
+  Object.entries(leads).forEach(([selector, key]) => {
+    try { setLabelLead(selector, key); } catch (_error) { /* optional translation only */ }
+  });
   setNodeText(".profile-style-picker legend", "profiles.style");
   document.querySelectorAll("#settingsForm button[value='cancel']").forEach((button) => { button.textContent = tr("settings.cancel"); });
   document.dispatchEvent(new CustomEvent("mission-control-language-changed"));

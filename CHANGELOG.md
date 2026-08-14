@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.3
+
+- Kritischen Windows-Agent-Verbindungstest gegen gemischte Browser-Caches abgesichert: JavaScript und CSS werden jetzt mit der laufenden Serverversion geladen.
+- „Verbindung prüfen“ erhält einen direkten Ausweich-Handler und bleibt auch dann nutzbar, wenn eine optionale Oberflächenfunktion nicht initialisiert werden kann.
+- Integrierte UI-Sprachpakete auf ältere Browser abgesichert; nicht unterstützte Übersetzungsselektoren können die Hauptanwendung nicht mehr blockieren.
+- LCARS-Systemband deutlich verbreitert, mit gerundeter oberer Kante und feststehender Systemuhr samt Datum ergänzt.
+- Mission Control weist vor dem Agent-Download deutlich auf das zuerst zu verbindende SMB-Netzlaufwerk hin.
+- Windows-Installer nennt dieselbe SMB-Voraussetzung direkt auf der Seite zur Auswahl der Spielebibliothek.
+
 ## 0.3.2
 
 - Windows-Agent-Installer um einen nativen Durchsuchen-Dialog für verbundene SMB-Laufwerke und lokale Ordner ergänzt.

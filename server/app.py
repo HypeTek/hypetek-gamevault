@@ -176,7 +176,10 @@ def logout():
 @app.get("/")
 @login_required
 def index():
-    return render_template("index.html")
+    # The release version is part of the static asset URLs. This prevents a
+    # browser from combining a freshly updated template with an older cached
+    # app.js/i18n.js file after a container upgrade.
+    return render_template("index.html", asset_version=APP_VERSION)
 
 
 def public_settings() -> dict:

@@ -9,7 +9,9 @@ const state = {
   view: localStorage.getItem("missionControlLibraryView") === "list" ? "list" : "grid",
 };
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
-const {applyUiLanguage, tr} = window.MissionControlI18n;
+const missionControlI18n = window.MissionControlI18n || {};
+const applyUiLanguage = typeof missionControlI18n.applyUiLanguage === "function" ? missionControlI18n.applyUiLanguage : () => {};
+const tr = typeof missionControlI18n.tr === "function" ? missionControlI18n.tr : (key) => key;
 const labels = {direct_setup: "Direktes Setup", iso: "ISO", manual: "Manuell", archive: "Archiv", manual_image: "Sonderabbild", ignore: "Ausgeblendet"};
 const library = document.querySelector("#library");
 const statusEl = document.querySelector("#status");
@@ -523,11 +525,26 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.2 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.3 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
   }
+}
+
+// Keep this critical action callable through the button's inline safety
+// handler even if an optional UI enhancement fails later during bootstrap.
+window.probeWindowsAgent = probeWindowsAgent;
+
+function updateLcarsSystemClock() {
+  const clock = document.querySelector("#lcarsSystemClock");
+  const date = document.querySelector("#lcarsSystemDate");
+  if (!clock || !date) return;
+  const now = new Date();
+  const language = state.settings?.ui_language || document.documentElement.lang || "de";
+  clock.textContent = now.toLocaleTimeString(language, {hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false});
+  clock.dateTime = now.toISOString();
+  date.textContent = now.toLocaleDateString(language, {day: "2-digit", month: "2-digit", year: "numeric"});
 }
 
 function renderMetadataResults(results) {
@@ -626,7 +643,6 @@ document.querySelector("#integrationHelpButton").addEventListener("click", () =>
 document.querySelector("#settingsIntegrationHelpButton").addEventListener("click", () => integrationHelpDialog.showModal());
 document.querySelector("#closeIntegrationHelp").addEventListener("click", () => integrationHelpDialog.close());
 document.querySelector("#integrationHelpDone").addEventListener("click", () => integrationHelpDialog.close());
-document.querySelector("#agentProbeButton").addEventListener("click", probeWindowsAgent);
 document.querySelector("#closeConnectionHelp").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#connectionHelpDone").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#closeGameInfo").addEventListener("click", () => gameInfoDialog.close());
@@ -654,4 +670,6 @@ document.querySelector("#search").addEventListener("input", (event) => { state.q
 document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; state.page = 1; render(); });
 
 requestAnimationFrame(animateEnergyColor);
+updateLcarsSystemClock();
+setInterval(updateLcarsSystemClock, 1000);
 load();

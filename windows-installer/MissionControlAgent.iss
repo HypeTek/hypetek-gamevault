@@ -1,5 +1,5 @@
 #define MyAppName "HypeTek Mission Control Agent"
-#define MyAppVersion "0.3.2"
+#define MyAppVersion "0.3.3"
 #define MyAppPublisher "HypeTek"
 #define MyAppExeName "GameVaultAgent.ps1"
 
@@ -20,7 +20,7 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=mission-control.ico
 UninstallDisplayIcon={app}\mission-control.ico
-VersionInfoVersion=0.3.2.0
+VersionInfoVersion=0.3.3.0
 VersionInfoDescription=HypeTek Mission Control Windows Agent Setup
 
 [Files]
@@ -79,7 +79,7 @@ begin
     Request.SetRequestHeader('Authorization', 'Bearer ' + Trim(TokenPage.Values[0]));
     Request.SetRequestHeader('Cache-Control', 'no-cache, no-store');
     Request.SetRequestHeader('Pragma', 'no-cache');
-    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.3.2');
+    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.3.3');
     Request.Send('');
     StatusCode := Request.Status;
 
@@ -140,7 +140,7 @@ begin
     ServerPage.ID,
     'Spielebibliothek',
     'SMB- oder lokaler Pfad auf diesem Windows-PC',
-    'Der Pfad muss auf denselben Games-Ordner zeigen, den Mission Control scannt. Mit Durchsuchen kannst du auch ein verbundenes Netzlaufwerk wählen.',
+    'Wichtig: Verbinde das SMB-Netzlaufwerk zuerst im Windows-Explorer. Der Pfad muss auf denselben Games-Ordner zeigen, den Mission Control scannt. Mit Durchsuchen kannst du anschließend das erreichbare Netzlaufwerk wählen.',
     False,
     '');
   PathPage.Add('Games-Pfad:');
