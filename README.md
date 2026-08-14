@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.3.1
+## Funktionen in Version 0.3.2
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -41,6 +41,7 @@ verändern oder in ein neues Format zu zwingen.
 - zum Linienverlauf farbsynchron glimmender Energiepunkt statt weißem Laufbalken
 - anklickbares HypeTek-Logo als Rücksprung zum Seitenanfang
 - mitgelieferte TXT-Kurzanleitung im PowerShell-Fallback-Paket
+- integrierte Oberflächensprachen Deutsch, Englisch und Russisch; unabhängig von der Sprache der Spielinhalte
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer
@@ -118,6 +119,23 @@ Für vollständige Updates unter Windows wird **GitHub Desktop** empfohlen:
 Damit wird auch `.github/workflows/container.yml` zuverlässig übernommen. Beim manuellen
 Upload im Browser kann der mit einem Punkt beginnende Ordner leicht übersehen werden;
 ohne diese Datei werden weder Tests noch Container oder Windows-Agent gebaut.
+
+### GitHub-Repository umbenennen
+
+Das Repository kann unter **Settings → General → Repository name** beispielsweise in
+`hypetek-mission-control` umbenannt werden. GitHub leitet bestehende Web-, Clone-,
+Fetch- und Push-Adressen auf den neuen Namen weiter. Der lokale Clone sollte danach
+trotzdem auf die neue Adresse umgestellt werden. GitHub Desktop bietet dies beim
+nächsten Abruf an; alternativ gilt:
+
+```bash
+git remote set-url origin https://github.com/HypeTek/hypetek-mission-control.git
+```
+
+Der technische Protokollname `hypetek-gamevault://` und das bestehende Container-Image
+`ghcr.io/hypetek/hypetek-gamevault` bleiben zunächst absichtlich kompatibel. Eine
+spätere kontrollierte Umbenennung des Images benötigt eine Übergangsphase in der
+TrueNAS-YAML und ist nicht dasselbe wie die gefahrlose Repository-Umbenennung.
 
 ## Sicherheitsgrenzen
 

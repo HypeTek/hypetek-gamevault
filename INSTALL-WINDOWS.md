@@ -11,7 +11,8 @@ HypeTek-Mission-Control-Agent-Setup.exe
 Der Installer läuft ohne Administratorrechte für den aktuellen Benutzer und fragt:
 
 1. Mission-Control-Adresse, zum Beispiel `http://10.69.78.143:9998`
-2. lokalen SMB-Pfad, zum Beispiel `Z:\Game`
+2. lokalen SMB-Pfad, zum Beispiel `Z:\Game` – mit **Durchsuchen** kann ein
+   verbundenes Netzlaufwerk oder ein lokaler Ordner ausgewählt werden
 3. Agent-Token (`GAMEVAULT_AGENT_TOKEN`) aus der TrueNAS-App-Konfiguration
 
 Danach registriert er das Protokoll `hypetek-gamevault://`. PowerShell 7 wird

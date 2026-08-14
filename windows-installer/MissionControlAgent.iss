@@ -1,5 +1,5 @@
 #define MyAppName "HypeTek Mission Control Agent"
-#define MyAppVersion "0.3.1"
+#define MyAppVersion "0.3.2"
 #define MyAppPublisher "HypeTek"
 #define MyAppExeName "GameVaultAgent.ps1"
 
@@ -20,7 +20,7 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=mission-control.ico
 UninstallDisplayIcon={app}\mission-control.ico
-VersionInfoVersion=0.3.1.0
+VersionInfoVersion=0.3.2.0
 VersionInfoDescription=HypeTek Mission Control Windows Agent Setup
 
 [Files]
@@ -38,7 +38,7 @@ Type: dirifempty; Name: "{app}"
 [Code]
 var
   ServerPage: TInputQueryWizardPage;
-  PathPage: TInputQueryWizardPage;
+  PathPage: TInputDirWizardPage;
   TokenPage: TInputQueryWizardPage;
   TokenHelpButton: TNewButton;
 
@@ -79,7 +79,7 @@ begin
     Request.SetRequestHeader('Authorization', 'Bearer ' + Trim(TokenPage.Values[0]));
     Request.SetRequestHeader('Cache-Control', 'no-cache, no-store');
     Request.SetRequestHeader('Pragma', 'no-cache');
-    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.3.1');
+    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.3.2');
     Request.Send('');
     StatusCode := Request.Status;
 
@@ -136,12 +136,14 @@ begin
   ServerPage.Add('Serveradresse:', False);
   ServerPage.Values[0] := 'http://10.69.78.143:9998';
 
-  PathPage := CreateInputQueryPage(
+  PathPage := CreateInputDirPage(
     ServerPage.ID,
     'Spielebibliothek',
-    'SMB-Pfad auf diesem Windows-PC',
-    'Der Pfad muss auf denselben Games-Ordner zeigen, den Mission Control scannt.');
-  PathPage.Add('Games-Pfad:', False);
+    'SMB- oder lokaler Pfad auf diesem Windows-PC',
+    'Der Pfad muss auf denselben Games-Ordner zeigen, den Mission Control scannt. Mit Durchsuchen kannst du auch ein verbundenes Netzlaufwerk wählen.',
+    False,
+    '');
+  PathPage.Add('Games-Pfad:');
   PathPage.Values[0] := 'Z:\Game';
 
   TokenPage := CreateInputQueryPage(

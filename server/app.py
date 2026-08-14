@@ -224,6 +224,7 @@ def update_settings():
         "scan_exclusions",
         "thegamesdb_api_key",
         "content_language",
+        "ui_language",
         "translator_url",
         "translator_api_key",
     }

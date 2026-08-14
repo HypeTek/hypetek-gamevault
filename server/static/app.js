@@ -9,6 +9,7 @@ const state = {
   view: localStorage.getItem("missionControlLibraryView") === "list" ? "list" : "grid",
 };
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+const {applyUiLanguage, tr} = window.MissionControlI18n;
 const labels = {direct_setup: "Direktes Setup", iso: "ISO", manual: "Manuell", archive: "Archiv", manual_image: "Sonderabbild", ignore: "Ausgeblendet"};
 const library = document.querySelector("#library");
 const statusEl = document.querySelector("#status");
@@ -42,6 +43,7 @@ async function api(url, options = {}) {
 
 function applySettings(settings) {
   state.settings = settings;
+  applyUiLanguage(settings.ui_language || "de");
   const profile = settings.design_profile || {};
   const colors = profile.colors || {};
   document.body.dataset.theme = settings.active_design_profile || settings.theme;
@@ -60,7 +62,7 @@ function applySettings(settings) {
   document.title = `HypeTek Mission Control · ${settings.server_name}`;
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
   document.querySelector("#agentNote").hidden = agentValidated;
-  document.querySelector("#agentSetupButton").textContent = agentValidated ? "Agent eingerichtet" : "Agent-Setup";
+  document.querySelector("#agentSetupButton").textContent = agentValidated ? (settings.ui_language === "ru" ? "Агент настроен" : settings.ui_language === "en" ? "Agent ready" : "Agent eingerichtet") : tr("nav.agent");
 }
 
 function parseProfileColor(value) {
@@ -100,8 +102,8 @@ async function load() {
 }
 
 function actionLabel(game) {
-  if (game.action === "direct_setup") return "Installieren";
-  if (game.action === "iso") return "Einbinden & installieren";
+  if (game.action === "direct_setup") return tr("game.install");
+  if (game.action === "iso") return tr("game.mountInstall");
   return "Manuelle Installation";
 }
 
@@ -133,9 +135,9 @@ function render() {
     return result;
   }, {});
   document.querySelector("#stats").innerHTML =
-    `<div class="stat"><strong>${state.games.length}</strong>Einträge</div>` +
-    `<div class="stat"><strong>${counts.direct_setup || 0}</strong>Setups</div>` +
-    `<div class="stat"><strong>${counts.iso || 0}</strong>ISOs</div>`;
+    `<div class="stat"><strong>${state.games.length}</strong>${tr("stats.entries")}</div>` +
+    `<div class="stat"><strong>${counts.direct_setup || 0}</strong>${tr("stats.setups")}</div>` +
+    `<div class="stat"><strong>${counts.iso || 0}</strong>${tr("stats.isos")}</div>`;
   library.classList.toggle("view-list", state.view === "list");
   document.querySelector("#viewGridButton").setAttribute("aria-pressed", String(state.view === "grid"));
   document.querySelector("#viewListButton").setAttribute("aria-pressed", String(state.view === "list"));
@@ -149,7 +151,7 @@ function render() {
     const sourceName = sourceNames[game.metadata_provider];
     const attribution = sourceName && game.metadata_source_url
       ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Cover: ${sourceName}</a>` : "";
-    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="Informationen zu ${escapeHtml(game.title)}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">Ordner öffnen</button><button class="secondary edit-action" onclick="editGame('${game.id}')">Edit</button></div></div></article>`;
+    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="Informationen zu ${escapeHtml(game.title)}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button class="secondary edit-action" onclick="editGame('${game.id}')">${tr("game.edit")}</button></div></div></article>`;
   }).join("") || "<p>Keine passenden Einträge.</p>";
   renderPagination(filteredGames.length, pageCount, firstIndex, games.length);
 }
@@ -164,7 +166,7 @@ function renderPagination(total, pageCount, firstIndex, shown) {
   pagination.hidden = false;
   const start = firstIndex + 1;
   const end = firstIndex + shown;
-  pagination.innerHTML = `<span>${start}–${end} von ${total}</span><div><button type="button" class="secondary" data-page="previous" ${state.page <= 1 ? "disabled" : ""}>← Zurück</button><strong>Seite ${state.page} von ${pageCount}</strong><button type="button" class="secondary" data-page="next" ${state.page >= pageCount ? "disabled" : ""}>Weiter →</button></div>`;
+  pagination.innerHTML = `<span>${start}–${end} / ${total}</span><div><button type="button" class="secondary" data-page="previous" ${state.page <= 1 ? "disabled" : ""}>← ${tr("pagination.previous")}</button><strong>${tr("pagination.page", {current: state.page, total: pageCount})}</strong><button type="button" class="secondary" data-page="next" ${state.page >= pageCount ? "disabled" : ""}>${tr("pagination.next")} →</button></div>`;
   pagination.querySelector('[data-page="previous"]')?.addEventListener("click", () => changePage(state.page - 1));
   pagination.querySelector('[data-page="next"]')?.addEventListener("click", () => changePage(state.page + 1));
 }
@@ -291,8 +293,8 @@ function showGameInfo(id) {
     ? `<button type="button" class="secondary" onclick="translateGameInfo('${game.id}')">Spielinhalt übersetzen</button>` : "";
   const original = game.metadata_overview_original && game.metadata_overview_original !== game.metadata_overview
     ? `<button id="gameInfoOriginalButton" type="button" class="secondary" onclick="toggleGameInfoOriginal('${game.id}')">Original anzeigen</button>` : "";
-  const favorite = `<button type="button" class="favorite-action ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? "★ Favorit" : "☆ Als Favorit markieren"}</button>`;
-  document.querySelector("#gameInfoActions").innerHTML = `${launch}${favorite}<button type="button" class="secondary" onclick="openGameFolder('${game.id}')">Ordner öffnen</button>${translate}${original}${source}<button type="button" class="secondary" onclick="gameInfoDialog.close(); editGame('${game.id}')">Edit</button>`;
+  const favorite = `<button type="button" class="favorite-action ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? tr("game.favorite") : tr("game.makeFavorite")}</button>`;
+  document.querySelector("#gameInfoActions").innerHTML = `${launch}${favorite}<button type="button" class="secondary" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button>${translate}${original}${source}<button type="button" class="secondary" onclick="gameInfoDialog.close(); editGame('${game.id}')">${tr("game.edit")}</button>`;
   if (!gameInfoDialog.open) gameInfoDialog.showModal();
 }
 
@@ -336,6 +338,7 @@ function openSettings() {
   document.querySelector("#settingTheGamesDbApiKey").value = "";
   document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? "Ein API-Key ist gespeichert." : "Noch kein API-Key gespeichert.";
   document.querySelector("#settingContentLanguage").value = settings.content_language || "de";
+  document.querySelector("#settingUiLanguage").value = settings.ui_language || "de";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
   document.querySelector("#translatorStatus").textContent = settings.translator_configured ? "Translator-Verbindung ist eingerichtet." : "Nicht eingerichtet – der Platzhalter ist nur eine Beispieladresse.";
@@ -395,7 +398,7 @@ function fillDesignProfileForm(profile = state.settings.design_profile, id = "")
   document.querySelector("#designProfileBlur").value = profile.background_blur ?? 2;
   document.querySelector("#designProfileForm").hidden = false;
   document.querySelector("#designProfileList").hidden = true;
-  document.querySelector("#newDesignProfileButton").hidden = true;
+  document.querySelector("#designProfileListActions").hidden = true;
   renderDesignProfilePreview();
 }
 
@@ -403,9 +406,9 @@ function renderDesignProfiles() {
   document.querySelector("#designProfileSaveStatus").textContent = "";
   const list = document.querySelector("#designProfileList");
   list.hidden = false;
-  document.querySelector("#newDesignProfileButton").hidden = false;
+  document.querySelector("#designProfileListActions").hidden = false;
   document.querySelector("#designProfileForm").hidden = true;
-  list.innerHTML = designProfileState.profiles.map((profile) => `<article class="design-profile-card ${profile.id === designProfileState.active ? "is-active" : ""}" style="--profile-primary:${escapeHtml(profile.colors.primary)};--profile-secondary:${escapeHtml(profile.colors.secondary)};--profile-panel:${escapeHtml(profile.colors.panel)}"><div class="profile-swatch"></div><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.style)} · ${escapeHtml(profile.font)}</span></div><span>${profile.id === designProfileState.active ? "AKTIV" : ""}</span><div class="profile-card-actions">${profile.id === designProfileState.active ? "" : `<button type="button" data-profile-activate="${profile.id}">Aktivieren</button>`}<button type="button" class="secondary" data-profile-copy="${profile.id}">Duplizieren</button>${profile.builtin ? "" : `<button type="button" class="secondary" data-profile-edit="${profile.id}">Edit</button><button type="button" class="ghost" data-profile-delete="${profile.id}">Löschen</button>`}</div></article>`).join("");
+  list.innerHTML = designProfileState.profiles.map((profile) => `<article class="design-profile-card ${profile.id === designProfileState.active ? "is-active" : ""}" style="--profile-primary:${escapeHtml(profile.colors.primary)};--profile-secondary:${escapeHtml(profile.colors.secondary)};--profile-panel:${escapeHtml(profile.colors.panel)}"><div class="profile-swatch"></div><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.style)} · ${escapeHtml(profile.font)}</span></div><span>${profile.id === designProfileState.active ? tr("profiles.active") : ""}</span><div class="profile-card-actions">${profile.id === designProfileState.active ? "" : `<button type="button" data-profile-activate="${profile.id}">${tr("profiles.activate")}</button>`}<button type="button" class="secondary" data-profile-copy="${profile.id}">${tr("profiles.duplicate")}</button>${profile.builtin ? "" : `<button type="button" class="secondary" data-profile-edit="${profile.id}">${tr("profiles.edit")}</button><button type="button" class="ghost" data-profile-delete="${profile.id}">${tr("profiles.delete")}</button>`}</div></article>`).join("");
   list.querySelectorAll("[data-profile-activate]").forEach((button) => button.addEventListener("click", () => activateDesignProfile(button.dataset.profileActivate)));
   list.querySelectorAll("[data-profile-copy]").forEach((button) => button.addEventListener("click", () => fillDesignProfileForm(designProfileState.profiles.find((item) => item.id === button.dataset.profileCopy), "")));
   list.querySelectorAll("[data-profile-edit]").forEach((button) => button.addEventListener("click", () => fillDesignProfileForm(designProfileState.profiles.find((item) => item.id === button.dataset.profileEdit), button.dataset.profileEdit)));
@@ -466,6 +469,7 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
     crosshair_cursor: document.querySelector("#settingCrosshair").checked,
     scan_exclusions: document.querySelector("#settingExclusions").value.split(/[,\n]/).map((value) => value.trim()).filter(Boolean),
     content_language: document.querySelector("#settingContentLanguage").value,
+    ui_language: document.querySelector("#settingUiLanguage").value,
     translator_url: document.querySelector("#settingTranslatorUrl").value.trim(),
   };
   const theGamesDbApiKey = document.querySelector("#settingTheGamesDbApiKey").value.trim();
@@ -519,7 +523,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.1 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.2 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
@@ -557,10 +561,10 @@ document.querySelector("#metadataSearchButton").addEventListener("click", async 
 });
 
 document.querySelector("#scanButton").addEventListener("click", async () => {
-  statusEl.textContent = "Scanne Bibliothek …";
+  statusEl.textContent = tr("scan.running");
   try {
     const result = await api("/api/scan", {method: "POST"});
-    statusEl.textContent = `${result.scanned} Einträge gescannt`;
+    statusEl.textContent = tr("scan.done", {count: result.scanned});
     await load();
   } catch (error) { statusEl.textContent = error.message; }
 });
@@ -569,6 +573,10 @@ document.querySelector("#designProfilesButton").addEventListener("click", openDe
 document.querySelector("#closeDesignProfiles").addEventListener("click", () => designProfilesDialog.close());
 document.querySelector("#newDesignProfileButton").addEventListener("click", () => fillDesignProfileForm(state.settings.design_profile, ""));
 document.querySelector("#cancelDesignProfileEdit").addEventListener("click", renderDesignProfiles);
+document.querySelector("#designProfilesBackButton").addEventListener("click", () => {
+  designProfilesDialog.close();
+  openSettings();
+});
 document.querySelector("#designProfileForm").addEventListener("input", () => {
   document.querySelector("#designProfileSaveStatus").textContent = "";
   renderDesignProfilePreview();
@@ -584,8 +592,9 @@ document.querySelector("#designProfileForm").addEventListener("submit", async (e
   const id = document.querySelector("#designProfileId").value;
   const saveButton = document.querySelector("#saveDesignProfileButton");
   const saveStatus = document.querySelector("#designProfileSaveStatus");
+  const isNew = !id;
   saveButton.disabled = true;
-  saveStatus.textContent = "Speichert …";
+  saveStatus.textContent = tr("profiles.saving");
   try {
     const background = document.querySelector("#designProfileBackground").files[0];
     if (background) {
@@ -600,9 +609,10 @@ document.querySelector("#designProfileForm").addEventListener("submit", async (e
       ? await api(`/api/design-profiles/${encodeURIComponent(id)}`, {method: "PUT", body: JSON.stringify(profilePayloadFromForm())})
       : await api("/api/design-profiles", {method: "POST", body: JSON.stringify(profilePayloadFromForm())});
     document.querySelector("#designProfileId").value = saved.id;
+    if (isNew) applySettings(await api(`/api/design-profiles/${encodeURIComponent(saved.id)}/activate`, {method: "POST", body: "{}"}));
     designProfileState = await api("/api/design-profiles");
-    if (designProfileState.active === saved.id) applySettings(await api("/api/settings"));
-    saveStatus.textContent = "✓ Profil gespeichert";
+    if (!isNew && designProfileState.active === saved.id) applySettings(await api("/api/settings"));
+    saveStatus.textContent = isNew ? tr("profiles.saved") : "✓ Profil gespeichert";
   } catch (error) {
     saveStatus.textContent = "Speichern fehlgeschlagen";
     alert(error.message);

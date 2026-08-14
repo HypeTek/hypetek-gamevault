@@ -178,6 +178,12 @@
             <option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="it">Italiano</option><option value="pt">Português</option><option value="pl">Polski</option><option value="ru">Русский</option><option value="uk">Українська</option><option value="tr">Türkçe</option><option value="ar">العربية</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option>
           </select>
         </label>
+        <label>Sprache der Oberfläche
+          <select id="settingUiLanguage">
+            <option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option>
+          </select>
+          <span class="field-hint">Integrierte Sprachpakete; unabhängig von der Übersetzung der Spielinhalte.</span>
+        </label>
         <label>Mission Control Translator (optional)
           <input id="settingTranslatorUrl" type="url" placeholder="http://translator:5000">
           <span id="translatorStatus" class="field-hint"></span>
@@ -200,7 +206,7 @@
     <div class="design-profile-content">
       <div class="dialog-head"><div><p class="eyebrow">VISUAL CONFIGURATION</p><h2>Designprofile</h2></div><button id="closeDesignProfiles" type="button" class="ghost" aria-label="Designprofile schließen">×</button></div>
       <div id="designProfileList" class="design-profile-list"></div>
-      <button id="newDesignProfileButton" type="button" class="profile-add">+ Neues Profil</button>
+      <div id="designProfileListActions" class="profile-list-actions"><button id="newDesignProfileButton" type="button" class="profile-add">+ Neues Profil</button><button id="designProfilesBackButton" type="button" class="secondary">Zurück</button></div>
       <form id="designProfileForm" class="design-profile-editor" hidden>
         <input id="designProfileId" type="hidden">
         <div class="profile-editor-grid">
@@ -233,7 +239,7 @@
             <p class="eyebrow">LIVE PREVIEW</p><div class="profile-preview-energy"></div><article><div class="preview-cover">MISSION CONTROL</div><h3>Assassin’s Creed Valhalla</h3><p>ISO · Windows · 42.69 GiB</p><button type="button">Einbinden & installieren</button><div><button type="button">Ordner öffnen</button><button type="button">Edit</button></div></article>
           </section>
         </div>
-        <div class="dialog-actions profile-save-actions"><span id="designProfileSaveStatus" class="save-confirmation" role="status" aria-live="polite"></span><button id="cancelDesignProfileEdit" class="secondary" type="button">Abbrechen</button><button id="saveDesignProfileButton" type="submit">Profil speichern</button></div>
+        <div class="dialog-actions profile-save-actions"><span id="designProfileSaveStatus" class="save-confirmation" role="status" aria-live="polite"></span><button id="cancelDesignProfileEdit" class="secondary" type="button">Zurück</button><button id="saveDesignProfileButton" type="submit">Profil speichern</button></div>
       </form>
     </div>
   </dialog>
@@ -296,6 +302,7 @@
       </div>
     </article>
   </dialog>
+  <script src="{{ url_for('static', filename='i18n.js') }}"></script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

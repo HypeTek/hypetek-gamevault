@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2
+
+- Windows-Agent-Installer um einen nativen Durchsuchen-Dialog für verbundene SMB-Laufwerke und lokale Ordner ergänzt.
+- Integrierte UI-Sprachpaket-Grundlage mit Deutsch, Englisch und Russisch eingeführt; die Oberflächensprache bleibt von der Sprache der Spielinhalte getrennt.
+- Neue Designprofile werden nach dem Speichern automatisch aktiviert und unmittelbar angewendet.
+- „Abbrechen“ im Profileditor in „Zurück“ umbenannt und eine eigene Zurück-Schaltfläche neben „+ Neues Profil“ ergänzt.
+- Tactical-Frame-Vorschau durch echte HUD-Eckmarkierungen ersetzt und an die spätere Kartendarstellung angeglichen.
+- Energiestreifen erhält einen expliziten, mathematisch mittigen Farbstopp zwischen Start- und Endfarbe.
+- Mehrbibliotheken-Unterstützung für zusätzliche lokale und serverseitige Pfade als sicherheitsrelevante nächste Ausbaustufe spezifiziert.
+
 ## 0.3.1
 
 - Spiele können direkt im Infofenster als Favorit markiert und über den neuen Favoritenfilter angezeigt werden.

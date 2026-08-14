@@ -8,6 +8,7 @@ from pathlib import Path
 
 THEMES = {"mission", "cyberpunk", "lcars", "midnight"}
 CONTENT_LANGUAGES = {"de", "en", "fr", "es", "it", "pt", "pl", "ru", "uk", "tr", "ar", "zh", "ja", "ko"}
+UI_LANGUAGES = {"de", "en", "ru"}
 DEFAULT_SERVER_NAME = os.environ.get("MISSION_CONTROL_SERVER_NAME", "Mission Control").strip()
 DEFAULT_LIBRARY_NAME = os.environ.get(
     "MISSION_CONTROL_LIBRARY_NAME", f"{DEFAULT_SERVER_NAME} GAME ARCHIVE"
@@ -25,6 +26,7 @@ DEFAULTS = {
     "rawg_api_key": "",
     "thegamesdb_api_key": "",
     "content_language": "de",
+    "ui_language": "de",
     "translator_url": "",
     "translator_api_key": "",
 }
@@ -113,6 +115,11 @@ class SettingsStore:
             "content_language": (
                 str(values.get("content_language") or "de").strip().casefold()
                 if str(values.get("content_language") or "de").strip().casefold() in CONTENT_LANGUAGES
+                else "de"
+            ),
+            "ui_language": (
+                str(values.get("ui_language") or "de").strip().casefold()
+                if str(values.get("ui_language") or "de").strip().casefold() in UI_LANGUAGES
                 else "de"
             ),
             "translator_url": str(values.get("translator_url") or "").strip().rstrip("/")[:500],

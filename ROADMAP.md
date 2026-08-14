@@ -6,9 +6,9 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 ### Internationalisierung
 
-- Übersetzungskern mit sprachneutralen Schlüsseln statt fest eingebauter UI-Texte
+- Übersetzungskern mit sprachneutralen Schlüsseln statt fest eingebauter UI-Texte (Basis seit 0.3.2)
 - automatische Browsererkennung plus frei wählbare Sprache
-- zunächst integriert: Deutsch, Englisch, Französisch, Spanisch, Italienisch,
+- integriert seit 0.3.2: Deutsch, Englisch und Russisch; anschließend Französisch, Spanisch, Italienisch,
   Portugiesisch (Brasilien), Polnisch, Russisch, Türkisch, vereinfachtes Chinesisch,
   Japanisch, Koreanisch und Arabisch
 - vollständige Rechts-nach-links-Unterstützung für Arabisch
@@ -19,6 +19,8 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 ### Bibliothek und Darstellung
 
+- echtes Mehrbibliotheken-Modell für zusätzliche Server-/Container-Pfade mit eigener
+  sicherer Windows-Pfadzuordnung je Bibliothek; keine unüberprüften Browserpfade
 - kontrollierte Stapelzuordnung von Covers mit Trefferprüfung
 - weitere Metadatenfelder, ohne vorhandene Ordnernamen zu verändern
 - Designprofile mit eigenen Farben, Hintergründen und regelbaren Effekten (Basis seit 0.3.0)

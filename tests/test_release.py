@@ -15,6 +15,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         javascript = (ROOT / "server" / "static" / "app.js").read_text(encoding="utf-8")
+        translations = (ROOT / "server" / "static" / "i18n.js").read_text(encoding="utf-8")
         template = (ROOT / "server" / "templates" / "index.html").read_text(encoding="utf-8")
 
         installer_version = re.search(
@@ -34,10 +35,19 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('value="favorites"', template)
         self.assertIn('data-profile-color="energy_start"', template)
         self.assertIn('id="designProfileSaveStatus"', template)
+        self.assertIn('id="settingUiLanguage"', template)
+        self.assertIn('id="designProfilesBackButton"', template)
+        self.assertIn('ru: {', translations)
+        self.assertIn('applyUiLanguage', translations)
+        self.assertIn('if (isNew) applySettings(await api(', javascript)
         self.assertIn("Michael Härtwig", template)
         self.assertIn('class="floating-brand-logo"', template)
         self.assertLess(template.index('class="floating-brand-logo"'), template.index('class="topbar"'))
         self.assertTrue((ROOT / "server" / "design_profiles.py").is_file())
+        self.assertIn(
+            "CreateInputDirPage",
+            (ROOT / "windows-installer" / "MissionControlAgent.iss").read_text(encoding="utf-8"),
+        )
 
         workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(
             encoding="utf-8"
