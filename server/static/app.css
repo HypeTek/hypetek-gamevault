@@ -128,21 +128,30 @@ body[data-style="lcars"] .lcars-system-rail::after{content:"";position:absolute;
 @media(max-width:900px){body[data-style="lcars"] main{border-left-width:62px;padding-left:14px}body[data-style="lcars"] .lcars-system-rail{left:3vw;width:62px;padding-inline:5px;border-radius:0 36px 0 0}.lcars-system-rail time{font-size:.62rem}.lcars-system-date{font-size:.5rem}}
 @media(max-width:560px){body[data-style="lcars"] main{border-left-width:14px;padding-left:8px}body[data-style="lcars"] .lcars-system-rail{display:none}}
 
-/* 0.3.5: mirrored, fixed LCARS rail. The clock remains readable while the
-   rail's silhouette and the connected horizontal bar face the other way. */
+/* 0.3.6: document-height LCARS rail. Its cap and crossbar scroll away with
+   the document; only the readable system clock remains sticky in the rail. */
 body[data-style="lcars"]{--lcars-rail-width:92px}
+body[data-style="lcars"]{position:relative}
 body[data-style="lcars"] main{border-left-width:var(--lcars-rail-width)}
 body[data-style="lcars"] .lcars-system-rail{
+  position:absolute;
+  top:106px;
+  bottom:0;
   width:var(--lcars-rail-width);
+  padding-top:38px;
   border-radius:52px 0 0 0;
   box-shadow:inset 7px 0 color-mix(in srgb,var(--teal),black 8%);
 }
 body[data-style="lcars"] .lcars-system-rail::after{
+  top:-14px;
   left:var(--lcars-rail-width);
+  height:12px;
   width:calc(min(1500px,94vw) - var(--lcars-rail-width));
 }
+.lcars-system-readout{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+body[data-style="lcars"] .lcars-system-readout{position:sticky;top:14px}
 @media(max-width:900px){
   body[data-style="lcars"]{--lcars-rail-width:62px}
-  body[data-style="lcars"] .lcars-system-rail{border-radius:36px 0 0 0}
+  body[data-style="lcars"] .lcars-system-rail{top:100px;border-radius:36px 0 0 0}
 }
 @media(max-width:560px){body[data-style="lcars"]{--lcars-rail-width:14px}}

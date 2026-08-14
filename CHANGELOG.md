@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.6
+
+- LCARS-Systemband auf Dokumenthöhe umgestellt: Rundung und Querbalken scrollen wie vorgesehen aus dem Sichtbereich, statt Spielekarten zu überlagern.
+- LCARS-Uhr als eigener Sticky-Bereich erhalten, während das Band beim Scrollen durchgehend sichtbar bleibt.
+- Vertikales Band beginnt am Seitenanfang unterhalb des Querbalkens.
+
 ## 0.3.5
 
 - Englisches und russisches Sprachpaket auf dynamische Bibliothekskarten, Zähler, Typen, Agent-Einrichtung und die wichtigsten Einstellungen erweitert.

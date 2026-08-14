@@ -12,9 +12,11 @@
     <img class="floating-brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
   </button>
   <aside id="lcarsSystemRail" class="lcars-system-rail" aria-label="LCARS-Systemzeit">
-    <span class="lcars-system-label">SYS</span>
-    <time id="lcarsSystemClock" datetime="">--:--:--</time>
-    <span id="lcarsSystemDate" class="lcars-system-date">--.--.----</span>
+    <div class="lcars-system-readout">
+      <span class="lcars-system-label">SYS</span>
+      <time id="lcarsSystemClock" datetime="">--:--:--</time>
+      <span id="lcarsSystemDate" class="lcars-system-date">--.--.----</span>
+    </div>
   </aside>
   <header class="topbar">
     <div class="brand">

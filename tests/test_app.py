@@ -107,7 +107,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.3.5")
+        self.assertEqual(health["version"], "0.3.6")
         self.assertEqual(health["agent_api"], 3)
 
     def test_path_escape_is_rejected(self):
@@ -147,7 +147,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.5/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.6/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -157,9 +157,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.3.5", html)
-        self.assertIn("/static/i18n.js?v=0.3.5", html)
-        self.assertIn("/static/app.css?v=0.3.5", html)
+        self.assertIn("/static/app.js?v=0.3.6", html)
+        self.assertIn("/static/i18n.js?v=0.3.6", html)
+        self.assertIn("/static/app.css?v=0.3.6", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -168,7 +168,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.3.5")
+        self.assertEqual(settings["version"], "0.3.6")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])

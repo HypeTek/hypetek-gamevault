@@ -66,7 +66,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.3.5 muss die Antwort unter anderem `"version":"0.3.5"` und
+Für Version 0.3.6 muss die Antwort unter anderem `"version":"0.3.6"` und
 `"agent_api":3` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
