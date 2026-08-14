@@ -163,7 +163,7 @@
     </div>
   </dialog>
 
-  <dialog id="settingsDialog">
+  <dialog id="settingsDialog" class="settings-dialog">
     <form id="settingsForm" method="dialog">
       <div class="dialog-head"><h2>Mission Control konfigurieren</h2><button value="cancel" class="ghost">×</button></div>
       <div class="settings-grid">
@@ -194,7 +194,7 @@
         </label>
         <label>Mission Control Translator (optional)
           <input id="settingTranslatorUrl" type="url" placeholder="http://translator:5000">
-          <span class="translator-status-row"><span id="translatorStatus" class="field-hint"></span><button id="testTranslatorButton" type="button" class="secondary" data-i18n="translator.test">Verbindung testen</button></span>
+          <span class="translator-status-row"><span id="translatorStatus" class="field-hint"></span><button id="testTranslatorButton" type="button" class="secondary" data-i18n="translator.test" disabled>Verbindung testen</button></span>
           <span id="settingsTranslatorHint" class="field-hint">Die sichtbare Adresse ist nur ein Beispiel. Ohne eingerichteten Translator bleiben übernommene Originaltexte unverändert.</span>
         </label>
         <label>Translator-API-Key (nur falls erforderlich)

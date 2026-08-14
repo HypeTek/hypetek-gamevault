@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.10
+
+- LCARS reserviert sein linkes Systemband nun auch für den Agent-Einrichtungsbereich und das Einstellungsfenster; Inhalte liegen nicht mehr unter Uhr oder Band.
+- Einstellungen verwenden auf ausreichend großen Desktopfenstern ein kompaktes Drei-Spalten-Layout ohne internen Scrollbereich.
+- Translator-Verbindung kann mit der aktuell eingegebenen Adresse vor dem Speichern geprüft werden.
+- Der Verbindungstest bleibt deaktiviert, solange weder eine Adresse eingegeben noch eine gespeicherte Verbindung vorhanden ist.
+- Bestehende Funktionen aus 0.3.9 bleiben unverändert erhalten; 0.3.10 konzentriert sich auf Stabilität und Bedienbarkeit.
+
 ## 0.3.9
 
 - Deutsche, englische und russische Oberflächentexte für Editor, Spiele-Infofenster, Metadatensuche, Profilverwaltung, Hilfen und dynamische Statusmeldungen vervollständigt.

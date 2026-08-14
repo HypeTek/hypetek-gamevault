@@ -15,6 +15,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         javascript = (ROOT / "server" / "static" / "app.js").read_text(encoding="utf-8")
+        stylesheet = (ROOT / "server" / "static" / "app.css").read_text(encoding="utf-8")
         translations = (ROOT / "server" / "static" / "i18n.js").read_text(encoding="utf-8")
         template = (ROOT / "server" / "templates" / "index.html").read_text(encoding="utf-8")
 
@@ -49,6 +50,10 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('"settings.auto": "Automatic (browser)"', translations)
         self.assertIn('"translator.reachable": "Translator is reachable and ready."', translations)
         self.assertIn('id="testTranslatorButton"', template)
+        self.assertIn('id="testTranslatorButton" type="button" class="secondary" data-i18n="translator.test" disabled', template)
+        self.assertIn('/api/translator/test', javascript)
+        self.assertIn('body[data-style="lcars"] .agent-note-content', stylesheet)
+        self.assertIn('grid-template-columns:repeat(3,minmax(0,1fr))', stylesheet)
         self.assertIn('addEventListener("click", probeWindowsAgent)', javascript)
         self.assertIn('applySettings(settings);\n    render();', javascript)
         self.assertIn('"stats.entries": "Entries"', translations)

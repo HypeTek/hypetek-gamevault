@@ -228,6 +228,35 @@ def translator_status():
     return response
 
 
+@app.post("/api/translator/test")
+@login_required
+def test_translator():
+    payload = request.get_json(silent=True) or {}
+    settings = settings_store.load()
+    raw_endpoint = payload.get("translator_url") or settings.get("translator_url", "")
+    try:
+        endpoint = normalize_translator_url(raw_endpoint)
+    except TranslationError as error:
+        return jsonify(configured=False, reachable=False, error=str(error)), 400
+    if not endpoint:
+        return jsonify(configured=False, reachable=False, error="Translator ist nicht eingerichtet"), 400
+
+    supplied_key = str(payload.get("translator_api_key") or "")
+    stored_endpoint = normalize_translator_url(settings.get("translator_url", ""))
+    api_key = supplied_key
+    if not api_key and endpoint == stored_endpoint:
+        api_key = settings.get("translator_api_key", "")
+    try:
+        validate_translator(endpoint, api_key)
+    except TranslationError as error:
+        response = jsonify(configured=True, reachable=False, error=str(error))
+        response.headers["Cache-Control"] = "no-store"
+        return response, 502
+    response = jsonify(configured=True, reachable=True)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.patch("/api/settings")
 @login_required
 @csrf_required

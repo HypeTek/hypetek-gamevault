@@ -363,20 +363,31 @@ function openSettings() {
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
   document.querySelector("#translatorStatus").textContent = settings.translator_configured ? tr("settings.translatorReady") : tr("settings.translatorMissing");
+  syncTranslatorTestAvailability();
   settingsDialog.showModal();
+}
+
+function syncTranslatorTestAvailability() {
+  const input = document.querySelector("#settingTranslatorUrl");
+  const button = document.querySelector("#testTranslatorButton");
+  button.disabled = !(input.value.trim() || state.settings?.translator_configured);
 }
 
 async function testTranslatorConnection() {
   const button = document.querySelector("#testTranslatorButton");
   const output = document.querySelector("#translatorStatus");
-  if (!state.settings?.translator_configured) {
+  const translatorUrl = document.querySelector("#settingTranslatorUrl").value.trim();
+  if (!translatorUrl && !state.settings?.translator_configured) {
     output.textContent = tr("translator.notConfigured");
     return;
   }
+  const payload = {translator_url: translatorUrl};
+  const translatorApiKey = document.querySelector("#settingTranslatorApiKey").value.trim();
+  if (translatorApiKey) payload.translator_api_key = translatorApiKey;
   button.disabled = true;
   output.textContent = tr("translator.checking");
   try {
-    const result = await api("/api/translator/status");
+    const result = await api("/api/translator/test", {method: "POST", body: JSON.stringify(payload)});
     output.textContent = result.reachable
       ? tr("translator.reachable")
       : tr("translator.unavailable", {error: result.error || "HTTP 502"});
@@ -544,6 +555,7 @@ document.querySelector("#removeTranslatorButton").addEventListener("click", asyn
     document.querySelector("#settingTranslatorUrl").value = "";
     document.querySelector("#settingTranslatorApiKey").value = "";
     document.querySelector("#translatorStatus").textContent = tr("settings.translatorMissing");
+    syncTranslatorTestAvailability();
   } catch (error) { alert(error.message); }
 });
 
@@ -628,6 +640,7 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
 document.querySelector("#testTranslatorButton").addEventListener("click", testTranslatorConnection);
+document.querySelector("#settingTranslatorUrl").addEventListener("input", syncTranslatorTestAvailability);
 document.querySelector("#designProfilesButton").addEventListener("click", openDesignProfiles);
 document.querySelector("#closeDesignProfiles").addEventListener("click", () => designProfilesDialog.close());
 document.querySelector("#newDesignProfileButton").addEventListener("click", () => fillDesignProfileForm(state.settings.design_profile, ""));
