@@ -764,6 +764,7 @@ def agent_ticket(token: str):
         action=requested_action,
         relative_path=game["relative_path"],
         launcher=launcher,
+        ui_language=settings_store.load().get("ui_language", "de"),
     )
 
 

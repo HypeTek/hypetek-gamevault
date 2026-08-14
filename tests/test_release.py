@@ -16,7 +16,6 @@ class ReleaseMetadataTests(unittest.TestCase):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         javascript = (ROOT / "server" / "static" / "app.js").read_text(encoding="utf-8")
         translations = (ROOT / "server" / "static" / "i18n.js").read_text(encoding="utf-8")
-        translations = (ROOT / "server" / "static" / "i18n.js").read_text(encoding="utf-8")
         template = (ROOT / "server" / "templates" / "index.html").read_text(encoding="utf-8")
 
         installer_version = re.search(
@@ -64,6 +63,9 @@ class ReleaseMetadataTests(unittest.TestCase):
             (ROOT / "windows-installer" / "MissionControlAgent.iss").read_text(encoding="utf-8"),
         )
         self.assertIn("Verbinde das SMB-Netzlaufwerk zuerst", installer)
+        agent = (ROOT / "windows-agent" / "GameVaultAgent.ps1").read_text(encoding="utf-8-sig")
+        self.assertIn("$manifest.ui_language", agent)
+        self.assertIn('Confirmation', agent)
 
         workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(
             encoding="utf-8"

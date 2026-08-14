@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.7
+
+- LCARS-Band richtet sich dynamisch an der tatsächlichen, sprachabhängigen Höhe der Kopfzeile aus und hält acht Pixel Abstand zum Querbalken.
+- Doppelter LCARS-Querbalken entfernt; die animierte Energielinie ist nun die einzige obere Trennlinie.
+- Sticky-Systemuhr hält automatisch Abstand zum feststehenden HypeTek-Logo.
+- Windows-Agent erhält die eingestellte Oberflächensprache im sicheren Startticket und übersetzt Bestätigungstitel, Felder, Aktion und Rückfrage auf Deutsch, Englisch oder Russisch.
+
 ## 0.3.6
 
 - LCARS-Systemband auf Dokumenthöhe umgestellt: Rundung und Querbalken scrollen wie vorgesehen aus dem Sichtbereich, statt Spielekarten zu überlagern.

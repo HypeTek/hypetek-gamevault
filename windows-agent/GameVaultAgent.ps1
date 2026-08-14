@@ -149,10 +149,29 @@ try {
         throw "Die erwartete Quelldatei ist kein regulärer Datenträger bzw. Installer:`n$source"
     }
 
-    $message = "Titel: $($manifest.title)`n`nAktion: $($manifest.action)`nQuelle: $source`n`nFortfahren?"
+    $language = if ($manifest.ui_language -in @("en", "ru")) { $manifest.ui_language } else { "de" }
+    $actionLabels = @{
+        de = @{ direct_setup = "Direktes Setup"; iso = "ISO einbinden und installieren"; open_folder = "Ordner öffnen" }
+        en = @{ direct_setup = "Direct setup"; iso = "Mount ISO and install"; open_folder = "Open folder" }
+        ru = @{ direct_setup = "Прямая установка"; iso = "Подключить ISO и установить"; open_folder = "Открыть папку" }
+    }
+    $actionLabel = $actionLabels[$language][$manifest.action]
+    if ([string]::IsNullOrWhiteSpace($actionLabel)) { $actionLabel = $manifest.action }
+    if ($language -eq "en") {
+        $message = "Title: $($manifest.title)`n`nAction: $actionLabel`nSource: $source`n`nContinue?"
+        $confirmationTitle = "HypeTek Mission Control – Confirmation"
+    }
+    elseif ($language -eq "ru") {
+        $message = "Название: $($manifest.title)`n`nДействие: $actionLabel`nИсточник: $source`n`nПродолжить?"
+        $confirmationTitle = "HypeTek Mission Control – Подтверждение"
+    }
+    else {
+        $message = "Titel: $($manifest.title)`n`nAktion: $actionLabel`nQuelle: $source`n`nFortfahren?"
+        $confirmationTitle = "HypeTek Mission Control – Bestätigung"
+    }
     $answer = [System.Windows.MessageBox]::Show(
         $message,
-        "HypeTek Mission Control – Bestätigung",
+        $confirmationTitle,
         [System.Windows.MessageBoxButton]::YesNo,
         [System.Windows.MessageBoxImage]::Question
     )
