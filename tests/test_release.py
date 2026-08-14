@@ -16,6 +16,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         javascript = (ROOT / "server" / "static" / "app.js").read_text(encoding="utf-8")
         translations = (ROOT / "server" / "static" / "i18n.js").read_text(encoding="utf-8")
+        translations = (ROOT / "server" / "static" / "i18n.js").read_text(encoding="utf-8")
         template = (ROOT / "server" / "templates" / "index.html").read_text(encoding="utf-8")
 
         installer_version = re.search(
@@ -46,6 +47,9 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertTrue(translations.rstrip().endswith("})();"))
         self.assertIn('applyUiLanguage', translations)
         self.assertIn('addEventListener("click", probeWindowsAgent)', javascript)
+        self.assertIn('applySettings(settings);\n    render();', javascript)
+        self.assertIn('"stats.entries": "Entries"', translations)
+        self.assertIn('"game.install": "Установить"', translations)
         self.assertIn('if (isNew) applySettings(await api(', javascript)
         self.assertIn("Michael Härtwig", template)
         self.assertIn('class="floating-brand-logo"', template)

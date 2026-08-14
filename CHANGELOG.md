@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.5
+
+- Englisches und russisches Sprachpaket auf dynamische Bibliothekskarten, Zähler, Typen, Agent-Einrichtung und die wichtigsten Einstellungen erweitert.
+- Sprachwechsel rendert Karten, Aktionsbuttons und Statistik sofort neu; ein Browser-Refresh ist nicht mehr erforderlich.
+- LCARS-Systemband horizontal gespiegelt und mit feststehender oberer Rundung an den ebenfalls feststehenden Querbalken angeschlossen.
+- Stylesheet erhält wie JavaScript einen Versionsparameter gegen gemischte Browser-Caches.
+
 ## 0.3.4
 
 - Globalen JavaScript-Namenskonflikt zwischen UI-Sprachpaket und Hauptanwendung behoben, der `app.js` in Chrome vollständig am Start hinderte.

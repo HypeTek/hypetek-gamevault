@@ -127,3 +127,22 @@ body[data-style="lcars"] .lcars-system-rail::after{content:"";position:absolute;
 .lcars-system-label{font-size:.7rem;font-weight:900;letter-spacing:.18em}.lcars-system-rail time{display:block;width:100%;padding:8px 3px;background:var(--bg);color:var(--text);border-radius:18px 4px 18px 4px;font-family:Consolas,"Courier New",monospace;font-size:.82rem;font-weight:800;text-align:center;letter-spacing:-.03em}.lcars-system-date{font-family:Consolas,"Courier New",monospace;font-size:.58rem;font-weight:800;white-space:nowrap}
 @media(max-width:900px){body[data-style="lcars"] main{border-left-width:62px;padding-left:14px}body[data-style="lcars"] .lcars-system-rail{left:3vw;width:62px;padding-inline:5px;border-radius:0 36px 0 0}.lcars-system-rail time{font-size:.62rem}.lcars-system-date{font-size:.5rem}}
 @media(max-width:560px){body[data-style="lcars"] main{border-left-width:14px;padding-left:8px}body[data-style="lcars"] .lcars-system-rail{display:none}}
+
+/* 0.3.5: mirrored, fixed LCARS rail. The clock remains readable while the
+   rail's silhouette and the connected horizontal bar face the other way. */
+body[data-style="lcars"]{--lcars-rail-width:92px}
+body[data-style="lcars"] main{border-left-width:var(--lcars-rail-width)}
+body[data-style="lcars"] .lcars-system-rail{
+  width:var(--lcars-rail-width);
+  border-radius:52px 0 0 0;
+  box-shadow:inset 7px 0 color-mix(in srgb,var(--teal),black 8%);
+}
+body[data-style="lcars"] .lcars-system-rail::after{
+  left:var(--lcars-rail-width);
+  width:calc(min(1500px,94vw) - var(--lcars-rail-width));
+}
+@media(max-width:900px){
+  body[data-style="lcars"]{--lcars-rail-width:62px}
+  body[data-style="lcars"] .lcars-system-rail{border-radius:36px 0 0 0}
+}
+@media(max-width:560px){body[data-style="lcars"]{--lcars-rail-width:14px}}

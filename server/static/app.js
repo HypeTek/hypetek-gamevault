@@ -12,7 +12,7 @@ const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
 const missionControlI18n = window.MissionControlI18n || {};
 const applyUiLanguage = typeof missionControlI18n.applyUiLanguage === "function" ? missionControlI18n.applyUiLanguage : () => {};
 const tr = typeof missionControlI18n.tr === "function" ? missionControlI18n.tr : (key) => key;
-const labels = {direct_setup: "Direktes Setup", iso: "ISO", manual: "Manuell", archive: "Archiv", manual_image: "Sonderabbild", ignore: "Ausgeblendet"};
+const typeLabelKeys = {direct_setup: "type.directSetup", iso: "type.iso", manual: "type.manual", archive: "type.archive", manual_image: "type.manualImage", ignore: "type.ignore"};
 const library = document.querySelector("#library");
 const statusEl = document.querySelector("#status");
 const editor = document.querySelector("#editor");
@@ -68,7 +68,7 @@ function applySettings(settings) {
   document.title = `HypeTek Mission Control · ${settings.server_name}`;
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
   document.querySelector("#agentNote").hidden = agentValidated;
-  document.querySelector("#agentSetupButton").textContent = agentValidated ? (settings.ui_language === "ru" ? "Агент настроен" : settings.ui_language === "en" ? "Agent ready" : "Agent eingerichtet") : tr("nav.agent");
+  document.querySelector("#agentSetupButton").textContent = agentValidated ? tr("agent.ready") : tr("nav.agent");
 }
 
 function parseProfileColor(value) {
@@ -110,7 +110,11 @@ async function load() {
 function actionLabel(game) {
   if (game.action === "direct_setup") return tr("game.install");
   if (game.action === "iso") return tr("game.mountInstall");
-  return "Manuelle Installation";
+  return tr("game.manualInstall");
+}
+
+function typeLabel(type) {
+  return tr(typeLabelKeys[type] || type);
 }
 
 function gameMonogram(title) {
@@ -156,9 +160,9 @@ function render() {
     const sourceNames = {rawg: "RAWG", thegamesdb: "TheGamesDB"};
     const sourceName = sourceNames[game.metadata_provider];
     const attribution = sourceName && game.metadata_source_url
-      ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Cover: ${sourceName}</a>` : "";
-    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="Informationen zu ${escapeHtml(game.title)}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${labels[game.action] || game.action}</span><span class="badge">${escapeHtml(game.platform || "Unbekannt")}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button class="secondary edit-action" onclick="editGame('${game.id}')">${tr("game.edit")}</button></div></div></article>`;
-  }).join("") || "<p>Keine passenden Einträge.</p>";
+      ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">${tr("game.coverSource", {source: sourceName})}</a>` : "";
+    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="${escapeHtml(tr("game.info", {title: game.title}))}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${typeLabel(game.action)}</span><span class="badge">${escapeHtml(game.platform || tr("game.unknown"))}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button class="secondary edit-action" onclick="editGame('${game.id}')">${tr("game.edit")}</button></div></div></article>`;
+  }).join("") || `<p>${tr("game.empty")}</p>`;
   renderPagination(filteredGames.length, pageCount, firstIndex, games.length);
 }
 
@@ -217,7 +221,7 @@ function editGame(id) {
   document.querySelector("#editCoverPosition").value = coverPosition(game);
   document.querySelector("#metadataQuery").value = game.metadata_search_title || game.title;
   document.querySelector("#metadataResults").innerHTML = "";
-  document.querySelector("#editNote").textContent = `Erkannt: ${labels[game.detected_type] || game.detected_type} · ${game.detection_note} · ${game.relative_path}`;
+  document.querySelector("#editNote").textContent = `Erkannt: ${typeLabel(game.detected_type)} · ${game.detection_note} · ${game.relative_path}`;
   updateCoverPositionPreview();
   editor.showModal();
 }
@@ -291,7 +295,7 @@ function showGameInfo(id) {
   document.querySelector("#gameInfoOverviewSection").classList.toggle("is-empty", !overview);
   document.querySelector("#gameInfoNotes").textContent = notes || "Keine eigenen Bemerkungen hinterlegt.";
   document.querySelector("#gameInfoNotesSection").classList.toggle("is-empty", !notes);
-  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>Bibliothekstitel</dt><dd>${escapeHtml(game.title)}</dd><dt>Typ</dt><dd>${escapeHtml(labels[game.action] || game.action)}</dd><dt>Größe</dt><dd>${formatBytes(game.logical_size)}</dd>`;
+  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>Bibliothekstitel</dt><dd>${escapeHtml(game.title)}</dd><dt>Typ</dt><dd>${escapeHtml(typeLabel(game.action))}</dd><dt>Größe</dt><dd>${formatBytes(game.logical_size)}</dd>`;
   const source = game.metadata_source_url ? `<a class="button-link secondary" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">Quelle ansehen</a>` : "";
   const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
   const launch = launchable ? `<button type="button" class="primary-info-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : "";
@@ -342,12 +346,12 @@ function openSettings() {
   document.querySelector("#settingCrosshair").checked = settings.crosshair_cursor;
   document.querySelector("#settingExclusions").value = settings.scan_exclusions.join(", ");
   document.querySelector("#settingTheGamesDbApiKey").value = "";
-  document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? "Ein API-Key ist gespeichert." : "Noch kein API-Key gespeichert.";
+  document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? tr("settings.keyStored") : tr("settings.keyMissing");
   document.querySelector("#settingContentLanguage").value = settings.content_language || "de";
   document.querySelector("#settingUiLanguage").value = settings.ui_language || "de";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
-  document.querySelector("#translatorStatus").textContent = settings.translator_configured ? "Translator-Verbindung ist eingerichtet." : "Nicht eingerichtet – der Platzhalter ist nur eine Beispieladresse.";
+  document.querySelector("#translatorStatus").textContent = settings.translator_configured ? tr("settings.translatorReady") : tr("settings.translatorMissing");
   settingsDialog.showModal();
 }
 
@@ -485,6 +489,7 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
   try {
     const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify(payload)});
     applySettings(settings);
+    render();
     settingsDialog.close();
   } catch (error) { alert(error.message); }
 });
@@ -495,7 +500,7 @@ document.querySelector("#removeTheGamesDbKeyButton").addEventListener("click", a
     const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify({thegamesdb_api_key: null})});
     applySettings(settings);
     document.querySelector("#settingTheGamesDbApiKey").value = "";
-    document.querySelector("#theGamesDbKeyStatus").textContent = "Noch kein API-Key gespeichert.";
+    document.querySelector("#theGamesDbKeyStatus").textContent = tr("settings.keyMissing");
   } catch (error) { alert(error.message); }
 });
 
@@ -506,7 +511,7 @@ document.querySelector("#removeTranslatorButton").addEventListener("click", asyn
     applySettings(settings);
     document.querySelector("#settingTranslatorUrl").value = "";
     document.querySelector("#settingTranslatorApiKey").value = "";
-    document.querySelector("#translatorStatus").textContent = "Noch kein Translator eingerichtet.";
+    document.querySelector("#translatorStatus").textContent = tr("settings.translatorMissing");
   } catch (error) { alert(error.message); }
 });
 
@@ -529,7 +534,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.4 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.5 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
