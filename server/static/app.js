@@ -25,6 +25,10 @@ let designProfileState = {active: "mission", profiles: []};
 let coverPreviewObjectUrl = null;
 let coverDrag = null;
 
+// Register the critical agent check before optional interface enhancements.
+// Function declarations are initialized before this statement is evaluated.
+document.querySelector("#agentProbeButton")?.addEventListener("click", probeWindowsAgent);
+
 const formatBytes = (value) => {
   if (!value) return "0 B";
   const units = ["B", "KiB", "MiB", "GiB", "TiB"];
@@ -525,7 +529,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.3 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.4 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;

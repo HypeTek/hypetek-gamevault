@@ -1,3 +1,4 @@
+(() => {
 "use strict";
 
 // Small integrated UI packs. Game descriptions use the separately configured
@@ -91,3 +92,4 @@ function applyUiLanguage(language) {
 }
 
 window.MissionControlI18n = {applyUiLanguage, tr};
+})();

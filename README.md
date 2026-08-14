@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.3.3
+## Funktionen in Version 0.3.4
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -152,6 +152,14 @@ TrueNAS-YAML und ist nicht dasselbe wie die gefahrlose Repository-Umbenennung.
 Für entfernten Zugriff werden Tailscale oder ein korrekt abgesicherter HTTPS-Reverse-
 Proxy empfohlen. Die App sollte nicht ungefiltert ins öffentliche Internet gestellt
 werden.
+
+## Rechte und Nutzung
+
+Der Quellcode ist aus Gründen der Transparenz öffentlich einsehbar, aber **nicht
+Open Source**. Offizielle, unveränderte Releases dürfen persönlich und
+nichtkommerziell genutzt werden. Weitergabe, Veröffentlichung, kommerzielle Nutzung
+und die Verbreitung abgeleiteter Fassungen erfordern eine vorherige schriftliche
+Genehmigung. Einzelheiten stehen in [LICENSE.md](LICENSE.md).
 
 ---
 

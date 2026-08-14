@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.4
+
+- Globalen JavaScript-Namenskonflikt zwischen UI-Sprachpaket und Hauptanwendung behoben, der `app.js` in Chrome vollständig am Start hinderte.
+- Sprachpaket in einen eigenen Gültigkeitsbereich gekapselt; Sprachfunktionen werden nur noch über die ausdrücklich vorgesehene Schnittstelle veröffentlicht.
+- Windows-Agent-Verbindungstest frühzeitig und CSP-kompatibel als nativen Ereignishandler registriert; Inline-JavaScript wurde wieder entfernt.
+- Source-Available-Rechtehinweis ergänzt: öffentlich einsehbar und als offizielles Release persönlich nutzbar, jedoch ausdrücklich nicht Open Source.
+- Alle Funktionen und Designänderungen aus 0.3.3 vollständig beibehalten.
+
 ## 0.3.3
 
 - Kritischen Windows-Agent-Verbindungstest gegen gemischte Browser-Caches abgesichert: JavaScript und CSS werden jetzt mit der laufenden Serverversion geladen.
