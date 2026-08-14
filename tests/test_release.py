@@ -29,9 +29,12 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('id="appVersion"', template)
         self.assertIn('id="pagination"', template)
         self.assertIn('id="viewListButton"', template)
+        self.assertIn('id="designProfilesDialog"', template)
+        self.assertIn('id="designProfilePreview"', template)
         self.assertIn("Michael Härtwig", template)
         self.assertIn('class="floating-brand-logo"', template)
         self.assertLess(template.index('class="floating-brand-logo"'), template.index('class="topbar"'))
+        self.assertTrue((ROOT / "server" / "design_profiles.py").is_file())
 
         workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(
             encoding="utf-8"

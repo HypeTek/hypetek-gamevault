@@ -21,8 +21,9 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 - kontrollierte Stapelzuordnung von Covers mit Trefferprüfung
 - weitere Metadatenfelder, ohne vorhandene Ordnernamen zu verändern
-- eigene Akzentfarben, Karten- und Fensterformen
-- zusätzliche Stile und regelbare Hintergrundeffekte
+- Designprofile mit eigenen Farben, Hintergründen und regelbaren Effekten (Basis seit 0.3.0)
+- unabhängige Karten-, Fenster- und Schriftstile (Basis seit 0.3.0)
+- Profil-Export und -Import mit geprüftem, versioniertem Austauschformat
 - Barrierefreiheit, Tastaturbedienung und reduzierte Animationen
 
 ### Veröffentlichung

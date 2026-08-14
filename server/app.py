@@ -24,6 +24,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from database import Database
+from design_profiles import DesignProfileStore
 from scanner import scan_library
 from settings import SettingsStore, THEMES
 from translation import (
@@ -91,6 +92,7 @@ app.config.update(
 )
 database = Database(CONFIG_DIR / "gamevault.sqlite3")
 settings_store = SettingsStore(CONFIG_DIR / "mission-control-settings.json")
+design_profiles = DesignProfileStore(CONFIG_DIR / "mission-control-designs.json")
 
 
 def login_required(function):
@@ -161,7 +163,7 @@ def login():
             csrf_token()
             return redirect(request.args.get("next") or url_for("index"))
         error = "Anmeldung fehlgeschlagen"
-    return render_template("login.html", error=error, appearance=settings_store.load())
+    return render_template("login.html", error=error, appearance=public_settings())
 
 
 @app.post("/logout")
@@ -179,7 +181,14 @@ def index():
 
 def public_settings() -> dict:
     values = settings_store.load()
+    profile_store = design_profiles.load(values.get("theme", "mission"))
+    active_profile = profile_store["profiles"][profile_store["active"]]
     values["version"] = APP_VERSION
+    values["active_design_profile"] = profile_store["active"]
+    active_profile = dict(active_profile)
+    if active_profile.get("builtin"):
+        active_profile["background_name"] = active_profile.get("background_name") or values.get("background_name")
+    values["design_profile"] = active_profile
     values["thegamesdb_configured"] = bool(values.get("thegamesdb_api_key"))
     values["translator_configured"] = bool(values.get("translator_url"))
     values["translator_api_key_configured"] = bool(values.get("translator_api_key"))
@@ -187,8 +196,8 @@ def public_settings() -> dict:
     values.pop("thegamesdb_api_key", None)
     values.pop("translator_api_key", None)
     values["background_url"] = (
-        url_for("background", name=values["background_name"])
-        if values.get("background_name")
+        url_for("background", name=active_profile["background_name"])
+        if active_profile.get("background_name")
         else None
     )
     return values
@@ -242,6 +251,100 @@ def update_settings():
                 return jsonify(error=f"Translator wurde nicht gespeichert: {error}"), 502
     settings_store.update(changes)
     return jsonify(public_settings())
+
+
+def public_profiles() -> dict:
+    settings = settings_store.load()
+    store = design_profiles.list_public(settings.get("theme", "mission"))
+    legacy_background = settings.get("background_name")
+    profiles = []
+    for key, profile in store["profiles"].items():
+        visible = dict(profile)
+        if visible.get("builtin"):
+            visible["background_name"] = visible.get("background_name") or legacy_background
+        profiles.append({"id": key, **visible})
+    return {
+        "active": store["active"],
+        "profiles": profiles,
+    }
+
+
+@app.get("/api/design-profiles")
+@login_required
+def get_design_profiles():
+    return jsonify(public_profiles())
+
+
+@app.post("/api/design-profiles")
+@login_required
+@csrf_required
+def create_design_profile():
+    try:
+        profile = design_profiles.create(request.get_json(force=True), settings_store.load().get("theme", "mission"))
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    return jsonify(profile), 201
+
+
+@app.put("/api/design-profiles/<profile_id>")
+@login_required
+@csrf_required
+def update_design_profile(profile_id: str):
+    try:
+        profile = design_profiles.update(profile_id, request.get_json(force=True), settings_store.load().get("theme", "mission"))
+    except KeyError as error:
+        return jsonify(error=str(error.args[0])), 404
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    return jsonify(profile)
+
+
+@app.post("/api/design-profiles/<profile_id>/activate")
+@login_required
+@csrf_required
+def activate_design_profile(profile_id: str):
+    try:
+        design_profiles.activate(profile_id, settings_store.load().get("theme", "mission"))
+    except KeyError as error:
+        return jsonify(error=str(error.args[0])), 404
+    return jsonify(public_settings())
+
+
+@app.delete("/api/design-profiles/<profile_id>")
+@login_required
+@csrf_required
+def delete_design_profile(profile_id: str):
+    try:
+        design_profiles.delete(profile_id, settings_store.load().get("theme", "mission"))
+    except KeyError as error:
+        return jsonify(error=str(error.args[0])), 404
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    return jsonify(public_profiles())
+
+
+@app.post("/api/design-profiles/background")
+@login_required
+@csrf_required
+def upload_design_profile_background():
+    upload = request.files.get("background")
+    if not upload or not upload.filename:
+        return jsonify(error="Keine Hintergrunddatei empfangen"), 400
+    extension = Path(secure_filename(upload.filename)).suffix.casefold()
+    if extension not in {".jpg", ".jpeg", ".png", ".webp"}:
+        return jsonify(error="Erlaubt sind JPG, PNG und WEBP"), 400
+    signature = upload.stream.read(16)
+    upload.stream.seek(0)
+    valid = (
+        signature.startswith(b"\xff\xd8\xff")
+        or signature.startswith(b"\x89PNG\r\n\x1a\n")
+        or (signature.startswith(b"RIFF") and signature[8:12] == b"WEBP")
+    )
+    if not valid:
+        return jsonify(error="Dateiinhalt ist kein unterstütztes Bild"), 400
+    name = f"background-{secrets.token_hex(12)}{extension}"
+    upload.save(BACKGROUND_DIR / name)
+    return jsonify(name=name, url=url_for("background", name=name)), 201
 
 
 @app.post("/api/settings/background")

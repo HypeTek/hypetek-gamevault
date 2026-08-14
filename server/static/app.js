@@ -17,6 +17,8 @@ const settingsDialog = document.querySelector("#settingsDialog");
 const connectionHelpDialog = document.querySelector("#connectionHelpDialog");
 const integrationHelpDialog = document.querySelector("#integrationHelpDialog");
 const gameInfoDialog = document.querySelector("#gameInfoDialog");
+const designProfilesDialog = document.querySelector("#designProfilesDialog");
+let designProfileState = {active: "mission", profiles: []};
 let coverPreviewObjectUrl = null;
 let coverDrag = null;
 
@@ -40,17 +42,46 @@ async function api(url, options = {}) {
 
 function applySettings(settings) {
   state.settings = settings;
-  document.body.dataset.theme = settings.theme;
+  const profile = settings.design_profile || {};
+  const colors = profile.colors || {};
+  document.body.dataset.theme = settings.active_design_profile || settings.theme;
+  document.body.dataset.style = profile.style || "soft";
+  document.body.dataset.font = profile.font || "system";
+  const colorVariables = {background: "--bg", panel: "--panel", panel_alt: "--panel2", text: "--text", muted: "--muted", primary: "--teal", secondary: "--orange", line: "--line"};
+  Object.entries(colorVariables).forEach(([key, variable]) => {
+    if (colors[key]) document.body.style.setProperty(variable, colors[key]);
+  });
   document.body.classList.toggle("crosshair", Boolean(settings.crosshair_cursor));
   document.body.style.setProperty("--custom-background", settings.background_url ? `url("${settings.background_url}")` : "none");
-  document.body.style.setProperty("--background-opacity", settings.background_opacity);
-  document.body.style.setProperty("--background-blur", `${settings.background_blur}px`);
+  document.body.style.setProperty("--background-opacity", profile.background_opacity ?? settings.background_opacity);
+  document.body.style.setProperty("--background-blur", `${profile.background_blur ?? settings.background_blur}px`);
   document.querySelector("#libraryName").textContent = settings.library_name;
   document.querySelector("#appVersion").textContent = `v${settings.version || "development"}`;
   document.title = `HypeTek Mission Control · ${settings.server_name}`;
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
   document.querySelector("#agentNote").hidden = agentValidated;
   document.querySelector("#agentSetupButton").textContent = agentValidated ? "Agent eingerichtet" : "Agent-Setup";
+}
+
+function parseProfileColor(value) {
+  const color = String(value || "").trim();
+  const hex = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (hex) return hex.slice(1).map((part) => parseInt(part, 16));
+  const rgb = color.match(/^rgba?\(\s*(\d+)\D+(\d+)\D+(\d+)/i);
+  return rgb ? rgb.slice(1, 4).map(Number) : [0, 209, 199];
+}
+
+function animateEnergyColor(timestamp) {
+  const point = document.querySelector(".energy-line span");
+  if (!point || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const styles = getComputedStyle(document.body);
+  const start = parseProfileColor(styles.getPropertyValue("--teal"));
+  const end = parseProfileColor(styles.getPropertyValue("--orange"));
+  const elapsed = timestamp % 6500;
+  const ratio = Math.min(1, elapsed / 4750);
+  const mixed = start.map((component, index) => Math.round(component + ((end[index] - component) * ratio)));
+  point.style.setProperty("--energy-color", `rgb(${mixed.join(",")})`);
+  requestAnimationFrame(animateEnergyColor);
 }
 
 function showAgentSetup() {
@@ -284,19 +315,11 @@ function toggleGameInfoOriginal(id) {
   button.textContent = showingOriginal ? "Original anzeigen" : "Übersetzung anzeigen";
 }
 
-function updateRangeOutputs() {
-  document.querySelector("#opacityValue").textContent = `${Math.round(Number(document.querySelector("#settingOpacity").value) * 100)} %`;
-  document.querySelector("#blurValue").textContent = `${document.querySelector("#settingBlur").value} px`;
-}
-
 function openSettings() {
   const settings = state.settings;
   document.querySelector("#settingServerName").value = settings.server_name;
   document.querySelector("#settingLibraryName").value = settings.library_name;
-  document.querySelector("#settingTheme").value = settings.theme;
   document.querySelector("#settingCrosshair").checked = settings.crosshair_cursor;
-  document.querySelector("#settingOpacity").value = settings.background_opacity;
-  document.querySelector("#settingBlur").value = settings.background_blur;
   document.querySelector("#settingExclusions").value = settings.scan_exclusions.join(", ");
   document.querySelector("#settingTheGamesDbApiKey").value = "";
   document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? "Ein API-Key ist gespeichert." : "Noch kein API-Key gespeichert.";
@@ -304,9 +327,96 @@ function openSettings() {
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
   document.querySelector("#translatorStatus").textContent = settings.translator_configured ? "Translator-Verbindung ist eingerichtet." : "Nicht eingerichtet – der Platzhalter ist nur eine Beispieladresse.";
-  document.querySelector("#settingBackground").value = "";
-  updateRangeOutputs();
   settingsDialog.showModal();
+}
+
+function profilePayloadFromForm() {
+  const colors = {};
+  document.querySelectorAll("[data-profile-color]").forEach((input) => { colors[input.dataset.profileColor] = input.value; });
+  return {
+    name: document.querySelector("#designProfileName").value.trim(),
+    style: document.querySelector('input[name="profileStyle"]:checked').value,
+    font: document.querySelector("#designProfileFont").value,
+    colors,
+    background_name: document.querySelector("#designProfileBackgroundName").value || null,
+    background_opacity: Number(document.querySelector("#designProfileOpacity").value),
+    background_blur: Number(document.querySelector("#designProfileBlur").value),
+  };
+}
+
+function renderDesignProfilePreview() {
+  const profile = profilePayloadFromForm();
+  const preview = document.querySelector("#designProfilePreview");
+  preview.dataset.style = profile.style;
+  preview.dataset.font = profile.font;
+  const variables = {background: "--preview-bg", panel: "--preview-panel", panel_alt: "--preview-panel2", text: "--preview-text", muted: "--preview-muted", primary: "--preview-primary", secondary: "--preview-secondary", line: "--preview-line"};
+  Object.entries(variables).forEach(([key, variable]) => preview.style.setProperty(variable, profile.colors[key]));
+  const selectedBackground = document.querySelector("#designProfileBackground").files[0];
+  if (preview.dataset.objectUrl) URL.revokeObjectURL(preview.dataset.objectUrl);
+  let background = "none";
+  if (selectedBackground) {
+    preview.dataset.objectUrl = URL.createObjectURL(selectedBackground);
+    background = `url('${preview.dataset.objectUrl}')`;
+  } else if (profile.background_name) {
+    preview.dataset.objectUrl = "";
+    background = `url('/backgrounds/${encodeURIComponent(profile.background_name)}')`;
+  } else {
+    preview.dataset.objectUrl = "";
+  }
+  preview.style.setProperty("--preview-background", background);
+  preview.style.setProperty("--preview-opacity", String(profile.background_opacity));
+  preview.style.setProperty("--preview-blur", `${profile.background_blur}px`);
+  document.querySelector("#profileOpacityValue").textContent = `${Math.round(profile.background_opacity * 100)} %`;
+  document.querySelector("#profileBlurValue").textContent = `${profile.background_blur} px`;
+}
+
+function fillDesignProfileForm(profile = state.settings.design_profile, id = "") {
+  document.querySelector("#designProfileId").value = id;
+  document.querySelector("#designProfileName").value = id ? profile.name : `${profile.name} Kopie`;
+  document.querySelector(`input[name="profileStyle"][value="${profile.style || "soft"}"]`).checked = true;
+  document.querySelector("#designProfileFont").value = profile.font || "system";
+  document.querySelector("#designProfileBackground").value = "";
+  document.querySelector("#designProfileBackgroundName").value = profile.background_name || "";
+  document.querySelectorAll("[data-profile-color]").forEach((input) => { input.value = profile.colors[input.dataset.profileColor]; });
+  document.querySelector("#designProfileOpacity").value = profile.background_opacity ?? 0.28;
+  document.querySelector("#designProfileBlur").value = profile.background_blur ?? 2;
+  document.querySelector("#designProfileForm").hidden = false;
+  document.querySelector("#designProfileList").hidden = true;
+  document.querySelector("#newDesignProfileButton").hidden = true;
+  renderDesignProfilePreview();
+}
+
+function renderDesignProfiles() {
+  const list = document.querySelector("#designProfileList");
+  list.hidden = false;
+  document.querySelector("#newDesignProfileButton").hidden = false;
+  document.querySelector("#designProfileForm").hidden = true;
+  list.innerHTML = designProfileState.profiles.map((profile) => `<article class="design-profile-card ${profile.id === designProfileState.active ? "is-active" : ""}" style="--profile-primary:${escapeHtml(profile.colors.primary)};--profile-secondary:${escapeHtml(profile.colors.secondary)};--profile-panel:${escapeHtml(profile.colors.panel)}"><div class="profile-swatch"></div><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.style)} · ${escapeHtml(profile.font)}</span></div><span>${profile.id === designProfileState.active ? "AKTIV" : ""}</span><div class="profile-card-actions">${profile.id === designProfileState.active ? "" : `<button type="button" data-profile-activate="${profile.id}">Aktivieren</button>`}<button type="button" class="secondary" data-profile-copy="${profile.id}">Duplizieren</button>${profile.builtin ? "" : `<button type="button" class="secondary" data-profile-edit="${profile.id}">Edit</button><button type="button" class="ghost" data-profile-delete="${profile.id}">Löschen</button>`}</div></article>`).join("");
+  list.querySelectorAll("[data-profile-activate]").forEach((button) => button.addEventListener("click", () => activateDesignProfile(button.dataset.profileActivate)));
+  list.querySelectorAll("[data-profile-copy]").forEach((button) => button.addEventListener("click", () => fillDesignProfileForm(designProfileState.profiles.find((item) => item.id === button.dataset.profileCopy), "")));
+  list.querySelectorAll("[data-profile-edit]").forEach((button) => button.addEventListener("click", () => fillDesignProfileForm(designProfileState.profiles.find((item) => item.id === button.dataset.profileEdit), button.dataset.profileEdit)));
+  list.querySelectorAll("[data-profile-delete]").forEach((button) => button.addEventListener("click", () => deleteDesignProfile(button.dataset.profileDelete)));
+}
+
+async function openDesignProfiles() {
+  designProfileState = await api("/api/design-profiles");
+  renderDesignProfiles();
+  settingsDialog.close();
+  designProfilesDialog.showModal();
+}
+
+async function activateDesignProfile(id) {
+  applySettings(await api(`/api/design-profiles/${encodeURIComponent(id)}/activate`, {method: "POST", body: "{}"}));
+  designProfileState = await api("/api/design-profiles");
+  renderDesignProfiles();
+}
+
+async function deleteDesignProfile(id) {
+  if (!confirm("Dieses eigene Designprofil wirklich löschen?")) return;
+  const wasActive = designProfileState.active === id;
+  designProfileState = await api(`/api/design-profiles/${encodeURIComponent(id)}`, {method: "DELETE"});
+  if (wasActive) applySettings(await api("/api/settings"));
+  renderDesignProfiles();
 }
 
 document.querySelector("#editorForm").addEventListener("submit", async (event) => {
@@ -339,10 +449,7 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
   const payload = {
     server_name: document.querySelector("#settingServerName").value.trim(),
     library_name: document.querySelector("#settingLibraryName").value.trim(),
-    theme: document.querySelector("#settingTheme").value,
     crosshair_cursor: document.querySelector("#settingCrosshair").checked,
-    background_opacity: Number(document.querySelector("#settingOpacity").value),
-    background_blur: Number(document.querySelector("#settingBlur").value),
     scan_exclusions: document.querySelector("#settingExclusions").value.split(/[,\n]/).map((value) => value.trim()).filter(Boolean),
     content_language: document.querySelector("#settingContentLanguage").value,
     translator_url: document.querySelector("#settingTranslatorUrl").value.trim(),
@@ -352,26 +459,9 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
   const translatorApiKey = document.querySelector("#settingTranslatorApiKey").value.trim();
   if (translatorApiKey) payload.translator_api_key = translatorApiKey;
   try {
-    let settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify(payload)});
-    const background = document.querySelector("#settingBackground").files[0];
-    if (background) {
-      const form = new FormData();
-      form.append("background", background);
-      const response = await fetch("/api/settings/background", {method: "POST", headers: {"X-CSRF-Token": csrf}, body: form});
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-      settings = data;
-    }
+    const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify(payload)});
     applySettings(settings);
     settingsDialog.close();
-  } catch (error) { alert(error.message); }
-});
-
-document.querySelector("#removeBackgroundButton").addEventListener("click", async () => {
-  try {
-    const settings = await api("/api/settings/background", {method: "DELETE"});
-    applySettings(settings);
-    document.querySelector("#settingBackground").value = "";
   } catch (error) { alert(error.message); }
 });
 
@@ -415,7 +505,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.2.9 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.0 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
@@ -461,6 +551,36 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
   } catch (error) { statusEl.textContent = error.message; }
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
+document.querySelector("#designProfilesButton").addEventListener("click", openDesignProfiles);
+document.querySelector("#closeDesignProfiles").addEventListener("click", () => designProfilesDialog.close());
+document.querySelector("#newDesignProfileButton").addEventListener("click", () => fillDesignProfileForm(state.settings.design_profile, ""));
+document.querySelector("#cancelDesignProfileEdit").addEventListener("click", renderDesignProfiles);
+document.querySelector("#designProfileForm").addEventListener("input", renderDesignProfilePreview);
+document.querySelector("#designProfileBackground").addEventListener("change", renderDesignProfilePreview);
+document.querySelector("#removeDesignProfileBackground").addEventListener("click", () => {
+  document.querySelector("#designProfileBackground").value = "";
+  document.querySelector("#designProfileBackgroundName").value = "";
+  renderDesignProfilePreview();
+});
+document.querySelector("#designProfileForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const id = document.querySelector("#designProfileId").value;
+  try {
+    const background = document.querySelector("#designProfileBackground").files[0];
+    if (background) {
+      const form = new FormData();
+      form.append("background", background);
+      const response = await fetch("/api/design-profiles/background", {method: "POST", headers: {"X-CSRF-Token": csrf}, body: form});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      document.querySelector("#designProfileBackgroundName").value = result.name;
+    }
+    if (id) await api(`/api/design-profiles/${encodeURIComponent(id)}`, {method: "PUT", body: JSON.stringify(profilePayloadFromForm())});
+    else await api("/api/design-profiles", {method: "POST", body: JSON.stringify(profilePayloadFromForm())});
+    designProfileState = await api("/api/design-profiles");
+    renderDesignProfiles();
+  } catch (error) { alert(error.message); }
+});
 document.querySelector("#agentSetupButton").addEventListener("click", showAgentSetup);
 document.querySelector("#connectionHelpButton").addEventListener("click", () => connectionHelpDialog.showModal());
 document.querySelector("#integrationHelpButton").addEventListener("click", () => integrationHelpDialog.showModal());
@@ -471,8 +591,6 @@ document.querySelector("#agentProbeButton").addEventListener("click", probeWindo
 document.querySelector("#closeConnectionHelp").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#connectionHelpDone").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#closeGameInfo").addEventListener("click", () => gameInfoDialog.close());
-document.querySelector("#settingOpacity").addEventListener("input", updateRangeOutputs);
-document.querySelector("#settingBlur").addEventListener("input", updateRangeOutputs);
 document.querySelector("#editTitle").addEventListener("input", updateCoverPositionPreview);
 document.querySelector("#editCover").addEventListener("change", (event) => {
   if (coverPreviewObjectUrl) URL.revokeObjectURL(coverPreviewObjectUrl);
@@ -496,4 +614,5 @@ document.querySelector("#pageSize").addEventListener("change", (event) => {
 document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; state.page = 1; render(); });
 document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; state.page = 1; render(); });
 
+requestAnimationFrame(animateEnergyColor);
 load();

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+- Designprofile als eigene persistente Ebene für Farben, Hintergrundbild und Hintergrundeffekte ergänzt.
+- Design und Oberflächenstil getrennt: sechs frei kombinierbare Stile und fünf Schriftgruppen stehen unabhängig von der Farbwelt zur Wahl.
+- Vier geschützte Ausgangsprofile Mission, Cyberpunk, LCARS und Midnight integriert.
+- Eigene Profile können dupliziert, live bearbeitet, gespeichert, aktiviert und gelöscht werden.
+- Profilwerte werden serverseitig strikt geprüft und atomar mit restriktiven Dateirechten gespeichert.
+- Bestehende Design- und Hintergrundeinstellungen werden beim ersten Wechsel in das Profilsystem übernommen.
+- Live-Vorschau zeigt Farben, Kartenform, Schrift, Hintergrundbild, Abdunklung und Unschärfe vor dem Speichern.
+- Energiepunkt übernimmt während des Durchlaufs stufenlos die jeweilige Farbe des Linienverlaufs und glüht passend dazu.
+
 ## 0.2.9
 
 - Energiepunkt als flachere, glühende orange Linse dargestellt.

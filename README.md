@@ -5,14 +5,16 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.2.9
+## Funktionen in Version 0.3.0
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
 - vorhandene SMB-Bibliothek schreibgeschützt einbinden
 - Suche, Filter, manuelle Metadaten und Cover-Uploads
-- Mission-, Cyberpunk-, LCARS- und Midnight-Design
-- eigenes Hintergrundbild mit Abdunklung und Unschärfe
+- Mission-, Cyberpunk-, LCARS- und Midnight-Ausgangsprofile
+- eigene speicherbare Designprofile mit Farben, Hintergrundbild und Effekten
+- Design unabhängig mit Karten-/Fensterstil und Schriftgruppe kombinieren
+- Live-Vorschau vor dem Speichern eines Profils
 - optionales Fadenkreuz als Mauszeiger
 - frei benennbarer Server und Archivtitel
 - konfigurierbare Scanner-Ausschlüsse
@@ -34,7 +36,7 @@ verändern oder in ein neues Format zu zwingen.
 - umschaltbare Kachel- und Listenansicht mit gespeicherter Auswahl
 - Seitennavigation mit 12, 24, 48 oder 96 Einträgen pro Seite
 - sichtbare laufende Version und HypeTek-Urhebervermerk in den Einstellungen
-- orange glimmender Energiepunkt statt weißem Laufbalken
+- zum Linienverlauf farbsynchron glimmender Energiepunkt statt weißem Laufbalken
 - anklickbares HypeTek-Logo als Rücksprung zum Seitenanfang
 - mitgelieferte TXT-Kurzanleitung im PowerShell-Fallback-Paket
 
@@ -73,8 +75,9 @@ Das veröffentlichte Image lautet weiterhin:
 ghcr.io/hypetek/hypetek-gamevault:latest
 ```
 
-Die alten `GAMEVAULT_*`-Umgebungsvariablen bleiben für Upgrades gültig. Neue
-Darstellungswerte werden in `/config/mission-control-settings.json` gespeichert.
+Die alten `GAMEVAULT_*`-Umgebungsvariablen bleiben für Upgrades gültig. Allgemeine
+Darstellungswerte werden in `/config/mission-control-settings.json`, eigene Profile
+atomar in `/config/mission-control-designs.json` gespeichert.
 
 ### Optionale TheGamesDB-Coversuche
 

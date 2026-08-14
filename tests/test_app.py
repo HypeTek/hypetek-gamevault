@@ -26,7 +26,7 @@ class AppTests(unittest.TestCase):
             GAMEVAULT_AGENT_DIR=str(Path(__file__).parents[1] / "windows-agent"),
         )
         sys.path.insert(0, str(Path(__file__).parents[1] / "server"))
-        for module in ("app", "database", "scanner", "settings", "metadata", "translation"):
+        for module in ("app", "database", "scanner", "settings", "metadata", "translation", "design_profiles"):
             sys.modules.pop(module, None)
         import app
         self.module = app
@@ -107,7 +107,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.2.9")
+        self.assertEqual(health["version"], "0.3.0")
         self.assertEqual(health["agent_api"], 3)
 
     def test_path_escape_is_rejected(self):
@@ -147,7 +147,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.2.9/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.0/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -163,10 +163,12 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.2.9")
+        self.assertEqual(settings["version"], "0.3.0")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
+        self.assertEqual(settings["active_design_profile"], "mission")
+        self.assertEqual(settings["design_profile"]["style"], "soft")
         response = self.client.patch(
             "/api/settings",
             json={
@@ -182,6 +184,62 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.get_json()["library_name"], "HypeTek HQ")
         scan = self.post("/api/scan")
         self.assertEqual(scan.get_json()["scanned"], 0)
+
+    def test_design_profiles_are_validated_persistent_and_protected(self):
+        self.login()
+        overview = self.client.get("/api/design-profiles").get_json()
+        self.assertEqual(overview["active"], "mission")
+        self.assertEqual(len(overview["profiles"]), 4)
+        mission = next(item for item in overview["profiles"] if item["id"] == "mission")
+        created_payload = {
+            **mission,
+            "name": "HypeTek Test",
+            "builtin": False,
+            "style": "terminal",
+            "font": "mono",
+            "colors": {**mission["colors"], "primary": "#112233"},
+        }
+        created = self.post("/api/design-profiles", json=created_payload)
+        self.assertEqual(created.status_code, 201)
+        profile_id = created.get_json()["id"]
+
+        activated = self.post(f"/api/design-profiles/{profile_id}/activate", json={})
+        self.assertEqual(activated.status_code, 200)
+        self.assertEqual(activated.get_json()["active_design_profile"], profile_id)
+        self.assertEqual(activated.get_json()["design_profile"]["font"], "mono")
+
+        invalid = self.client.put(
+            f"/api/design-profiles/{profile_id}",
+            json={**created_payload, "colors": {**mission["colors"], "primary": "red"}},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(invalid.status_code, 400)
+
+        protected = self.client.delete(
+            "/api/design-profiles/mission", headers={"X-CSRF-Token": self.csrf}
+        )
+        self.assertEqual(protected.status_code, 400)
+        stored = Path(os.environ["GAMEVAULT_CONFIG_DIR"]) / "mission-control-designs.json"
+        self.assertTrue(stored.is_file())
+        self.assertEqual(stored.stat().st_mode & 0o777, 0o600)
+
+    def test_design_profile_background_is_checked_before_storage(self):
+        self.login()
+        invalid = self.post(
+            "/api/design-profiles/background",
+            data={"background": (BytesIO(b"not an image"), "background.png")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(invalid.status_code, 400)
+        valid = self.post(
+            "/api/design-profiles/background",
+            data={"background": (BytesIO(b"\x89PNG\r\n\x1a\n" + b"x" * 32), "background.png")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(valid.status_code, 201)
+        name = valid.get_json()["name"]
+        self.assertRegex(name, r"^background-[a-f0-9]{24}\.png$")
+        self.assertTrue((Path(os.environ["GAMEVAULT_CONFIG_DIR"]) / "backgrounds" / name).is_file())
 
     def test_thegamesdb_key_is_write_only_and_blank_patch_keeps_it(self):
         self.login()
