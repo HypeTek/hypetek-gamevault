@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.8
+
+- LCARS verwendet nur noch einen durchgehenden Querbalken über die vollständige Seitenbreite; der zusätzliche Hero-Rand wurde entfernt.
+- Das vertikale LCARS-Systemband beginnt mit einem minimalen Abstand direkt unterhalb des Querbalkens.
+- Die Position wird weiterhin aus der tatsächlichen Kopfzeilenhöhe berechnet und bleibt damit unabhängig von Deutsch, Englisch oder Russisch.
+
 ## 0.3.7
 
 - LCARS-Band richtet sich dynamisch an der tatsächlichen, sprachabhängigen Höhe der Kopfzeile aus und hält acht Pixel Abstand zum Querbalken.

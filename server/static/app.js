@@ -76,7 +76,7 @@ function updateLcarsLayout() {
   const energyLine = document.querySelector(".energy-line");
   const logoButton = document.querySelector("#brandHomeButton");
   if (!energyLine || !logoButton) return;
-  const railTop = Math.ceil(energyLine.getBoundingClientRect().bottom + window.scrollY + 8);
+  const railTop = Math.ceil(energyLine.getBoundingClientRect().bottom + window.scrollY + 2);
   const stickyTop = Math.ceil(logoButton.getBoundingClientRect().bottom + 18);
   document.body.style.setProperty("--lcars-rail-top", `${railTop}px`);
   document.body.style.setProperty("--lcars-clock-sticky-top", `${stickyTop}px`);
@@ -545,7 +545,7 @@ async function probeWindowsAgent() {
       }
       if (result.expired) break;
     }
-    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.7 aktualisieren.");
+    throw new Error("Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.8 aktualisieren.");
   } catch (error) {
     output.textContent = ` · ${error.message}`;
     button.disabled = false;
