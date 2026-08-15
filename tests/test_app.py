@@ -108,7 +108,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.3.14")
+        self.assertEqual(health["version"], "0.3.15")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -149,7 +149,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.14/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.15/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -159,9 +159,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.3.14", html)
-        self.assertIn("/static/i18n.js?v=0.3.14", html)
-        self.assertIn("/static/app.css?v=0.3.14", html)
+        self.assertIn("/static/app.js?v=0.3.15", html)
+        self.assertIn("/static/i18n.js?v=0.3.15", html)
+        self.assertIn("/static/app.css?v=0.3.15", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -170,7 +170,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.3.14")
+        self.assertEqual(settings["version"], "0.3.15")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -360,17 +360,20 @@ class AppTests(unittest.TestCase):
 
             self.module.settings_store.update({
                 "translator_url": "http://translator:5000",
-                "content_language": "de",
+                "favorite_content_language": "de",
             })
             original_translate = self.module.translate_text
-            self.module.translate_text = lambda endpoint, text, target, key="": "Ein Testspiel."
+            original_validate = self.module.validate_translator
+            self.module.translate_text = lambda endpoint, text, target, key="", available_languages=None: "Ein Testspiel."
+            self.module.validate_translator = lambda endpoint, key="": ["de", "en", "ru"]
             try:
                 translated = self.post(
                     f"/api/games/{game['id']}/metadata/translate",
-                    json={},
+                    json={"target_language": "de"},
                 )
             finally:
                 self.module.translate_text = original_translate
+                self.module.validate_translator = original_validate
             self.assertEqual(translated.status_code, 200)
             self.assertEqual(translated.get_json()["metadata_overview"], "Ein Testspiel.")
             self.assertEqual(translated.get_json()["metadata_overview_original"], "A test game overview.")
@@ -475,7 +478,7 @@ class AppTests(unittest.TestCase):
                 json={
                     "translator_url": "http://translator:5000/",
                     "translator_api_key": "translator-secret",
-                    "content_language": "ru",
+                    "favorite_content_language": "ru",
                 },
                 headers={"X-CSRF-Token": self.csrf},
             )
@@ -484,7 +487,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(saved.status_code, 200)
         public = saved.get_json()
         self.assertEqual(public["translator_url"], "http://translator:5000")
-        self.assertEqual(public["content_language"], "ru")
+        self.assertEqual(public["favorite_content_language"], "ru")
         self.assertTrue(public["translator_configured"])
         self.assertNotIn("translator_api_key", public)
 

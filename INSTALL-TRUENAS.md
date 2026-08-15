@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.3.14"
+      com.hypetek.mission-control.deployment: "0.3.15"
 
     ports:
       - "9998:8080"
@@ -96,7 +96,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.3.14 muss die Antwort unter anderem `"version":"0.3.14"`,
+Für Version 0.3.15 muss die Antwort unter anderem `"version":"0.3.15"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -112,10 +112,11 @@ Control übernimmt diese Adresse automatisch. Die vollständige Anleitung kann
 in Mission Control unter **API-/Translator-Hilfe** als PDF heruntergeladen oder
 per QR-Code auf einem zweiten Gerät geöffnet werden.
 
-Beim ersten Start lädt LibreTranslate die Sprachmodelle für Deutsch, Englisch,
-Russisch und Italienisch. Italienisch wird benötigt, weil TheGamesDB einzelne
-englische Beschreibungen mit italienischen Systemanforderungen mischt. Das kann
-mehrere Minuten dauern. Der Zustand lässt sich danach unter
+Beim ersten Start lädt LibreTranslate ein schlankes Basispaket für Deutsch,
+Englisch, Russisch und Italienisch. Die Erkennung gemischter Inhalte ist nicht
+auf diese Ausgangssprachen festgelegt; verarbeitet werden alle im Translator
+installierten Sprachen. Der erste Modell-Download kann mehrere Minuten dauern.
+Der Zustand lässt sich danach unter
 **Einstellungen → Verbindung testen** prüfen; Mission Control zeigt dort auch die
 vom Container gemeldeten Sprachcodes an. Zusätzliche Modelle werden über
 `LT_LOAD_ONLY` kommasepariert ergänzt, etwa `fr,es,it,pl,uk,tr,ar,zh,ja,ko`.

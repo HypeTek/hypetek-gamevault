@@ -18,12 +18,16 @@ class TranslationTests(unittest.TestCase):
         with self.assertRaises(translation.TranslationError):
             translation.normalize_translator_url("http://user:pass@translator:5000")
 
-    def test_mixed_lines_are_translated_separately_and_keep_line_breaks(self):
+    def test_mixed_languages_are_detected_dynamically_and_keep_line_breaks(self):
         calls = []
         original = translation._json_request
 
         def fake_request(url, payload=None, timeout=25):
             calls.append((url, payload))
+            if url.endswith("/detect"):
+                text = payload["q"]
+                language = "de" if text.startswith("DE:") else ("it" if "Requisiti" in text else "en")
+                return [{"language": language, "confidence": 99}]
             return {"translatedText": f"DE: {payload['q']}"}
 
         translation._json_request = fake_request
@@ -32,14 +36,16 @@ class TranslationTests(unittest.TestCase):
                 "http://translator:5000",
                 "English paragraph.\nRequisiti di sistema.\n\n64 GB\n---",
                 "de",
+                available_languages=["de", "en", "it"],
             )
         finally:
             translation._json_request = original
-        self.assertEqual(len(calls), 3)
-        self.assertEqual(
-            result,
-            "DE: English paragraph.\nDE: Requisiti di sistema.\n\nDE: 64 GB\n---",
-        )
+        self.assertIn("DE: English paragraph", result)
+        self.assertIn("DE: Requisiti di sistema", result)
+        self.assertIn("\n\n64 GB\n---", result)
+        sources = [payload["source"] for url, payload in calls if url.endswith("/translate")]
+        self.assertIn("en", sources)
+        self.assertIn("it", sources)
 
     def test_validation_returns_normalized_available_language_codes(self):
         original = translation._json_request
@@ -55,25 +61,30 @@ class TranslationTests(unittest.TestCase):
             translation._json_request = original
         self.assertEqual(codes, ["de", "en", "it", "ru"])
 
-    def test_short_italian_requirement_labels_use_explicit_source(self):
+    def test_source_languages_are_not_hard_coded(self):
         calls = []
         original = translation._json_request
 
         def fake_request(url, payload=None, timeout=25):
             calls.append(payload)
-            return {"translatedText": f"EN: {payload['q']}"}
+            if url.endswith("/detect"):
+                language = "de" if payload["q"].startswith("DE:") else ("es" if "Requisitos" in payload["q"] else "fr")
+                return [{"language": language, "confidence": 95}]
+            return {"translatedText": f"DE: {payload['q']}"}
 
         translation._json_request = fake_request
         try:
             translation.translate_text(
                 "http://translator:5000",
-                "REQUISITI DI SISTEMA\nScheda video: 4 GB\nEnglish prose.",
-                "en",
+                "Requisitos del sistema\nConfiguration recommandée",
+                "de",
+                available_languages=["de", "es", "fr"],
             )
         finally:
             translation._json_request = original
 
-        self.assertEqual([call["source"] for call in calls], ["it", "it", "auto"])
+        sources = [call["source"] for call in calls if call and "source" in call]
+        self.assertEqual(sources, ["es", "fr"])
 
 
 if __name__ == "__main__":

@@ -11,28 +11,6 @@ class TranslationError(RuntimeError):
     pass
 
 
-_ITALIAN_SYSTEM_MARKERS = re.compile(
-    r"\b(?:"
-    r"requisiti|sistema\s+operativo|richiede|processore|memoria|"
-    r"scheda\s+video|note?\s+aggiuntive?|consigliati?|minimi|"
-    r"spazio\s+disponibile|versione"
-    r")\b",
-    re.IGNORECASE,
-)
-
-
-def _source_language_hint(text: str) -> str:
-    """Return a reliable source hint for short metadata fragments.
-
-    LibreTranslate's automatic detector is intentionally retained for normal
-    prose. Short Italian requirement labels are the exception: entries such as
-    "CONSIGLIATI" or "Scheda video" are frequently left untouched or detected
-    as another Romance language, even when the Italian model is installed.
-    """
-
-    return "it" if _ITALIAN_SYSTEM_MARKERS.search(str(text or "")) else "auto"
-
-
 def normalize_translator_url(value: str) -> str:
     url = str(value or "").strip().rstrip("/")
     if not url:
@@ -59,7 +37,7 @@ def _json_request(url: str, payload: dict | None = None, timeout: int = 25):
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "HypeTek-Mission-Control/0.3.14",
+            "User-Agent": "HypeTek-Mission-Control/0.3.15",
         },
     )
     try:
@@ -92,11 +70,42 @@ def validate_translator(endpoint: str, api_key: str = "") -> list[str]:
     return codes
 
 
+def _detected_languages(base: str, text: str, api_key: str = "") -> list[str]:
+    payload = {"q": text}
+    if api_key:
+        payload["api_key"] = api_key
+    result = _json_request(f"{base}/detect", payload=payload)
+    if not isinstance(result, list):
+        return []
+    ranked = sorted(
+        (item for item in result if isinstance(item, dict)),
+        key=lambda item: float(item.get("confidence") or 0),
+        reverse=True,
+    )
+    return [
+        str(item.get("language") or "").strip().casefold()
+        for item in ranked
+        if item.get("language")
+    ]
+
+
+def _translate_fragment(base: str, text: str, source: str, target: str, api_key: str) -> str:
+    payload = {"q": text, "source": source, "target": target, "format": "text"}
+    if api_key:
+        payload["api_key"] = api_key
+    result = _json_request(f"{base}/translate", payload=payload)
+    value = result.get("translatedText") if isinstance(result, dict) else None
+    if not isinstance(value, str) or not value.strip():
+        raise TranslationError("Translator lieferte keinen übersetzten Text")
+    return value.strip()
+
+
 def translate_text(
     endpoint: str,
     text: str,
     target_language: str,
     api_key: str = "",
+    available_languages: list[str] | None = None,
 ) -> str:
     base = normalize_translator_url(endpoint)
     source_text = str(text or "").strip()
@@ -106,10 +115,17 @@ def translate_text(
     if not re.fullmatch(r"[a-z]{2,3}(?:-[a-z]{2})?", target):
         raise TranslationError("Ungültige Zielsprache")
 
-    # TheGamesDB overviews can mix languages even inside one section: English
-    # prose is often followed by Italian requirements without a reliable blank
-    # line.  Submit every logical line separately so LibreTranslate can detect
-    # the source language for each unit. Newlines are retained verbatim.
+    available = {
+        str(code).strip().casefold()
+        for code in (available_languages or [])
+        if re.fullmatch(r"[a-z]{2,3}(?:-[a-z]{2})?", str(code).strip().casefold())
+    }
+
+    # TheGamesDB descriptions can contain any number of source languages, even
+    # within one line. Translate logical fragments independently and repeat
+    # detection after every pass. Once the dominant language was translated,
+    # a previously hidden second language can be detected on the next pass.
+    # No source language is hard-coded here; the Translator decides dynamically.
     parts = re.split(r"(\r?\n+)", source_text)
     translated: list[str] = []
     for part in parts:
@@ -118,20 +134,27 @@ def translate_text(
             continue
         # Pure numbers and separators do not need language detection and can
         # make short-text detectors unreliable.
-        if not any(character.isalpha() for character in part):
+        if not any(character.isalpha() for character in part) or re.fullmatch(
+            r"[\d\s.,:/()+\-x×%]+(?:[kmgt]i?b)?", part.strip(), re.IGNORECASE
+        ):
             translated.append(part)
             continue
-        payload = {
-            "q": part.strip(),
-            "source": _source_language_hint(part),
-            "target": target,
-            "format": "text",
-        }
-        if api_key:
-            payload["api_key"] = api_key
-        result = _json_request(f"{base}/translate", payload=payload)
-        value = result.get("translatedText") if isinstance(result, dict) else None
-        if not isinstance(value, str) or not value.strip():
-            raise TranslationError("Translator lieferte keinen übersetzten Text")
-        translated.append(value.strip())
+        fragments = re.split(r"([:;.!?]+\s*)", part.strip())
+        line: list[str] = []
+        for fragment in fragments:
+            if not fragment or not any(character.isalpha() for character in fragment):
+                line.append(fragment)
+                continue
+            current = fragment.strip()
+            for _ in range(4):
+                detected = _detected_languages(base, current, api_key)
+                candidates = [code for code in detected if code != target and (not available or code in available)]
+                if not candidates:
+                    break
+                updated = _translate_fragment(base, current, candidates[0], target, api_key)
+                if updated.casefold() == current.casefold():
+                    break
+                current = updated
+            line.append(current)
+        translated.append("".join(line).strip())
     return "".join(translated).strip()

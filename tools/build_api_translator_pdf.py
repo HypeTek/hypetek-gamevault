@@ -214,13 +214,14 @@ def build_pdf():
                 "TheGamesDB, integrierter lokaler Translator und sichere TrueNAS-Konfiguration",
                 styles["SubtitleMC"],
             ),
-            Paragraph("Was ist ab Version 0.3.14 neu?", styles["H1MC"]),
+            Paragraph("Was ist ab Version 0.3.15 neu?", styles["H1MC"]),
             Paragraph(
                 "Mission Control kann den lokalen Translator jetzt als zweiten Dienst derselben "
                 "TrueNAS-App betreiben. Die interne Adresse wird automatisch gesetzt. Es ist weder "
                 "ein externer Übersetzungsdienst noch ein Translator-API-Key nötig. Gemischte "
-                "TheGamesDB-Texte werden zeilenweise erkannt; kurze italienische Begriffe der "
-                "Systemanforderungen erhalten dabei einen zuverlässigen Sprachhinweis.",
+                "TheGamesDB-Texte werden abschnittsweise erkannt. Dabei ist keine Ausgangssprache "
+                "fest vorgegeben: Alle im Translator installierten Sprachen können auch innerhalb "
+                "desselben Spielinhalts dynamisch erkannt und verarbeitet werden.",
                 styles["CalloutMC"],
             ),
         ]
@@ -319,7 +320,7 @@ def build_pdf():
                 "  image: ghcr.io/hypetek/hypetek-gamevault:latest<br/>"
                 "  pull_policy: always<br/>"
                 "  labels:<br/>"
-                "    com.hypetek.mission-control.deployment: \"0.3.14\"<br/>"
+                "    com.hypetek.mission-control.deployment: \"0.3.15\"<br/>"
                 "  environment:<br/>"
                 "    MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000<br/>"
                 "translator:<br/>"
@@ -354,19 +355,19 @@ def build_pdf():
             Paragraph("Gesundheitsprüfung", styles["H2MC"]),
             Paragraph("http://TRUENAS-IP:9998/health", styles["CodeMC"]),
             Paragraph(
-                "Die Antwort muss unter anderem version 0.3.14, agent_api 3 und "
+                "Die Antwort muss unter anderem version 0.3.15, agent_api 3 und "
                 "translator_managed true enthalten. Danach in Einstellungen bei Translator auf "
                 "Verbindung testen klicken. Mission Control zeigt die erreichbaren Sprachcodes.",
                 styles["BodyMC"],
             ),
             Paragraph("Übersetzung verwenden", styles["H2MC"]),
-            bullet("In Einstellungen die Sprache der Spielinhalte auswählen.", styles),
-            bullet("Ein Spiel öffnen und Spielinhalt übersetzen wählen.", styles),
+            bullet("Im Spiele-Infofenster auf Spieleinhalt übersetzen klicken und die Zielsprache aus der scrollbaren Liste auswählen.", styles),
+            bullet("Der Stern markiert eine bevorzugte Zielsprache und sortiert sie beim nächsten Öffnen nach oben.", styles),
             bullet("Original anzeigen und Übersetzung anzeigen wechseln zwischen beiden Fassungen.", styles),
             Paragraph("Sprachen schlank erweitern", styles["H2MC"]),
             Paragraph(
-                "Standardmäßig werden en,de,ru,it geladen. Italienisch ermöglicht die vollständige "
-                "Übersetzung gemischter TheGamesDB-Texte. Weitere Codes werden in LT_LOAD_ONLY "
+                "Standardmäßig werden en,de,ru,it als schlankes Basispaket geladen. Die Erkennung "
+                "selbst ist nicht darauf beschränkt. Weitere Codes werden in LT_LOAD_ONLY "
                 "kommasepariert ergänzt, zum Beispiel fr,es,pl,uk,tr,ar,zh,ja,ko. Nur tatsächlich "
                 "benötigte Sprachen laden, weil Modelle Speicherplatz, Startzeit und Arbeitsspeicher "
                 "benötigen.",

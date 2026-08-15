@@ -7,7 +7,6 @@ from pathlib import Path
 
 
 THEMES = {"mission", "cyberpunk", "lcars", "midnight"}
-CONTENT_LANGUAGES = {"de", "en", "fr", "es", "it", "pt", "pl", "ru", "uk", "tr", "ar", "zh", "ja", "ko"}
 UI_LANGUAGES = {"auto", "de", "en", "ru"}
 DEFAULT_SERVER_NAME = os.environ.get("MISSION_CONTROL_SERVER_NAME", "Mission Control").strip()
 DEFAULT_LIBRARY_NAME = os.environ.get(
@@ -28,7 +27,7 @@ DEFAULTS = {
     "scan_exclusions": [],
     "rawg_api_key": "",
     "thegamesdb_api_key": "",
-    "content_language": "de",
+    "favorite_content_language": "de",
     "ui_language": "auto",
     "translator_url": DEFAULT_TRANSLATOR_URL,
     "translator_api_key": "",
@@ -121,9 +120,12 @@ class SettingsStore:
             "scan_exclusions": exclusions,
             "rawg_api_key": str(values.get("rawg_api_key") or "").strip()[:200],
             "thegamesdb_api_key": str(values.get("thegamesdb_api_key") or "").strip()[:200],
-            "content_language": (
-                str(values.get("content_language") or "de").strip().casefold()
-                if str(values.get("content_language") or "de").strip().casefold() in CONTENT_LANGUAGES
+            "favorite_content_language": (
+                str(values.get("favorite_content_language") or values.get("content_language") or "de").strip().casefold()
+                if re.fullmatch(
+                    r"[a-z]{2,3}(?:-[a-z]{2})?",
+                    str(values.get("favorite_content_language") or values.get("content_language") or "de").strip().casefold(),
+                )
                 else "de"
             ),
             "ui_language": (

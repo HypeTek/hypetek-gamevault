@@ -28,6 +28,9 @@ let coverDrag = null;
 // Register the critical agent check before optional interface enhancements.
 // Function declarations are initialized before this statement is evaluated.
 document.querySelector("#agentProbeButton")?.addEventListener("click", probeWindowsAgent);
+document.querySelector("#closeTranslationLanguages")?.addEventListener("click", () => {
+  document.querySelector("#translationLanguageMenu").hidden = true;
+});
 
 const formatBytes = (value) => {
   if (!value) return "0 B";
@@ -318,11 +321,14 @@ function showGameInfo(id) {
   const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
   const launch = launchable ? `<button type="button" class="primary-info-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : "";
   const translate = state.settings?.translator_configured && overview
-    ? `<button type="button" class="secondary" onclick="translateGameInfo('${game.id}')">${tr("info.translate")}</button>` : "";
+    ? `<button type="button" class="secondary info-translate" onclick="openTranslationLanguages('${game.id}')">${tr("info.translate")}</button>` : "";
   const original = game.metadata_overview_original && game.metadata_overview_original !== game.metadata_overview
     ? `<button id="gameInfoOriginalButton" type="button" class="secondary" onclick="toggleGameInfoOriginal('${game.id}')">${tr("info.original")}</button>` : "";
-  const favorite = `<button type="button" class="favorite-action ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? tr("game.favorite") : tr("game.makeFavorite")}</button>`;
-  document.querySelector("#gameInfoActions").innerHTML = `${launch}${favorite}<button type="button" class="secondary" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button>${translate}${original}${source}<button type="button" class="secondary" onclick="gameInfoDialog.close(); editGame('${game.id}')">${tr("game.edit")}</button>`;
+  const favorite = `<button type="button" class="favorite-action info-favorite ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? tr("game.favorite") : tr("game.makeFavorite")}</button>`;
+  const menu = document.querySelector("#translationLanguageMenu");
+  menu.hidden = true;
+  menu.dataset.gameId = game.id;
+  document.querySelector("#gameInfoActions").innerHTML = `${launch.replace('primary-info-action', 'primary-info-action info-launch')}${favorite}<button type="button" class="secondary info-folder" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button type="button" class="secondary info-edit" onclick="gameInfoDialog.close(); editGame('${game.id}')">${tr("game.edit")}</button>${translate}${original.replace('secondary', 'secondary info-original')}${source.replace('secondary', 'secondary info-source')}<button type="button" class="secondary info-back" onclick="gameInfoDialog.close()">${tr("common.back")}</button>`;
   if (!gameInfoDialog.open) gameInfoDialog.showModal();
 }
 
@@ -337,9 +343,58 @@ async function toggleFavorite(id) {
   } catch (error) { alert(error.message); }
 }
 
-async function translateGameInfo(id) {
+function displayLanguageName(code) {
   try {
-    const translated = await api(`/api/games/${id}/metadata/translate`, {method: "POST", body: "{}"});
+    const display = new Intl.DisplayNames([document.documentElement.lang || "de"], {type: "language"});
+    return display.of(code) || code.toUpperCase();
+  } catch (_error) {
+    return code.toUpperCase();
+  }
+}
+
+function renderTranslationLanguages(id, languages) {
+  const favorite = state.settings?.favorite_content_language || "de";
+  const ordered = [...new Set(languages)].sort((left, right) => {
+    if (left === favorite) return -1;
+    if (right === favorite) return 1;
+    return displayLanguageName(left).localeCompare(displayLanguageName(right), document.documentElement.lang);
+  });
+  document.querySelector("#translationLanguageList").innerHTML = ordered.map((code) => `
+    <div class="translation-language-row ${code === favorite ? "is-favorite" : ""}">
+      <button type="button" class="translation-language-choice" onclick="translateGameInfo('${id}', '${code}')">
+        <span>${escapeHtml(displayLanguageName(code))}</span><small>${code.toUpperCase()}</small>
+      </button>
+      <button type="button" class="translation-language-favorite" onclick="setFavoriteTranslationLanguage('${id}', '${code}')" aria-label="${escapeHtml(tr("info.favoriteLanguage", {language: displayLanguageName(code)}))}" aria-pressed="${code === favorite ? "true" : "false"}">${code === favorite ? "★" : "☆"}</button>
+    </div>`).join("");
+}
+
+async function openTranslationLanguages(id) {
+  const menu = document.querySelector("#translationLanguageMenu");
+  const list = document.querySelector("#translationLanguageList");
+  menu.hidden = false;
+  menu.dataset.gameId = id;
+  list.innerHTML = `<p class="field-hint">${tr("common.loading")}</p>`;
+  menu.scrollIntoView({behavior: "smooth", block: "nearest"});
+  try {
+    const status = await api("/api/translator/status");
+    renderTranslationLanguages(id, status.languages || []);
+  } catch (error) {
+    list.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function setFavoriteTranslationLanguage(id, language) {
+  try {
+    const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify({favorite_content_language: language})});
+    applySettings(settings);
+    const status = await api("/api/translator/status");
+    renderTranslationLanguages(id, status.languages || []);
+  } catch (error) { alert(error.message); }
+}
+
+async function translateGameInfo(id, targetLanguage) {
+  try {
+    const translated = await api(`/api/games/${id}/metadata/translate`, {method: "POST", body: JSON.stringify({target_language: targetLanguage})});
     const index = state.games.findIndex((game) => game.id === id);
     if (index >= 0) state.games[index] = {...state.games[index], ...translated};
     showGameInfo(id);
@@ -365,7 +420,6 @@ function openSettings() {
   document.querySelector("#settingExclusions").value = settings.scan_exclusions.join(", ");
   document.querySelector("#settingTheGamesDbApiKey").value = "";
   document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? tr("settings.keyStored") : tr("settings.keyMissing");
-  document.querySelector("#settingContentLanguage").value = settings.content_language || "de";
   document.querySelector("#settingUiLanguage").value = settings.ui_language || "auto";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
@@ -533,7 +587,6 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
     library_name: document.querySelector("#settingLibraryName").value.trim(),
     crosshair_cursor: document.querySelector("#settingCrosshair").checked,
     scan_exclusions: document.querySelector("#settingExclusions").value.split(/[,\n]/).map((value) => value.trim()).filter(Boolean),
-    content_language: document.querySelector("#settingContentLanguage").value,
     ui_language: document.querySelector("#settingUiLanguage").value,
     translator_url: document.querySelector("#settingTranslatorUrl").value.trim(),
   };

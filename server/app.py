@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 import time
 import zipfile
@@ -278,7 +279,7 @@ def update_settings():
         "crosshair_cursor",
         "scan_exclusions",
         "thegamesdb_api_key",
-        "content_language",
+        "favorite_content_language",
         "ui_language",
         "translator_url",
         "translator_api_key",
@@ -654,13 +655,20 @@ def translate_game_metadata(game_id: str):
     endpoint = settings.get("translator_url", "")
     if not endpoint:
         return jsonify(error="In den Einstellungen ist kein Mission Control Translator eingerichtet"), 409
-    target = settings.get("content_language", "de")
+    payload = request.get_json(silent=True) or {}
+    target = str(payload.get("target_language") or settings.get("favorite_content_language") or "de").strip().casefold()
+    if not re.fullmatch(r"[a-z]{2,3}(?:-[a-z]{2})?", target):
+        return jsonify(error="Ungültige Zielsprache"), 400
     try:
+        languages = validate_translator(endpoint, settings.get("translator_api_key", ""))
+        if target not in languages:
+            return jsonify(error="Diese Zielsprache ist im Translator nicht installiert"), 409
         translated = translate_text(
             endpoint,
             source,
             target,
             settings.get("translator_api_key", ""),
+            available_languages=languages,
         )
     except TranslationError as error:
         return jsonify(error=str(error)), 502

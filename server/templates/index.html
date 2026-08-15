@@ -182,11 +182,6 @@
           <input id="settingTheGamesDbApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
           <span id="theGamesDbKeyStatus" class="field-hint"></span>
         </label>
-        <label>Sprache der Spielinhalte (optional)
-          <select id="settingContentLanguage">
-            <option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="it">Italiano</option><option value="pt">Português</option><option value="pl">Polski</option><option value="ru">Русский</option><option value="uk">Українська</option><option value="tr">Türkçe</option><option value="ar">العربية</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option>
-          </select>
-        </label>
         <label>Sprache der Oberfläche
           <select id="settingUiLanguage">
             <option value="auto">Automatisch (Browser)</option><option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option>
@@ -307,6 +302,11 @@
         <section id="gameInfoOverviewSection"><h3>Spielinhalt</h3><p id="gameInfoOverview"></p></section>
         <section id="gameInfoNotesSection"><h3>Bemerkungen</h3><p id="gameInfoNotes"></p></section>
         <section id="gameInfoLibrarySection"><h3>Bibliothek</h3><dl id="gameInfoLibrary" class="game-info-list"></dl></section>
+        <section id="translationLanguageMenu" class="translation-language-menu" hidden>
+          <div class="translation-language-head"><h3 data-i18n="info.chooseLanguage">Zielsprache auswählen</h3><button id="closeTranslationLanguages" type="button" class="ghost" aria-label="Sprachauswahl schließen">×</button></div>
+          <p data-i18n="info.languageHint">Der Stern legt deine bevorzugte Sprache fest. Die Auswahl startet die Übersetzung nur für dieses Spiel.</p>
+          <div id="translationLanguageList" class="translation-language-list"></div>
+        </section>
         <div id="gameInfoActions" class="dialog-actions"></div>
       </div>
     </article>

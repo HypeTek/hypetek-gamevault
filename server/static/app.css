@@ -169,6 +169,30 @@ body[data-style="lcars"] .hero{
 .translator-status-row button{padding:7px 10px;font-size:.78rem}
 .agent-setup-close{display:flex;justify-content:flex-end;margin-top:8px}.agent-setup-close button{padding:7px 12px;font-size:.78rem}
 
+/* 0.3.15: per-game translation language picker and stable action rows. */
+#gameInfoActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+#gameInfoActions>*{min-width:0;margin:0}
+#gameInfoActions .info-launch{grid-column:1;grid-row:1}
+#gameInfoActions .info-favorite{grid-column:2;grid-row:1}
+#gameInfoActions .info-folder{grid-column:3;grid-row:1}
+#gameInfoActions .info-edit{grid-column:4;grid-row:1}
+#gameInfoActions .info-translate{grid-column:1;grid-row:2}
+#gameInfoActions .info-original{grid-column:2;grid-row:2}
+#gameInfoActions .info-source{grid-column:3;grid-row:2;text-align:center}
+#gameInfoActions .info-back{grid-column:4;grid-row:2}
+.translation-language-menu{padding:18px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel),black 8%)}
+.translation-language-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.translation-language-head h3{margin:0}
+.translation-language-head button{font-size:1.3rem;padding:5px 10px}
+.translation-language-menu>p{color:var(--muted);font-size:.88rem;margin:6px 0 14px}
+.translation-language-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:280px;overflow-y:auto;padding-right:5px}
+.translation-language-row{display:grid;grid-template-columns:1fr auto;gap:6px;border:1px solid var(--line);border-radius:10px;padding:5px;background:var(--panel2)}
+.translation-language-row.is-favorite{border-color:var(--orange)}
+.translation-language-choice{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:transparent;color:var(--text)}
+.translation-language-choice small{color:var(--muted)}
+.translation-language-favorite{width:44px;padding:7px;background:transparent;color:var(--orange);font-size:1.3rem}
+@media(max-width:720px){#gameInfoActions{grid-template-columns:1fr 1fr}#gameInfoActions>*{grid-column:auto!important;grid-row:auto!important}.translation-language-list{grid-template-columns:1fr}}
+
 /* 0.3.10: LCARS reserves its system rail for every top-level panel. */
 body[data-style="lcars"] .agent-note-content{
   width:min(1500px,94vw);

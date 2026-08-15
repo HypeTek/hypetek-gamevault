@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.15
+
+- Zielsprachen-Auswahl aus den globalen Einstellungen in das jeweilige Spiele-Infofenster verschoben.
+- Scrollbare, vom Translator gelieferte Sprachliste mit dauerhaft speicherbarer Favoritensprache ergänzt.
+- Mischsprachige Inhalte werden ohne fest verdrahtete Ausgangssprachen fragmentweise erkannt und mehrstufig übersetzt.
+- Aktionsbereich im Spielefenster neu geordnet: Edit oben, Zurück unten rechts.
+
 ## 0.3.14
 
 - Kurze italienische Systemanforderungs-Begriffe wie `REQUISITI DI SISTEMA`, `MINIMI`, `Scheda video` und `CONSIGLIATI` werden nun ausdrücklich als Italienisch an LibreTranslate übergeben.
