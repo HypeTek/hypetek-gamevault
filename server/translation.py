@@ -37,7 +37,7 @@ def _json_request(url: str, payload: dict | None = None, timeout: int = 25):
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "HypeTek-Mission-Control/0.3.12",
+            "User-Agent": "HypeTek-Mission-Control/0.3.13",
         },
     )
     try:
@@ -84,13 +84,19 @@ def translate_text(
     if not re.fullmatch(r"[a-z]{2,3}(?:-[a-z]{2})?", target):
         raise TranslationError("Ungültige Zielsprache")
 
-    # TheGamesDB overviews can contain English prose and, in the same entry,
-    # requirements copied from another language. Detect each paragraph rather
-    # than treating the whole mixed document as a single source language.
-    parts = re.split(r"(\n\s*\n)", source_text)
+    # TheGamesDB overviews can mix languages even inside one section: English
+    # prose is often followed by Italian requirements without a reliable blank
+    # line.  Submit every logical line separately so LibreTranslate can detect
+    # the source language for each unit. Newlines are retained verbatim.
+    parts = re.split(r"(\r?\n+)", source_text)
     translated: list[str] = []
     for part in parts:
-        if not part.strip() or re.fullmatch(r"\n\s*\n", part):
+        if not part.strip() or re.fullmatch(r"\r?\n+", part):
+            translated.append(part)
+            continue
+        # Pure numbers and separators do not need language detection and can
+        # make short-text detectors unreliable.
+        if not any(character.isalpha() for character in part):
             translated.append(part)
             continue
         payload = {

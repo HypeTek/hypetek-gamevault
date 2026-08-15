@@ -18,7 +18,7 @@ class TranslationTests(unittest.TestCase):
         with self.assertRaises(translation.TranslationError):
             translation.normalize_translator_url("http://user:pass@translator:5000")
 
-    def test_mixed_paragraphs_are_translated_separately(self):
+    def test_mixed_lines_are_translated_separately_and_keep_line_breaks(self):
         calls = []
         original = translation._json_request
 
@@ -30,13 +30,16 @@ class TranslationTests(unittest.TestCase):
         try:
             result = translation.translate_text(
                 "http://translator:5000",
-                "English paragraph.\n\nRequisiti di sistema.",
+                "English paragraph.\nRequisiti di sistema.\n\n64 GB\n---",
                 "de",
             )
         finally:
             translation._json_request = original
-        self.assertEqual(len(calls), 2)
-        self.assertEqual(result, "DE: English paragraph.\n\nDE: Requisiti di sistema.")
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(
+            result,
+            "DE: English paragraph.\nDE: Requisiti di sistema.\n\nDE: 64 GB\n---",
+        )
 
     def test_validation_returns_normalized_available_language_codes(self):
         original = translation._json_request
@@ -44,12 +47,13 @@ class TranslationTests(unittest.TestCase):
             {"code": "ru", "name": "Russian"},
             {"code": "DE", "name": "German"},
             {"code": "en", "name": "English"},
+            {"code": "it", "name": "Italian"},
         ]
         try:
             codes = translation.validate_translator("http://translator:5000")
         finally:
             translation._json_request = original
-        self.assertEqual(codes, ["de", "en", "ru"])
+        self.assertEqual(codes, ["de", "en", "it", "ru"])
 
 
 if __name__ == "__main__":

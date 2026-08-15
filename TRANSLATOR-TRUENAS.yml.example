@@ -1,4 +1,4 @@
-# Ab 0.3.12 ist dieser Dienst bereits in docker-compose.yml und in der
+# Ab 0.3.13 ist dieser Dienst bereits in docker-compose.yml und in der
 # vollständigen TrueNAS-YAML aus INSTALL-TRUENAS.md enthalten.
 # Nur tatsächlich benötigte Sprachen in LT_LOAD_ONLY eintragen.
 translator:
@@ -7,7 +7,7 @@ translator:
   restart: unless-stopped
   environment:
     LT_UPDATE_MODELS: 'true'
-    LT_LOAD_ONLY: en,de,ru
+    LT_LOAD_ONLY: en,de,ru,it
     LT_DISABLE_WEB_UI: 'true'
   volumes:
     - source: /mnt/Application/mission-control-translator

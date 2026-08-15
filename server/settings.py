@@ -50,7 +50,7 @@ class SettingsStore:
                 values.update(stored)
         except (OSError, ValueError, TypeError):
             pass
-        # 0.3.12 can manage the local Translator through the Compose
+        # 0.3.12+ can manage the local Translator through the Compose
         # environment. Existing installations usually have an explicitly
         # stored empty value from older releases; in that case the managed
         # address must still become active after the upgrade.

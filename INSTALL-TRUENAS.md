@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.3.12"
+      com.hypetek.mission-control.deployment: "0.3.13"
 
     ports:
       - "9998:8080"
@@ -63,7 +63,7 @@ services:
     environment:
       LT_DISABLE_WEB_UI: "true"
       LT_UPDATE_MODELS: "true"
-      LT_LOAD_ONLY: "en,de,ru"
+      LT_LOAD_ONLY: "en,de,ru,it"
 
     volumes:
       - type: bind
@@ -96,7 +96,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.3.12 muss die Antwort unter anderem `"version":"0.3.12"`,
+Für Version 0.3.13 muss die Antwort unter anderem `"version":"0.3.13"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -112,8 +112,10 @@ Control übernimmt diese Adresse automatisch. Die vollständige Anleitung kann
 in Mission Control unter **API-/Translator-Hilfe** als PDF heruntergeladen oder
 per QR-Code auf einem zweiten Gerät geöffnet werden.
 
-Beim ersten Start lädt LibreTranslate die Sprachmodelle für Deutsch, Englisch und
-Russisch. Das kann mehrere Minuten dauern. Der Zustand lässt sich danach unter
+Beim ersten Start lädt LibreTranslate die Sprachmodelle für Deutsch, Englisch,
+Russisch und Italienisch. Italienisch wird benötigt, weil TheGamesDB einzelne
+englische Beschreibungen mit italienischen Systemanforderungen mischt. Das kann
+mehrere Minuten dauern. Der Zustand lässt sich danach unter
 **Einstellungen → Verbindung testen** prüfen; Mission Control zeigt dort auch die
 vom Container gemeldeten Sprachcodes an. Zusätzliche Modelle werden über
 `LT_LOAD_ONLY` kommasepariert ergänzt, etwa `fr,es,it,pl,uk,tr,ar,zh,ja,ko`.
@@ -123,10 +125,20 @@ für Nutzer kompatibler externer Translator-Dienste erhalten.
 
 ## Berechtigungen
 
-Der Container läuft als UID/GID `568` (`apps`). Für `/mnt/Titan/Game` genügen Lesen und
-Durchqueren; Schreib-, Änderungs- und Löschrechte sind nicht erforderlich. Der Scanner
-überspringt nicht zugängliche Ordner und zusätzlich alle unter **Einstellungen →
-Scanner-Ausschlüsse** eingetragenen Namen.
+Mission Control läuft als UID/GID `568` (`apps`). Für `/mnt/Titan/Game` genügen Lesen
+und Durchqueren; Schreib-, Änderungs- und Löschrechte sind nicht erforderlich. Der
+Scanner überspringt nicht zugängliche Ordner und zusätzlich alle unter
+**Einstellungen → Scanner-Ausschlüsse** eingetragenen Namen.
+
+LibreTranslate 1.9.6 verwendet im Container UID/GID `1032:65534` und benötigt
+Schreibzugriff auf sein Modell-Dataset. Einmalig auf dem TrueNAS-Host ausführen:
+
+```bash
+sudo chown -R 1032:65534 /mnt/Application/mission-control-translator
+```
+
+Bei einem anderen Translator-Image lässt sich dessen Identität vorab mit
+`docker run --rm --entrypoint id IMAGE` ermitteln.
 ---
 
 Copyright © 2026 Michael Härtwig · HypeTek

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.13
+
+- Italienisch zum verwalteten LibreTranslate-Sprachpaket ergänzt, damit gemischtsprachige TheGamesDB-Inhalte vollständig verarbeitet werden können.
+- Spielinhalte werden nun zeilenweise mit eigener Quellsprachenerkennung übersetzt; englische Beschreibungen und italienische Systemanforderungen können dadurch in einem Datensatz gemeinsam übersetzt werden.
+- Zeilenumbrüche und nichtsprachliche Trennzeichen bleiben bei der Übersetzung erhalten.
+- TrueNAS-YAML, Compose-Beispiel, integrierte Hilfe und Tests auf das neue Basispaket Deutsch, Englisch, Russisch und Italienisch aktualisiert.
+
 ## 0.3.12
 
 - LibreTranslate 1.9.6 als versionierten internen zweiten Container in Compose und TrueNAS-YAML integriert.

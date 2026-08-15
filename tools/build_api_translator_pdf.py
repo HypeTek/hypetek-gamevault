@@ -214,7 +214,7 @@ def build_pdf():
                 "TheGamesDB, integrierter lokaler Translator und sichere TrueNAS-Konfiguration",
                 styles["SubtitleMC"],
             ),
-            Paragraph("Was ist ab Version 0.3.12 neu?", styles["H1MC"]),
+            Paragraph("Was ist ab Version 0.3.13 neu?", styles["H1MC"]),
             Paragraph(
                 "Mission Control kann den lokalen Translator jetzt als zweiten Dienst derselben "
                 "TrueNAS-App betreiben. Die interne Adresse wird automatisch gesetzt. Es ist weder "
@@ -310,13 +310,14 @@ def build_pdf():
             Paragraph("Datasets vorbereiten", styles["H2MC"]),
             bullet("/mnt/Application/gamevault für Datenbank, Cover und Einstellungen.", styles),
             bullet("/mnt/Application/mission-control-translator für Sprachmodelle.", styles),
+            bullet("Translator-Dataset für die Container-Identität 1032:65534 beschreibbar machen.", styles),
             Paragraph("Relevanter YAML-Ausschnitt", styles["H2MC"]),
             Paragraph(
                 "gamevault:<br/>"
                 "  image: ghcr.io/hypetek/hypetek-gamevault:latest<br/>"
                 "  pull_policy: always<br/>"
                 "  labels:<br/>"
-                "    com.hypetek.mission-control.deployment: \"0.3.12\"<br/>"
+                "    com.hypetek.mission-control.deployment: \"0.3.13\"<br/>"
                 "  environment:<br/>"
                 "    MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000<br/>"
                 "translator:<br/>"
@@ -325,7 +326,7 @@ def build_pdf():
                 "  environment:<br/>"
                 "    LT_DISABLE_WEB_UI: \"true\"<br/>"
                 "    LT_UPDATE_MODELS: \"true\"<br/>"
-                "    LT_LOAD_ONLY: en,de,ru<br/>"
+                "    LT_LOAD_ONLY: en,de,ru,it<br/>"
                 "  volumes:<br/>"
                 "    - /mnt/Application/mission-control-translator:/home/libretranslate/.local<br/>"
                 "  healthcheck:<br/>"
@@ -351,7 +352,7 @@ def build_pdf():
             Paragraph("Gesundheitsprüfung", styles["H2MC"]),
             Paragraph("http://TRUENAS-IP:9998/health", styles["CodeMC"]),
             Paragraph(
-                "Die Antwort muss unter anderem version 0.3.12, agent_api 3 und "
+                "Die Antwort muss unter anderem version 0.3.13, agent_api 3 und "
                 "translator_managed true enthalten. Danach in Einstellungen bei Translator auf "
                 "Verbindung testen klicken. Mission Control zeigt die erreichbaren Sprachcodes.",
                 styles["BodyMC"],
@@ -362,8 +363,9 @@ def build_pdf():
             bullet("Original anzeigen und Übersetzung anzeigen wechseln zwischen beiden Fassungen.", styles),
             Paragraph("Sprachen schlank erweitern", styles["H2MC"]),
             Paragraph(
-                "Standardmäßig werden en,de,ru geladen. Weitere Codes werden in LT_LOAD_ONLY "
-                "kommasepariert ergänzt, zum Beispiel fr,es,it,pl,uk,tr,ar,zh,ja,ko. Nur tatsächlich "
+                "Standardmäßig werden en,de,ru,it geladen. Italienisch ermöglicht die vollständige "
+                "Übersetzung gemischter TheGamesDB-Texte. Weitere Codes werden in LT_LOAD_ONLY "
+                "kommasepariert ergänzt, zum Beispiel fr,es,pl,uk,tr,ar,zh,ja,ko. Nur tatsächlich "
                 "benötigte Sprachen laden, weil Modelle Speicherplatz, Startzeit und Arbeitsspeicher "
                 "benötigen.",
                 styles["BodyMC"],
