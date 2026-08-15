@@ -1,12 +1,23 @@
-# Diesen Dienst unter "services:" derselben TrueNAS Custom App ergänzen.
+# Ab 0.3.12 ist dieser Dienst bereits in docker-compose.yml und in der
+# vollständigen TrueNAS-YAML aus INSTALL-TRUENAS.md enthalten.
 # Nur tatsächlich benötigte Sprachen in LT_LOAD_ONLY eintragen.
 translator:
-  image: libretranslate/libretranslate:latest
+  image: libretranslate/libretranslate:v1.9.6
+  pull_policy: always
   restart: unless-stopped
   environment:
-    LT_LOAD_ONLY: en,de,it
+    LT_UPDATE_MODELS: 'true'
+    LT_LOAD_ONLY: en,de,ru
     LT_DISABLE_WEB_UI: 'true'
   volumes:
     - source: /mnt/Application/mission-control-translator
       target: /home/libretranslate/.local
       type: bind
+  healthcheck:
+    test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
+    interval: 30s
+    timeout: 10s
+    retries: 10
+    start_period: 10m
+  security_opt:
+    - no-new-privileges:true

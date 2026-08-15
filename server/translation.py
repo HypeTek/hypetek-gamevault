@@ -37,7 +37,7 @@ def _json_request(url: str, payload: dict | None = None, timeout: int = 25):
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "HypeTek-Mission-Control/0.3.11",
+            "User-Agent": "HypeTek-Mission-Control/0.3.12",
         },
     )
     try:
@@ -51,13 +51,23 @@ def _json_request(url: str, payload: dict | None = None, timeout: int = 25):
         raise TranslationError("Translator ist derzeit nicht erreichbar") from error
 
 
-def validate_translator(endpoint: str, api_key: str = "") -> None:
+def validate_translator(endpoint: str, api_key: str = "") -> list[str]:
     base = normalize_translator_url(endpoint)
     if not base:
         raise TranslationError("Translator-Adresse ist leer")
     languages = _json_request(f"{base}/languages", timeout=12)
     if not isinstance(languages, list):
         raise TranslationError("Translator lieferte keine gültige Sprachliste")
+    codes = sorted(
+        {
+            str(item.get("code") or "").strip().casefold()
+            for item in languages
+            if isinstance(item, dict) and item.get("code")
+        }
+    )
+    if not codes:
+        raise TranslationError("Translator meldete keine verfügbaren Sprachen")
+    return codes
 
 
 def translate_text(

@@ -6,6 +6,7 @@
 | --- | --- | --- | --- |
 | Spiele | `/mnt/Titan/Game` | `/games` | nur lesen |
 | Datenbank, Cover, Designs | `/mnt/Application/gamevault` | `/config` | lesen/schreiben |
+| Translator-Sprachmodelle | `/mnt/Application/mission-control-translator` | `/home/libretranslate/.local` | lesen/schreiben |
 
 Das Upgrade von 0.1 auf 0.2 behält die bestehende SQLite-Datenbank und alle Cover. Die
 neue Datei `mission-control-settings.json` wird beim ersten Start ergänzt.
@@ -22,6 +23,9 @@ services:
     pull_policy: always
     restart: unless-stopped
 
+    labels:
+      com.hypetek.mission-control.deployment: "0.3.12"
+
     ports:
       - "9998:8080"
 
@@ -33,6 +37,7 @@ services:
       GAMEVAULT_SECRET_KEY: "HIER_SECRET_KEY"
       MISSION_CONTROL_SERVER_NAME: "TrueTitan"
       MISSION_CONTROL_LIBRARY_NAME: "TrueTitan Game Archive"
+      MISSION_CONTROL_TRANSLATOR_URL: "http://translator:5000"
 
     volumes:
       - type: bind
@@ -49,13 +54,38 @@ services:
 
     cap_drop:
       - ALL
+
+  translator:
+    image: libretranslate/libretranslate:v1.9.6
+    pull_policy: always
+    restart: unless-stopped
+
+    environment:
+      LT_DISABLE_WEB_UI: "true"
+      LT_UPDATE_MODELS: "true"
+      LT_LOAD_ONLY: "en,de,ru"
+
+    volumes:
+      - type: bind
+        source: /mnt/Application/mission-control-translator
+        target: /home/libretranslate/.local
+
+    healthcheck:
+      test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 10m
+
+    security_opt:
+      - no-new-privileges:true
 ```
 
 ## Upgrade
 
 1. In TrueNAS **Apps → gamevault → Edit** öffnen.
-2. Die beiden `MISSION_CONTROL_*`-Werte ergänzen.
-3. `pull_policy: always` beibehalten.
+2. Den Translator-Dienst und `MISSION_CONTROL_TRANSLATOR_URL` aus der YAML ergänzen.
+3. `pull_policy: always` und den Deployment-Label der Version beibehalten.
 4. Speichern und auf **Running** warten.
 5. Browser mit `Strg+F5` aktualisieren.
 6. Unter **Einstellungen** Design, Hintergrund und Ausschlüsse festlegen.
@@ -66,21 +96,30 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.3.11 muss die Antwort unter anderem `"version":"0.3.11"` und
-`"agent_api":3` enthalten. So lässt sich ein noch laufendes altes Container-Image
+Für Version 0.3.12 muss die Antwort unter anderem `"version":"0.3.12"`,
+`"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
 Weder Agent-Token noch Admin-Passwort müssen beim Upgrade geändert werden. Ein geänderter
 Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
 
-## Optionaler lokaler Translator
+## Integrierter lokaler Translator
 
-Die Datei `TRANSLATOR-TRUENAS.yml.example` enthält den zusätzlichen
-LibreTranslate-kompatiblen Dienst. Er wird unter `services:` derselben Custom App
-ergänzt und ist anschließend innerhalb des App-Netzes als
-`http://translator:5000` erreichbar. Die vollständige, bebilderte Anleitung kann
+Die vollständige YAML enthält einen LibreTranslate-kompatiblen zweiten Dienst. Er
+ist ausschließlich innerhalb des App-Netzes als `http://translator:5000`
+erreichbar; Port 5000 wird bewusst nicht am TrueNAS-Host veröffentlicht. Mission
+Control übernimmt diese Adresse automatisch. Die vollständige Anleitung kann
 in Mission Control unter **API-/Translator-Hilfe** als PDF heruntergeladen oder
 per QR-Code auf einem zweiten Gerät geöffnet werden.
+
+Beim ersten Start lädt LibreTranslate die Sprachmodelle für Deutsch, Englisch und
+Russisch. Das kann mehrere Minuten dauern. Der Zustand lässt sich danach unter
+**Einstellungen → Verbindung testen** prüfen; Mission Control zeigt dort auch die
+vom Container gemeldeten Sprachcodes an. Zusätzliche Modelle werden über
+`LT_LOAD_ONLY` kommasepariert ergänzt, etwa `fr,es,it,pl,uk,tr,ar,zh,ja,ko`.
+
+Der Translator benötigt keinen externen API-Key. Die vorhandenen Felder bleiben
+für Nutzer kompatibler externer Translator-Dienste erhalten.
 
 ## Berechtigungen
 

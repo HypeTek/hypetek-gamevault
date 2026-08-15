@@ -146,13 +146,13 @@
       </section>
       <section>
         <h3 data-i18n="help.translatorTitle">Mission Control Translator – lokal auf TrueNAS</h3>
-        <p data-i18n="help.translatorText">Der Translator ist ein optionaler eigener Container. Mission Control bleibt ohne ihn vollständig nutzbar. Mit ihm werden Spieltexte über eine LibreTranslate-kompatible API lokal übersetzt.</p>
+        <p data-i18n="help.translatorText">Ab Version 0.3.12 läuft der Translator als interner zweiter Container. Er benötigt keinen externen Dienst und keinen API-Key.</p>
         <ol id="helpTranslatorSteps">
-          <li>In der TrueNAS-App einen zusätzlichen Dienst mit dem Image <code>libretranslate/libretranslate:latest</code> anlegen.</li>
-          <li><code>LT_LOAD_ONLY=en,de,it</code> setzen. Weitere mögliche Quell- oder Zielsprachen werden kommasepariert ergänzt, zum Beispiel <code>fr,es,pl,ru,ar,zh</code>.</li>
+          <li>Die vollständige YAML aus <code>INSTALL-TRUENAS.md</code> verwenden; sie enthält <code>libretranslate/libretranslate:v1.9.6</code>.</li>
+          <li><code>LT_LOAD_ONLY=en,de,ru</code> ist das schlanke Basispaket. Weitere Sprachen werden kommasepariert ergänzt.</li>
           <li>Ein persistentes Volume nach <code>/home/libretranslate/.local</code> einbinden, damit Sprachmodelle nicht erneut geladen werden.</li>
-          <li>Mission Control und Translator im selben App-Netz betreiben. Als Translator-Adresse <code>http://translator:5000</code> eintragen.</li>
-          <li>Unter <strong>Sprache der Spielinhalte</strong> die gewünschte Zielsprache auswählen und die Verbindung speichern.</li>
+          <li>Mission Control erkennt den Dienst intern automatisch unter <code>http://translator:5000</code>.</li>
+          <li>Nach dem ersten Modell-Download die Verbindung prüfen und die gewünschte Zielsprache wählen.</li>
         </ol>
         <p id="helpTranslatorWarning" class="warning-note"><strong>Erster Start:</strong> Das Laden der ausgewählten Sprachmodelle kann mehrere Minuten dauern. Der Translator muss gesund und erreichbar sein, bevor Mission Control die Adresse akzeptiert.</p>
       </section>

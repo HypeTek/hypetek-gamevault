@@ -38,6 +38,19 @@ class TranslationTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(result, "DE: English paragraph.\n\nDE: Requisiti di sistema.")
 
+    def test_validation_returns_normalized_available_language_codes(self):
+        original = translation._json_request
+        translation._json_request = lambda *args, **kwargs: [
+            {"code": "ru", "name": "Russian"},
+            {"code": "DE", "name": "German"},
+            {"code": "en", "name": "English"},
+        ]
+        try:
+            codes = translation.validate_translator("http://translator:5000")
+        finally:
+            translation._json_request = original
+        self.assertEqual(codes, ["de", "en", "ru"])
+
 
 if __name__ == "__main__":
     unittest.main()

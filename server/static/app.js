@@ -369,7 +369,10 @@ function openSettings() {
   document.querySelector("#settingUiLanguage").value = settings.ui_language || "auto";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
-  document.querySelector("#translatorStatus").textContent = settings.translator_configured ? tr("settings.translatorReady") : tr("settings.translatorMissing");
+  document.querySelector("#translatorStatus").textContent = settings.translator_managed
+    ? tr("settings.translatorManaged")
+    : (settings.translator_configured ? tr("settings.translatorReady") : tr("settings.translatorMissing"));
+  document.querySelector("#removeTranslatorButton").disabled = Boolean(settings.translator_managed);
   syncTranslatorTestAvailability();
   settingsDialog.showModal();
 }
@@ -396,7 +399,9 @@ async function testTranslatorConnection() {
   try {
     const result = await api("/api/translator/test", {method: "POST", body: JSON.stringify(payload)});
     output.textContent = result.reachable
-      ? tr("translator.reachable")
+      ? (result.languages?.length
+        ? tr("translator.reachableLanguages", {languages: result.languages.join(", ")})
+        : tr("translator.reachable"))
       : tr("translator.unavailable", {error: result.error || "HTTP 502"});
   } catch (error) {
     output.textContent = tr("translator.unavailable", {error: error.message});

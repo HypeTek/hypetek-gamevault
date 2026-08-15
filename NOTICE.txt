@@ -9,3 +9,8 @@ entfernt werden. Rechte an eingebundenen Namen, Covern und Metadaten Dritter
 verbleiben bei den jeweiligen Rechteinhabern. TheGamesDB-Inhalte werden erst
 auf ausdrückliche Auswahl des Betreibers lokal übernommen und mit Quelle
 gekennzeichnet.
+
+Der optionale integrierte Translator wird als separater LibreTranslate-Container
+bezogen und nicht in diesem Projektpaket weiterverteilt. LibreTranslate 1.9.6
+steht unter der GNU Affero General Public License v3.0. Quellcode und Lizenz:
+https://github.com/LibreTranslate/LibreTranslate

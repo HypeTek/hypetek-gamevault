@@ -4,6 +4,8 @@ services:
     pull_policy: always
     container_name: hypetek-gamevault
     restart: unless-stopped
+    labels:
+      com.hypetek.mission-control.deployment: "0.3.12"
     ports:
       - "9998:8080"
     environment:
@@ -14,6 +16,7 @@ services:
       GAMEVAULT_SECRET_KEY: ${GAMEVAULT_SECRET_KEY}
       MISSION_CONTROL_SERVER_NAME: ${MISSION_CONTROL_SERVER_NAME:-Mission Control}
       MISSION_CONTROL_LIBRARY_NAME: ${MISSION_CONTROL_LIBRARY_NAME:-Mission Control Game Archive}
+      MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000
     volumes:
       - /mnt/Titan/Game:/games:ro
       - /mnt/Application/gamevault:/config
@@ -21,3 +24,23 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+
+  translator:
+    image: libretranslate/libretranslate:v1.9.6
+    pull_policy: always
+    container_name: hypetek-mission-control-translator
+    restart: unless-stopped
+    environment:
+      LT_DISABLE_WEB_UI: "true"
+      LT_UPDATE_MODELS: "true"
+      LT_LOAD_ONLY: en,de,ru
+    volumes:
+      - /mnt/Application/mission-control-translator:/home/libretranslate/.local
+    healthcheck:
+      test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 10m
+    security_opt:
+      - no-new-privileges:true

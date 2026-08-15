@@ -26,7 +26,7 @@ from werkzeug.utils import secure_filename
 from database import Database
 from design_profiles import DesignProfileStore
 from scanner import scan_library
-from settings import SettingsStore, THEMES
+from settings import DEFAULT_TRANSLATOR_URL, SettingsStore, THEMES
 from translation import (
     TranslationError,
     normalize_translator_url,
@@ -147,7 +147,13 @@ def delete_game_covers(game_id: str, keep_name: str | None = None) -> None:
 
 @app.get("/health")
 def health():
-    return jsonify(status="ok", version=APP_VERSION, agent_api=3, game_root=str(GAME_ROOT))
+    return jsonify(
+        status="ok",
+        version=APP_VERSION,
+        agent_api=3,
+        game_root=str(GAME_ROOT),
+        translator_managed=bool(DEFAULT_TRANSLATOR_URL),
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -194,6 +200,7 @@ def public_settings() -> dict:
     values["design_profile"] = active_profile
     values["thegamesdb_configured"] = bool(values.get("thegamesdb_api_key"))
     values["translator_configured"] = bool(values.get("translator_url"))
+    values["translator_managed"] = bool(DEFAULT_TRANSLATOR_URL)
     values["translator_api_key_configured"] = bool(values.get("translator_api_key"))
     values.pop("rawg_api_key", None)
     values.pop("thegamesdb_api_key", None)
@@ -220,10 +227,10 @@ def translator_status():
     if not endpoint:
         return jsonify(configured=False, reachable=False, error="Translator ist nicht eingerichtet")
     try:
-        validate_translator(endpoint, settings.get("translator_api_key", ""))
+        languages = validate_translator(endpoint, settings.get("translator_api_key", ""))
     except TranslationError as error:
         return jsonify(configured=True, reachable=False, error=str(error)), 502
-    response = jsonify(configured=True, reachable=True)
+    response = jsonify(configured=True, reachable=True, languages=languages or [])
     response.headers["Cache-Control"] = "no-store"
     return response
 
@@ -247,12 +254,12 @@ def test_translator():
     if not api_key and endpoint == stored_endpoint:
         api_key = settings.get("translator_api_key", "")
     try:
-        validate_translator(endpoint, api_key)
+        languages = validate_translator(endpoint, api_key)
     except TranslationError as error:
         response = jsonify(configured=True, reachable=False, error=str(error))
         response.headers["Cache-Control"] = "no-store"
         return response, 502
-    response = jsonify(configured=True, reachable=True)
+    response = jsonify(configured=True, reachable=True, languages=languages or [])
     response.headers["Cache-Control"] = "no-store"
     return response
 

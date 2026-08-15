@@ -108,8 +108,9 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.3.11")
+        self.assertEqual(health["version"], "0.3.12")
         self.assertEqual(health["agent_api"], 3)
+        self.assertFalse(health["translator_managed"])
 
     def test_path_escape_is_rejected(self):
         self.login()
@@ -148,7 +149,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.11/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.12/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -158,9 +159,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.3.11", html)
-        self.assertIn("/static/i18n.js?v=0.3.11", html)
-        self.assertIn("/static/app.css?v=0.3.11", html)
+        self.assertIn("/static/app.js?v=0.3.12", html)
+        self.assertIn("/static/i18n.js?v=0.3.12", html)
+        self.assertIn("/static/app.css?v=0.3.12", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -169,7 +170,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.3.11")
+        self.assertEqual(settings["version"], "0.3.12")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -467,7 +468,7 @@ class AppTests(unittest.TestCase):
     def test_translator_is_validated_and_secret_is_write_only(self):
         self.login()
         original_validate = self.module.validate_translator
-        self.module.validate_translator = lambda url, key="": None
+        self.module.validate_translator = lambda url, key="": ["de", "en", "ru"]
         try:
             saved = self.client.patch(
                 "/api/settings",
@@ -491,7 +492,7 @@ class AppTests(unittest.TestCase):
         self.login()
         original_validate = self.module.validate_translator
         calls = []
-        self.module.validate_translator = lambda url, key="": calls.append((url, key))
+        self.module.validate_translator = lambda url, key="": (calls.append((url, key)) or ["de", "en", "ru"])
         try:
             self.client.patch(
                 "/api/settings",
@@ -506,7 +507,7 @@ class AppTests(unittest.TestCase):
         finally:
             self.module.validate_translator = original_validate
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json(), {"configured": True, "reachable": True})
+        self.assertEqual(response.get_json(), {"configured": True, "reachable": True, "languages": ["de", "en", "ru"]})
         self.assertEqual(calls, [("http://translator:5000", "translator-secret")])
         self.assertEqual(response.headers.get("Cache-Control"), "no-store")
 
@@ -517,11 +518,23 @@ class AppTests(unittest.TestCase):
         self.assertFalse(response.get_json()["configured"])
         self.assertFalse(response.get_json()["reachable"])
 
+    def test_managed_translator_migrates_an_existing_empty_setting(self):
+        import settings
+
+        original = settings.DEFAULT_TRANSLATOR_URL
+        self.module.settings_store.update({"translator_url": ""})
+        settings.DEFAULT_TRANSLATOR_URL = "http://translator:5000"
+        try:
+            values = self.module.settings_store.load()
+        finally:
+            settings.DEFAULT_TRANSLATOR_URL = original
+        self.assertEqual(values["translator_url"], "http://translator:5000")
+
     def test_translator_test_accepts_unsaved_address_without_persisting_it(self):
         self.login()
         calls = []
         original_validate = self.module.validate_translator
-        self.module.validate_translator = lambda url, key="": calls.append((url, key))
+        self.module.validate_translator = lambda url, key="": (calls.append((url, key)) or ["de", "en"])
         try:
             response = self.client.post(
                 "/api/translator/test",
@@ -531,7 +544,7 @@ class AppTests(unittest.TestCase):
         finally:
             self.module.validate_translator = original_validate
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json(), {"configured": True, "reachable": True})
+        self.assertEqual(response.get_json(), {"configured": True, "reachable": True, "languages": ["de", "en"]})
         self.assertEqual(calls, [("http://translator-preview:5000", "preview-secret")])
         self.assertEqual(response.headers.get("Cache-Control"), "no-store")
         self.assertFalse(self.module.settings_store.load()["translator_url"])

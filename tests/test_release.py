@@ -49,12 +49,14 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('resolveUiLanguage', translations)
         self.assertIn('"settings.auto": "Automatic (browser)"', translations)
         self.assertIn('"translator.reachable": "Translator is reachable and ready."', translations)
+        self.assertIn('"translator.reachableLanguages": "Translator ready · Languages: {languages}"', translations)
         self.assertIn('id="testTranslatorButton"', template)
         self.assertIn('id="agentSetupBackButton"', template)
         self.assertIn('addEventListener("click", closeAgentSetup)', javascript)
         self.assertIn('"agent.back": "Back"', translations)
         self.assertIn('id="testTranslatorButton" type="button" class="secondary" data-i18n="translator.test" disabled', template)
         self.assertIn('/api/translator/test', javascript)
+        self.assertIn('result.languages.join(", ")', javascript)
         self.assertIn('body[data-style="lcars"] .agent-note-content', stylesheet)
         self.assertIn('grid-template-columns:repeat(3,minmax(0,1fr))', stylesheet)
         self.assertIn('addEventListener("click", probeWindowsAgent)', javascript)
@@ -78,6 +80,17 @@ class ReleaseMetadataTests(unittest.TestCase):
         agent = (ROOT / "windows-agent" / "GameVaultAgent.ps1").read_text(encoding="utf-8-sig")
         self.assertIn("$manifest.ui_language", agent)
         self.assertIn('Confirmation', agent)
+
+        compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+        self.assertIn("libretranslate/libretranslate:v1.9.6", compose)
+        self.assertIn("MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000", compose)
+        self.assertIn("LT_LOAD_ONLY: en,de,ru", compose)
+        self.assertIn('com.hypetek.mission-control.deployment: "0.3.12"', compose)
+        self.assertNotIn('"5000:5000"', compose)
+
+        notice = (ROOT / "NOTICE.txt").read_text(encoding="utf-8")
+        self.assertIn("LibreTranslate 1.9.6", notice)
+        self.assertIn("GNU Affero General Public License v3.0", notice)
 
         workflow = (ROOT / ".github" / "workflows" / "container.yml").read_text(
             encoding="utf-8"

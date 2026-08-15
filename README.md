@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.3.11
+## Funktionen in Version 0.3.12
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -28,7 +28,10 @@ verändern oder in ein neues Format zu zwingen.
 - optionale, manuell ausgelöste TheGamesDB-Coversuche mit Vorschau und Quellenlink
 - Spiele-Infofenster mit lokal gespeichertem Spielinhalt und getrennten eigenen Bemerkungen
 - Installations- und Ordneraktionen direkt im Spiele-Infofenster
-- optionaler lokaler Mission Control Translator über eine LibreTranslate-kompatible API
+- integrierter lokaler Mission Control Translator als interner zweiter Container
+- automatisches Translator-Ziel ohne externen Port oder API-Key
+- schlankes Basispaket für Deutsch, Englisch und Russisch mit erweiterbarer Modellliste
+- Translator-Verbindungstest mit Anzeige der tatsächlich verfügbaren Sprachcodes
 - sichere Windows-Agent-Erkennung über kurzlebige Prüftickets
 - integrierte API-/Translator-Hilfe mit PDF-Download und QR-Code
 - klar geführte Windows-Agent-Ersteinrichtung mit EXE, Installation und Verbindungstest
@@ -43,7 +46,7 @@ verändern oder in ein neues Format zu zwingen.
 - mitgelieferte TXT-Kurzanleitung im PowerShell-Fallback-Paket
 - vollständiger integrierter Oberflächenkern für Deutsch, Englisch und Russisch; unabhängig von der Sprache der Spielinhalte
 - automatische Browser-Spracherkennung mit Fallback von Region zu Basissprache und anschließend Englisch
-- direkt prüfbarer Status des optionalen Mission Control Translators
+- direkt prüfbarer Status des integrierten Mission Control Translators
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer
@@ -70,7 +73,7 @@ und Benutzeroberfläche heißen bereits HypeTek Mission Control.
 - `.github/workflows/container.yml` – Tests, Container und Windows-Installer
 - `INSTALL-TRUENAS.md` – Installation und Upgrade auf TrueNAS SCALE
 - `INSTALL-WINDOWS.md` – Windows-Agent und Diagnose
-- `TRANSLATOR-TRUENAS.yml.example` – optionaler lokaler Translator-Dienst für TrueNAS
+- `TRANSLATOR-TRUENAS.yml.example` – Auszug des integrierten Translator-Dienstes für TrueNAS
 
 ## Container
 

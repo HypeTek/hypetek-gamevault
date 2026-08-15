@@ -13,6 +13,9 @@ DEFAULT_SERVER_NAME = os.environ.get("MISSION_CONTROL_SERVER_NAME", "Mission Con
 DEFAULT_LIBRARY_NAME = os.environ.get(
     "MISSION_CONTROL_LIBRARY_NAME", f"{DEFAULT_SERVER_NAME} GAME ARCHIVE"
 ).strip()
+DEFAULT_TRANSLATOR_URL = os.environ.get(
+    "MISSION_CONTROL_TRANSLATOR_URL", ""
+).strip().rstrip("/")
 
 DEFAULTS = {
     "server_name": DEFAULT_SERVER_NAME,
@@ -27,7 +30,7 @@ DEFAULTS = {
     "thegamesdb_api_key": "",
     "content_language": "de",
     "ui_language": "auto",
-    "translator_url": "",
+    "translator_url": DEFAULT_TRANSLATOR_URL,
     "translator_api_key": "",
 }
 
@@ -47,6 +50,12 @@ class SettingsStore:
                 values.update(stored)
         except (OSError, ValueError, TypeError):
             pass
+        # 0.3.12 can manage the local Translator through the Compose
+        # environment. Existing installations usually have an explicitly
+        # stored empty value from older releases; in that case the managed
+        # address must still become active after the upgrade.
+        if DEFAULT_TRANSLATOR_URL and not values.get("translator_url"):
+            values["translator_url"] = DEFAULT_TRANSLATOR_URL
         return self.validate(values)
 
     def update(self, changes: dict) -> dict:

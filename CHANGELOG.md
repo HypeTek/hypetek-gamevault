@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.12
+
+- LibreTranslate 1.9.6 als versionierten internen zweiten Container in Compose und TrueNAS-YAML integriert.
+- Mission Control erkennt den Translator automatisch unter `http://translator:5000`; ein externer Dienst oder API-Key ist nicht nötig.
+- Der Translator veröffentlicht keinen Host-Port und ist nur im internen App-Netz erreichbar.
+- Persistente Modellablage und ein schlankes Basispaket für Deutsch, Englisch und Russisch ergänzt.
+- Verbindungstest und Statusendpunkt zeigen die vom Translator tatsächlich gemeldeten Sprachcodes.
+- Bestehende leere Translator-Einstellungen werden beim Upgrade automatisch auf den verwalteten Dienst migriert.
+- Integrierte Hilfe und Installationsdokumentation auf den neuen Ein-Schritt-Betrieb aktualisiert.
+
 ## 0.3.11
 
 - Nach erfolgreicher Agent-Prüfung klappt die Einrichtung weiterhin automatisch ein.
