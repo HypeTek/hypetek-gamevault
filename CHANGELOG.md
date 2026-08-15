@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.14
+
+- Kurze italienische Systemanforderungs-Begriffe wie `REQUISITI DI SISTEMA`, `MINIMI`, `Scheda video` und `CONSIGLIATI` werden nun ausdrücklich als Italienisch an LibreTranslate übergeben.
+- Normale Beschreibungstexte behalten weiterhin die automatische Quellsprachenerkennung, sodass gemischte TheGamesDB-Inhalte zeilenweise korrekt verarbeitet werden.
+- Regressionstest für gemischte englische Beschreibungen und kurze italienische Anforderungszeilen ergänzt.
+
 ## 0.3.13
 
 - Italienisch zum verwalteten LibreTranslate-Sprachpaket ergänzt, damit gemischtsprachige TheGamesDB-Inhalte vollständig verarbeitet werden können.

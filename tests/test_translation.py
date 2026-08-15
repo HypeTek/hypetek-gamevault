@@ -55,6 +55,26 @@ class TranslationTests(unittest.TestCase):
             translation._json_request = original
         self.assertEqual(codes, ["de", "en", "it", "ru"])
 
+    def test_short_italian_requirement_labels_use_explicit_source(self):
+        calls = []
+        original = translation._json_request
+
+        def fake_request(url, payload=None, timeout=25):
+            calls.append(payload)
+            return {"translatedText": f"EN: {payload['q']}"}
+
+        translation._json_request = fake_request
+        try:
+            translation.translate_text(
+                "http://translator:5000",
+                "REQUISITI DI SISTEMA\nScheda video: 4 GB\nEnglish prose.",
+                "en",
+            )
+        finally:
+            translation._json_request = original
+
+        self.assertEqual([call["source"] for call in calls], ["it", "it", "auto"])
+
 
 if __name__ == "__main__":
     unittest.main()

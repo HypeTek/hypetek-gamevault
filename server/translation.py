@@ -11,6 +11,28 @@ class TranslationError(RuntimeError):
     pass
 
 
+_ITALIAN_SYSTEM_MARKERS = re.compile(
+    r"\b(?:"
+    r"requisiti|sistema\s+operativo|richiede|processore|memoria|"
+    r"scheda\s+video|note?\s+aggiuntive?|consigliati?|minimi|"
+    r"spazio\s+disponibile|versione"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _source_language_hint(text: str) -> str:
+    """Return a reliable source hint for short metadata fragments.
+
+    LibreTranslate's automatic detector is intentionally retained for normal
+    prose. Short Italian requirement labels are the exception: entries such as
+    "CONSIGLIATI" or "Scheda video" are frequently left untouched or detected
+    as another Romance language, even when the Italian model is installed.
+    """
+
+    return "it" if _ITALIAN_SYSTEM_MARKERS.search(str(text or "")) else "auto"
+
+
 def normalize_translator_url(value: str) -> str:
     url = str(value or "").strip().rstrip("/")
     if not url:
@@ -37,7 +59,7 @@ def _json_request(url: str, payload: dict | None = None, timeout: int = 25):
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "HypeTek-Mission-Control/0.3.13",
+            "User-Agent": "HypeTek-Mission-Control/0.3.14",
         },
     )
     try:
@@ -101,7 +123,7 @@ def translate_text(
             continue
         payload = {
             "q": part.strip(),
-            "source": "auto",
+            "source": _source_language_hint(part),
             "target": target,
             "format": "text",
         }

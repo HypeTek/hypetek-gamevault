@@ -214,11 +214,13 @@ def build_pdf():
                 "TheGamesDB, integrierter lokaler Translator und sichere TrueNAS-Konfiguration",
                 styles["SubtitleMC"],
             ),
-            Paragraph("Was ist ab Version 0.3.13 neu?", styles["H1MC"]),
+            Paragraph("Was ist ab Version 0.3.14 neu?", styles["H1MC"]),
             Paragraph(
                 "Mission Control kann den lokalen Translator jetzt als zweiten Dienst derselben "
                 "TrueNAS-App betreiben. Die interne Adresse wird automatisch gesetzt. Es ist weder "
-                "ein externer Übersetzungsdienst noch ein Translator-API-Key nötig.",
+                "ein externer Übersetzungsdienst noch ein Translator-API-Key nötig. Gemischte "
+                "TheGamesDB-Texte werden zeilenweise erkannt; kurze italienische Begriffe der "
+                "Systemanforderungen erhalten dabei einen zuverlässigen Sprachhinweis.",
                 styles["CalloutMC"],
             ),
         ]
@@ -317,7 +319,7 @@ def build_pdf():
                 "  image: ghcr.io/hypetek/hypetek-gamevault:latest<br/>"
                 "  pull_policy: always<br/>"
                 "  labels:<br/>"
-                "    com.hypetek.mission-control.deployment: \"0.3.13\"<br/>"
+                "    com.hypetek.mission-control.deployment: \"0.3.14\"<br/>"
                 "  environment:<br/>"
                 "    MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000<br/>"
                 "translator:<br/>"
@@ -352,7 +354,7 @@ def build_pdf():
             Paragraph("Gesundheitsprüfung", styles["H2MC"]),
             Paragraph("http://TRUENAS-IP:9998/health", styles["CodeMC"]),
             Paragraph(
-                "Die Antwort muss unter anderem version 0.3.13, agent_api 3 und "
+                "Die Antwort muss unter anderem version 0.3.14, agent_api 3 und "
                 "translator_managed true enthalten. Danach in Einstellungen bei Translator auf "
                 "Verbindung testen klicken. Mission Control zeigt die erreichbaren Sprachcodes.",
                 styles["BodyMC"],
