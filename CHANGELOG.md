@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.16
+
+- Zielsprachen im Spiele-Infofenster in ein kompaktes Dropdown mit Favoritenstern und getrenntem Startknopf überführt.
+- Während LibreTranslate arbeitet, zeigen Übersetzungsbutton und Statuszeile einen Spinner sowie die verstrichene Zeit.
+- Die TheGamesDB-Coversuche lässt sich nun auch mit Enter im Suchfeld starten.
+
 ## 0.3.15
 
 - Zielsprachen-Auswahl aus den globalen Einstellungen in das jeweilige Spiele-Infofenster verschoben.

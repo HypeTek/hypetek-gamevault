@@ -31,6 +31,7 @@ document.querySelector("#agentProbeButton")?.addEventListener("click", probeWind
 document.querySelector("#closeTranslationLanguages")?.addEventListener("click", () => {
   document.querySelector("#translationLanguageMenu").hidden = true;
 });
+document.querySelector("#translationLanguageSelect")?.addEventListener("change", updateTranslationFavoriteButton);
 
 const formatBytes = (value) => {
   if (!value) return "0 B";
@@ -359,27 +360,33 @@ function renderTranslationLanguages(id, languages) {
     if (right === favorite) return 1;
     return displayLanguageName(left).localeCompare(displayLanguageName(right), document.documentElement.lang);
   });
-  document.querySelector("#translationLanguageList").innerHTML = ordered.map((code) => `
-    <div class="translation-language-row ${code === favorite ? "is-favorite" : ""}">
-      <button type="button" class="translation-language-choice" onclick="translateGameInfo('${id}', '${code}')">
-        <span>${escapeHtml(displayLanguageName(code))}</span><small>${code.toUpperCase()}</small>
-      </button>
-      <button type="button" class="translation-language-favorite" onclick="setFavoriteTranslationLanguage('${id}', '${code}')" aria-label="${escapeHtml(tr("info.favoriteLanguage", {language: displayLanguageName(code)}))}" aria-pressed="${code === favorite ? "true" : "false"}">${code === favorite ? "★" : "☆"}</button>
-    </div>`).join("");
+  const select = document.querySelector("#translationLanguageSelect");
+  select.innerHTML = ordered.map((code) => `<option value="${escapeHtml(code)}">${escapeHtml(displayLanguageName(code))} (${code.toUpperCase()})</option>`).join("");
+  select.value = ordered.includes(favorite) ? favorite : (ordered[0] || "");
+  select.disabled = ordered.length === 0;
+  document.querySelector("#startTranslationButton").disabled = ordered.length === 0;
+  document.querySelector("#translationLanguageStatus").textContent = ordered.length ? "" : tr("info.noLanguages");
+  updateTranslationFavoriteButton();
 }
 
 async function openTranslationLanguages(id) {
   const menu = document.querySelector("#translationLanguageMenu");
-  const list = document.querySelector("#translationLanguageList");
+  if (!menu.hidden && menu.dataset.gameId === id) {
+    menu.hidden = true;
+    return;
+  }
   menu.hidden = false;
   menu.dataset.gameId = id;
-  list.innerHTML = `<p class="field-hint">${tr("common.loading")}</p>`;
+  document.querySelector("#translationLanguageSelect").innerHTML = "";
+  document.querySelector("#translationLanguageSelect").disabled = true;
+  document.querySelector("#startTranslationButton").disabled = true;
+  document.querySelector("#translationLanguageStatus").textContent = tr("common.loading");
   menu.scrollIntoView({behavior: "smooth", block: "nearest"});
   try {
     const status = await api("/api/translator/status");
     renderTranslationLanguages(id, status.languages || []);
   } catch (error) {
-    list.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+    document.querySelector("#translationLanguageStatus").textContent = error.message;
   }
 }
 
@@ -392,13 +399,58 @@ async function setFavoriteTranslationLanguage(id, language) {
   } catch (error) { alert(error.message); }
 }
 
+function updateTranslationFavoriteButton() {
+  const select = document.querySelector("#translationLanguageSelect");
+  const button = document.querySelector("#favoriteTranslationLanguageButton");
+  const language = select.value;
+  const favorite = state.settings?.favorite_content_language || "de";
+  const selectedIsFavorite = language === favorite;
+  button.textContent = selectedIsFavorite ? "★" : "☆";
+  button.setAttribute("aria-pressed", selectedIsFavorite ? "true" : "false");
+  button.setAttribute("aria-label", tr("info.favoriteLanguage", {language: displayLanguageName(language)}));
+  button.disabled = !language;
+}
+
+async function setFavoriteSelectedTranslationLanguage() {
+  const menu = document.querySelector("#translationLanguageMenu");
+  const language = document.querySelector("#translationLanguageSelect").value;
+  if (menu.dataset.gameId && language) await setFavoriteTranslationLanguage(menu.dataset.gameId, language);
+}
+
+async function translateSelectedGameInfo() {
+  const menu = document.querySelector("#translationLanguageMenu");
+  const language = document.querySelector("#translationLanguageSelect").value;
+  if (menu.dataset.gameId && language) await translateGameInfo(menu.dataset.gameId, language);
+}
+
 async function translateGameInfo(id, targetLanguage) {
+  const translateButton = document.querySelector("#gameInfoActions .info-translate");
+  const startButton = document.querySelector("#startTranslationButton");
+  const status = document.querySelector("#translationLanguageStatus");
+  const started = Date.now();
+  const updateProgress = () => {
+    const seconds = Math.max(0, Math.floor((Date.now() - started) / 1000));
+    const label = tr("info.translating", {seconds});
+    if (translateButton) translateButton.innerHTML = `<span class="button-spinner" aria-hidden="true"></span>${escapeHtml(label)}`;
+    if (status) status.textContent = label;
+  };
+  if (translateButton) translateButton.disabled = true;
+  if (startButton) startButton.disabled = true;
+  updateProgress();
+  const progressTimer = window.setInterval(updateProgress, 1000);
   try {
     const translated = await api(`/api/games/${id}/metadata/translate`, {method: "POST", body: JSON.stringify({target_language: targetLanguage})});
     const index = state.games.findIndex((game) => game.id === id);
     if (index >= 0) state.games[index] = {...state.games[index], ...translated};
     showGameInfo(id);
-  } catch (error) { alert(error.message); }
+  } catch (error) {
+    alert(error.message);
+    if (translateButton) { translateButton.disabled = false; translateButton.textContent = tr("info.translate"); }
+    if (startButton) startButton.disabled = false;
+    if (status) status.textContent = error.message;
+  } finally {
+    window.clearInterval(progressTimer);
+  }
 }
 
 function toggleGameInfoOriginal(id) {
@@ -684,7 +736,7 @@ function renderMetadataResults(results) {
   }));
 }
 
-document.querySelector("#metadataSearchButton").addEventListener("click", async () => {
+async function searchTheGamesDbMetadata() {
   const id = document.querySelector("#editId").value;
   const query = document.querySelector("#metadataQuery").value.trim();
   const target = document.querySelector("#metadataResults");
@@ -694,6 +746,13 @@ document.querySelector("#metadataSearchButton").addEventListener("click", async 
     const data = await api(`/api/games/${id}/metadata/search`, {method: "POST", body: JSON.stringify({query})});
     renderMetadataResults(data.results);
   } catch (error) { target.innerHTML = `<p class="note error">${escapeHtml(error.message)}</p>`; }
+}
+
+document.querySelector("#metadataSearchButton").addEventListener("click", searchTheGamesDbMetadata);
+document.querySelector("#metadataQuery").addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  searchTheGamesDbMetadata();
 });
 
 document.querySelector("#scanButton").addEventListener("click", async () => {

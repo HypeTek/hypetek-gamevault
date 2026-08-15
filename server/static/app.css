@@ -185,13 +185,12 @@ body[data-style="lcars"] .hero{
 .translation-language-head h3{margin:0}
 .translation-language-head button{font-size:1.3rem;padding:5px 10px}
 .translation-language-menu>p{color:var(--muted);font-size:.88rem;margin:6px 0 14px}
-.translation-language-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:280px;overflow-y:auto;padding-right:5px}
-.translation-language-row{display:grid;grid-template-columns:1fr auto;gap:6px;border:1px solid var(--line);border-radius:10px;padding:5px;background:var(--panel2)}
-.translation-language-row.is-favorite{border-color:var(--orange)}
-.translation-language-choice{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:transparent;color:var(--text)}
-.translation-language-choice small{color:var(--muted)}
+.translation-language-controls{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:8px;align-items:stretch}
+.translation-language-controls select{min-width:0;margin:0}
 .translation-language-favorite{width:44px;padding:7px;background:transparent;color:var(--orange);font-size:1.3rem}
-@media(max-width:720px){#gameInfoActions{grid-template-columns:1fr 1fr}#gameInfoActions>*{grid-column:auto!important;grid-row:auto!important}.translation-language-list{grid-template-columns:1fr}}
+.button-spinner{display:inline-block;width:.85em;height:.85em;margin-right:.5em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-.1em;animation:button-spin .75s linear infinite}
+@keyframes button-spin{to{transform:rotate(360deg)}}
+@media(max-width:720px){#gameInfoActions{grid-template-columns:1fr 1fr}#gameInfoActions>*{grid-column:auto!important;grid-row:auto!important}.translation-language-controls{grid-template-columns:1fr auto}.translation-language-controls #startTranslationButton{grid-column:1/-1}}
 
 /* 0.3.10: LCARS reserves its system rail for every top-level panel. */
 body[data-style="lcars"] .agent-note-content{

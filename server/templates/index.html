@@ -304,8 +304,13 @@
         <section id="gameInfoLibrarySection"><h3>Bibliothek</h3><dl id="gameInfoLibrary" class="game-info-list"></dl></section>
         <section id="translationLanguageMenu" class="translation-language-menu" hidden>
           <div class="translation-language-head"><h3 data-i18n="info.chooseLanguage">Zielsprache auswählen</h3><button id="closeTranslationLanguages" type="button" class="ghost" aria-label="Sprachauswahl schließen">×</button></div>
-          <p data-i18n="info.languageHint">Der Stern legt deine bevorzugte Sprache fest. Die Auswahl startet die Übersetzung nur für dieses Spiel.</p>
-          <div id="translationLanguageList" class="translation-language-list"></div>
+          <p data-i18n="info.languageHint">Sprache im Dropdown auswählen. Der Stern legt sie als bevorzugte Sprache fest.</p>
+          <div id="translationLanguageControls" class="translation-language-controls">
+            <select id="translationLanguageSelect" aria-label="Zielsprache"></select>
+            <button id="favoriteTranslationLanguageButton" type="button" class="translation-language-favorite" onclick="setFavoriteSelectedTranslationLanguage()" aria-label="Bevorzugte Sprache festlegen">☆</button>
+            <button id="startTranslationButton" type="button" onclick="translateSelectedGameInfo()" data-i18n="info.translateNow">Jetzt übersetzen</button>
+          </div>
+          <p id="translationLanguageStatus" class="field-hint" aria-live="polite"></p>
         </section>
         <div id="gameInfoActions" class="dialog-actions"></div>
       </div>
