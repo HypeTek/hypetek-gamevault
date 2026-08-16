@@ -125,7 +125,15 @@ function resolveUiLanguage(language) {
 }
 
 function tr(key, variables = {}) {
-  const pack = UI_PACKS[currentUiLanguage] || UI_PACKS.en;
+  return trIn(key, currentUiLanguage, variables);
+}
+
+// Renders a key using a specific integrated language pack, independent of the
+// active interface language. Used to localize the game-info dialog to a
+// game's translated content language (only for languages we ship a full UI
+// pack for) without switching the whole interface.
+function trIn(key, language, variables = {}) {
+  const pack = UI_PACKS[language] || UI_PACKS[currentUiLanguage] || UI_PACKS.en;
   let value = pack[key] || UI_PACKS.en[key] || key;
   Object.entries(variables).forEach(([name, replacement]) => {
     value = value.split(`{${name}}`).join(String(replacement));
@@ -198,5 +206,5 @@ function applyUiLanguage(language) {
   document.dispatchEvent(new CustomEvent("mission-control-language-changed"));
 }
 
-window.MissionControlI18n = {applyUiLanguage, tr, resolveUiLanguage, supportedLanguages: SUPPORTED_UI_LANGUAGES};
+window.MissionControlI18n = {applyUiLanguage, tr, trIn, resolveUiLanguage, supportedLanguages: SUPPORTED_UI_LANGUAGES};
 })();

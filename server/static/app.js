@@ -12,6 +12,8 @@ const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
 const missionControlI18n = window.MissionControlI18n || {};
 const applyUiLanguage = typeof missionControlI18n.applyUiLanguage === "function" ? missionControlI18n.applyUiLanguage : () => {};
 const tr = typeof missionControlI18n.tr === "function" ? missionControlI18n.tr : (key) => key;
+const trIn = typeof missionControlI18n.trIn === "function" ? missionControlI18n.trIn : (key) => tr(key);
+const supportedUiLanguages = missionControlI18n.supportedLanguages || ["en"];
 const typeLabelKeys = {direct_setup: "type.directSetup", iso: "type.iso", manual: "type.manual", archive: "type.archive", manual_image: "type.manualImage", ignore: "type.ignore"};
 const library = document.querySelector("#library");
 const statusEl = document.querySelector("#status");
@@ -135,8 +137,20 @@ function actionLabel(game) {
   return tr("game.manualInstall");
 }
 
-function typeLabel(type) {
-  return tr(typeLabelKeys[type] || type);
+function typeLabel(type, translate = tr) {
+  return translate(typeLabelKeys[type] || type);
+}
+
+// The game-info dialog can show a translated Spielinhalt in a different
+// language than the interface. When that content language is one of our
+// integrated UI packs, the dialog's own chrome (section headings, the
+// library labels/values, the empty-state placeholders) follows it too, so
+// the panel reads consistently. Anything not covered by a UI pack, and the
+// rest of the app, stays in the interface language.
+function gameInfoDialogLanguage(game, showingTranslation) {
+  const language = game?.metadata_overview_language;
+  if (!showingTranslation || !language || language === "original") return null;
+  return supportedUiLanguages.includes(language) ? language : null;
 }
 
 function gameMonogram(title) {
@@ -313,11 +327,17 @@ function showGameInfo(id) {
   document.querySelector("#gameInfoMeta").innerHTML = metadata.map((value) => `<span>${escapeHtml(value)}</span>`).join("");
   const overview = String(game.metadata_overview || "").trim();
   const notes = String(game.description || "").trim();
-  document.querySelector("#gameInfoOverview").textContent = overview || tr("info.noOverview");
+  const showingTranslation = Boolean(game.metadata_overview_original && game.metadata_overview_original !== game.metadata_overview);
+  const dialogLanguage = gameInfoDialogLanguage(game, showingTranslation);
+  const dialogTr = (key, variables) => (dialogLanguage ? trIn(key, dialogLanguage, variables) : tr(key, variables));
+  document.querySelector("#gameInfoOverviewSection h3").textContent = dialogTr("info.overview");
+  document.querySelector("#gameInfoNotesSection h3").textContent = dialogTr("info.notes");
+  document.querySelector("#gameInfoLibrarySection h3").textContent = dialogTr("info.library");
+  document.querySelector("#gameInfoOverview").textContent = overview || dialogTr("info.noOverview");
   document.querySelector("#gameInfoOverviewSection").classList.toggle("is-empty", !overview);
-  document.querySelector("#gameInfoNotes").textContent = notes || tr("info.noNotes");
+  document.querySelector("#gameInfoNotes").textContent = notes || dialogTr("info.noNotes");
   document.querySelector("#gameInfoNotesSection").classList.toggle("is-empty", !notes);
-  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>${tr("info.libraryTitle")}</dt><dd>${escapeHtml(game.title)}</dd><dt>${tr("info.type")}</dt><dd>${escapeHtml(typeLabel(game.action))}</dd><dt>${tr("info.size")}</dt><dd>${formatBytes(game.logical_size)}</dd>`;
+  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>${dialogTr("info.libraryTitle")}</dt><dd>${escapeHtml(game.title)}</dd><dt>${dialogTr("info.type")}</dt><dd>${escapeHtml(typeLabel(game.action, dialogTr))}</dd><dt>${dialogTr("info.size")}</dt><dd>${formatBytes(game.logical_size)}</dd>`;
   const source = game.metadata_source_url ? `<a class="button-link secondary" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">${tr("info.source")}</a>` : "";
   const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
   const launch = launchable ? `<button type="button" class="primary-info-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : "";
@@ -381,13 +401,16 @@ async function openTranslationLanguages(id) {
   document.querySelector("#translationLanguageSelect").disabled = true;
   document.querySelector("#startTranslationButton").disabled = true;
   document.querySelector("#translationLanguageStatus").textContent = tr("common.loading");
-  menu.scrollIntoView({behavior: "smooth", block: "nearest"});
   try {
     const status = await api("/api/translator/status");
     renderTranslationLanguages(id, status.languages || []);
   } catch (error) {
     document.querySelector("#translationLanguageStatus").textContent = error.message;
   }
+  // Scroll after the language list (and its final height) has rendered,
+  // not before, otherwise the dialog scrolls to a spot that is still too
+  // high once the dropdown and buttons appear below it.
+  requestAnimationFrame(() => menu.scrollIntoView({behavior: "smooth", block: "nearest"}));
 }
 
 async function setFavoriteTranslationLanguage(id, language) {
@@ -459,9 +482,18 @@ function toggleGameInfoOriginal(id) {
   const overview = document.querySelector("#gameInfoOverview");
   const button = document.querySelector("#gameInfoOriginalButton");
   const showingOriginal = button.dataset.showingOriginal === "true";
+  const willShowTranslation = showingOriginal;
   overview.textContent = showingOriginal ? game.metadata_overview : game.metadata_overview_original;
   button.dataset.showingOriginal = showingOriginal ? "false" : "true";
-  button.textContent = showingOriginal ? tr("info.original") : tr("info.translation");
+  const dialogLanguage = gameInfoDialogLanguage(game, willShowTranslation);
+  const dialogTr = (key, variables) => (dialogLanguage ? trIn(key, dialogLanguage, variables) : tr(key, variables));
+  button.textContent = showingOriginal ? dialogTr("info.original") : dialogTr("info.translation");
+  document.querySelector("#gameInfoOverviewSection h3").textContent = dialogTr("info.overview");
+  document.querySelector("#gameInfoNotesSection h3").textContent = dialogTr("info.notes");
+  document.querySelector("#gameInfoLibrarySection h3").textContent = dialogTr("info.library");
+  const notes = String(game.description || "").trim();
+  if (!notes) document.querySelector("#gameInfoNotes").textContent = dialogTr("info.noNotes");
+  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>${dialogTr("info.libraryTitle")}</dt><dd>${escapeHtml(game.title)}</dd><dt>${dialogTr("info.type")}</dt><dd>${escapeHtml(typeLabel(game.action, dialogTr))}</dd><dt>${dialogTr("info.size")}</dt><dd>${formatBytes(game.logical_size)}</dd>`;
 }
 
 function openSettings() {
