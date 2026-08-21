@@ -12,8 +12,7 @@ const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
 const missionControlI18n = window.MissionControlI18n || {};
 const applyUiLanguage = typeof missionControlI18n.applyUiLanguage === "function" ? missionControlI18n.applyUiLanguage : () => {};
 const tr = typeof missionControlI18n.tr === "function" ? missionControlI18n.tr : (key) => key;
-const trIn = typeof missionControlI18n.trIn === "function" ? missionControlI18n.trIn : (key) => tr(key);
-const supportedUiLanguages = missionControlI18n.supportedLanguages || ["en"];
+const trForLanguage = typeof missionControlI18n.trForLanguage === "function" ? missionControlI18n.trForLanguage : ((_language, key, variables) => tr(key, variables));
 const typeLabelKeys = {direct_setup: "type.directSetup", iso: "type.iso", manual: "type.manual", archive: "type.archive", manual_image: "type.manualImage", ignore: "type.ignore"};
 const library = document.querySelector("#library");
 const statusEl = document.querySelector("#status");
@@ -131,26 +130,14 @@ async function load() {
   render();
 }
 
-function actionLabel(game) {
-  if (game.action === "direct_setup") return tr("game.install");
-  if (game.action === "iso") return tr("game.mountInstall");
-  return tr("game.manualInstall");
+function actionLabel(game, translate = tr) {
+  if (game.action === "direct_setup") return translate("game.install");
+  if (game.action === "iso") return translate("game.mountInstall");
+  return translate("game.manualInstall");
 }
 
 function typeLabel(type, translate = tr) {
   return translate(typeLabelKeys[type] || type);
-}
-
-// The game-info dialog can show a translated Spielinhalt in a different
-// language than the interface. When that content language is one of our
-// integrated UI packs, the dialog's own chrome (section headings, the
-// library labels/values, the empty-state placeholders) follows it too, so
-// the panel reads consistently. Anything not covered by a UI pack, and the
-// rest of the app, stays in the interface language.
-function gameInfoDialogLanguage(game, showingTranslation) {
-  const language = game?.metadata_overview_language;
-  if (!showingTranslation || !language || language === "original") return null;
-  return supportedUiLanguages.includes(language) ? language : null;
 }
 
 function gameMonogram(title) {
@@ -318,38 +305,41 @@ function nudgeCoverPosition(event) {
 function showGameInfo(id) {
   const game = state.games.find((candidate) => candidate.id === id);
   if (!game) return;
+  const contentLanguage = String(game.metadata_overview_language || "").trim().toLowerCase();
+  const infoTr = (key, variables = {}) => trForLanguage(contentLanguage, key, variables);
+  gameInfoDialog.dataset.gameId = game.id;
   const hero = document.querySelector("#gameInfoHero");
   hero.style.backgroundImage = game.cover_name ? `url('${coverUrl(game)}')` : "none";
   hero.style.backgroundPosition = `center ${coverPosition(game)}%`;
   document.querySelector("#gameInfoProvider").textContent = game.metadata_provider === "thegamesdb" ? "TheGamesDB" : "Mission Control";
   document.querySelector("#gameInfoTitle").textContent = game.metadata_title || game.title;
-  const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? tr("info.players", {count: game.metadata_players}) : "", game.metadata_coop ? tr("info.coop", {value: game.metadata_coop}) : ""].filter(Boolean);
+  const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? infoTr("info.players", {count: game.metadata_players}) : "", game.metadata_coop ? infoTr("info.coop", {value: game.metadata_coop}) : ""].filter(Boolean);
   document.querySelector("#gameInfoMeta").innerHTML = metadata.map((value) => `<span>${escapeHtml(value)}</span>`).join("");
   const overview = String(game.metadata_overview || "").trim();
   const notes = String(game.description || "").trim();
-  const showingTranslation = Boolean(game.metadata_overview_original && game.metadata_overview_original !== game.metadata_overview);
-  const dialogLanguage = gameInfoDialogLanguage(game, showingTranslation);
-  const dialogTr = (key, variables) => (dialogLanguage ? trIn(key, dialogLanguage, variables) : tr(key, variables));
-  document.querySelector("#gameInfoOverviewSection h3").textContent = dialogTr("info.overview");
-  document.querySelector("#gameInfoNotesSection h3").textContent = dialogTr("info.notes");
-  document.querySelector("#gameInfoLibrarySection h3").textContent = dialogTr("info.library");
-  document.querySelector("#gameInfoOverview").textContent = overview || dialogTr("info.noOverview");
+  document.querySelector("#gameInfoOverviewSection h3").textContent = infoTr("info.overview");
+  document.querySelector("#gameInfoNotesSection h3").textContent = infoTr("info.notes");
+  document.querySelector("#gameInfoLibrarySection h3").textContent = infoTr("info.library");
+  document.querySelector("#translationLanguageMenu h3").textContent = infoTr("info.chooseLanguage");
+  document.querySelector("#translationLanguageMenu > p").textContent = infoTr("info.languageHint");
+  document.querySelector("#startTranslationButton").textContent = infoTr("info.translateNow");
+  document.querySelector("#gameInfoOverview").textContent = overview || infoTr("info.noOverview");
   document.querySelector("#gameInfoOverviewSection").classList.toggle("is-empty", !overview);
-  document.querySelector("#gameInfoNotes").textContent = notes || dialogTr("info.noNotes");
+  document.querySelector("#gameInfoNotes").textContent = notes || infoTr("info.noNotes");
   document.querySelector("#gameInfoNotesSection").classList.toggle("is-empty", !notes);
-  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>${dialogTr("info.libraryTitle")}</dt><dd>${escapeHtml(game.title)}</dd><dt>${dialogTr("info.type")}</dt><dd>${escapeHtml(typeLabel(game.action, dialogTr))}</dd><dt>${dialogTr("info.size")}</dt><dd>${formatBytes(game.logical_size)}</dd>`;
-  const source = game.metadata_source_url ? `<a class="button-link secondary" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">${tr("info.source")}</a>` : "";
+  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>${infoTr("info.libraryTitle")}</dt><dd>${escapeHtml(game.title)}</dd><dt>${infoTr("info.type")}</dt><dd>${escapeHtml(typeLabel(game.action, infoTr))}</dd><dt>${infoTr("info.size")}</dt><dd>${formatBytes(game.logical_size)}</dd>`;
+  const source = game.metadata_source_url ? `<a class="button-link secondary" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">${infoTr("info.source")}</a>` : "";
   const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
-  const launch = launchable ? `<button type="button" class="primary-info-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : "";
+  const launch = launchable ? `<button type="button" class="primary-info-action" onclick="launchGame('${game.id}')">${actionLabel(game, infoTr)}</button>` : "";
   const translate = state.settings?.translator_configured && overview
-    ? `<button type="button" class="secondary info-translate" onclick="openTranslationLanguages('${game.id}')">${tr("info.translate")}</button>` : "";
+    ? `<button type="button" class="secondary info-translate" onclick="openTranslationLanguages('${game.id}')">${infoTr("info.translate")}</button>` : "";
   const original = game.metadata_overview_original && game.metadata_overview_original !== game.metadata_overview
-    ? `<button id="gameInfoOriginalButton" type="button" class="secondary" onclick="toggleGameInfoOriginal('${game.id}')">${tr("info.original")}</button>` : "";
-  const favorite = `<button type="button" class="favorite-action info-favorite ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? tr("game.favorite") : tr("game.makeFavorite")}</button>`;
+    ? `<button id="gameInfoOriginalButton" type="button" class="secondary" onclick="toggleGameInfoOriginal('${game.id}')">${infoTr("info.original")}</button>` : "";
+  const favorite = `<button type="button" class="favorite-action info-favorite ${game.favorite ? "is-favorite" : "secondary"}" onclick="toggleFavorite('${game.id}')" aria-pressed="${game.favorite ? "true" : "false"}">${game.favorite ? infoTr("game.favorite") : infoTr("game.makeFavorite")}</button>`;
   const menu = document.querySelector("#translationLanguageMenu");
   menu.hidden = true;
   menu.dataset.gameId = game.id;
-  document.querySelector("#gameInfoActions").innerHTML = `${launch.replace('primary-info-action', 'primary-info-action info-launch')}${favorite}<button type="button" class="secondary info-folder" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button type="button" class="secondary info-edit" onclick="gameInfoDialog.close(); editGame('${game.id}')">${tr("game.edit")}</button>${translate}${original.replace('secondary', 'secondary info-original')}${source.replace('secondary', 'secondary info-source')}<button type="button" class="secondary info-back" onclick="gameInfoDialog.close()">${tr("common.back")}</button>`;
+  document.querySelector("#gameInfoActions").innerHTML = `${launch.replace('primary-info-action', 'primary-info-action info-launch')}${favorite}<button type="button" class="secondary info-folder" onclick="openGameFolder('${game.id}')">${infoTr("game.folder")}</button><button type="button" class="secondary info-edit" onclick="gameInfoDialog.close(); editGame('${game.id}')">${infoTr("game.edit")}</button>${translate}${original.replace('secondary', 'secondary info-original')}${source.replace('secondary', 'secondary info-source')}<button type="button" class="secondary info-back" onclick="gameInfoDialog.close()">${infoTr("common.back")}</button>`;
   if (!gameInfoDialog.open) gameInfoDialog.showModal();
 }
 
@@ -401,16 +391,23 @@ async function openTranslationLanguages(id) {
   document.querySelector("#translationLanguageSelect").disabled = true;
   document.querySelector("#startTranslationButton").disabled = true;
   document.querySelector("#translationLanguageStatus").textContent = tr("common.loading");
+  window.requestAnimationFrame(() => scrollGameInfoToTranslationMenu(menu));
   try {
     const status = await api("/api/translator/status");
     renderTranslationLanguages(id, status.languages || []);
+    window.requestAnimationFrame(() => scrollGameInfoToTranslationMenu(menu));
   } catch (error) {
     document.querySelector("#translationLanguageStatus").textContent = error.message;
   }
-  // Scroll after the language list (and its final height) has rendered,
-  // not before, otherwise the dialog scrolls to a spot that is still too
-  // high once the dropdown and buttons appear below it.
-  requestAnimationFrame(() => menu.scrollIntoView({behavior: "smooth", block: "nearest"}));
+}
+
+function scrollGameInfoToTranslationMenu(menu) {
+  const dialog = document.querySelector("#gameInfoDialog");
+  if (!dialog || !menu || menu.hidden) return;
+  const dialogBox = dialog.getBoundingClientRect();
+  const menuBox = menu.getBoundingClientRect();
+  const target = dialog.scrollTop + menuBox.top - dialogBox.top - 20;
+  dialog.scrollTo({top: Math.max(0, target), behavior: "smooth"});
 }
 
 async function setFavoriteTranslationLanguage(id, language) {
@@ -482,18 +479,11 @@ function toggleGameInfoOriginal(id) {
   const overview = document.querySelector("#gameInfoOverview");
   const button = document.querySelector("#gameInfoOriginalButton");
   const showingOriginal = button.dataset.showingOriginal === "true";
-  const willShowTranslation = showingOriginal;
   overview.textContent = showingOriginal ? game.metadata_overview : game.metadata_overview_original;
   button.dataset.showingOriginal = showingOriginal ? "false" : "true";
-  const dialogLanguage = gameInfoDialogLanguage(game, willShowTranslation);
-  const dialogTr = (key, variables) => (dialogLanguage ? trIn(key, dialogLanguage, variables) : tr(key, variables));
-  button.textContent = showingOriginal ? dialogTr("info.original") : dialogTr("info.translation");
-  document.querySelector("#gameInfoOverviewSection h3").textContent = dialogTr("info.overview");
-  document.querySelector("#gameInfoNotesSection h3").textContent = dialogTr("info.notes");
-  document.querySelector("#gameInfoLibrarySection h3").textContent = dialogTr("info.library");
-  const notes = String(game.description || "").trim();
-  if (!notes) document.querySelector("#gameInfoNotes").textContent = dialogTr("info.noNotes");
-  document.querySelector("#gameInfoLibrary").innerHTML = `<dt>${dialogTr("info.libraryTitle")}</dt><dd>${escapeHtml(game.title)}</dd><dt>${dialogTr("info.type")}</dt><dd>${escapeHtml(typeLabel(game.action, dialogTr))}</dd><dt>${dialogTr("info.size")}</dt><dd>${formatBytes(game.logical_size)}</dd>`;
+  const contentLanguage = String(game.metadata_overview_language || "").trim().toLowerCase();
+  const infoTr = (key, variables = {}) => trForLanguage(contentLanguage, key, variables);
+  button.textContent = showingOriginal ? infoTr("info.original") : infoTr("info.translation");
 }
 
 function openSettings() {
@@ -889,4 +879,7 @@ updateLcarsLayout();
 updateLcarsSystemClock();
 setInterval(updateLcarsSystemClock, 1000);
 document.addEventListener("mission-control-language-changed", updateLcarsSystemClock);
+document.addEventListener("mission-control-language-changed", () => {
+  if (gameInfoDialog.open && gameInfoDialog.dataset.gameId) showGameInfo(gameInfoDialog.dataset.gameId);
+});
 load();

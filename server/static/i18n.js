@@ -42,6 +42,18 @@ const UI_PACKS = {
   }
 };
 
+// The managed Translator currently also exposes Italian.  Mission Control's
+// global interface intentionally stays limited to the integrated UI packs,
+// while the game-info controls follow every bundled content language.
+const CONTENT_LANGUAGE_PACKS = {
+  it: {
+    "common.back": "Indietro",
+    "game.install": "Installa", "game.mountInstall": "Monta e installa", "game.manualInstall": "Installazione manuale", "game.folder": "Apri cartella", "game.favorite": "★ Preferito", "game.makeFavorite": "☆ Aggiungi ai preferiti", "game.edit": "Modifica",
+    "type.directSetup": "Installazione diretta", "type.iso": "ISO", "type.manual": "Manuale", "type.archive": "Archivio", "type.manualImage": "Immagine speciale", "type.ignore": "Nascosto",
+    "info.overview": "Contenuto del gioco", "info.notes": "Note", "info.library": "Libreria", "info.libraryTitle": "Titolo nella libreria", "info.type": "Tipo", "info.size": "Dimensione", "info.noOverview": "Nessun contenuto del gioco è stato importato per questa voce.", "info.noNotes": "Non sono state aggiunte note personali.", "info.players": "{count} giocatori", "info.coop": "Co-op: {value}", "info.source": "Visualizza fonte", "info.translate": "Traduci contenuto del gioco", "info.translateNow": "Traduci ora", "info.translating": "Traduzione … {seconds} s", "info.noLanguages": "Il traduttore non segnala lingue disponibili.", "info.original": "Mostra originale", "info.translation": "Mostra traduzione", "info.chooseLanguage": "Scegli la lingua di destinazione", "info.languageHint": "Scegli una lingua dal menu. La stella la imposta come lingua preferita.", "info.favoriteLanguage": "Imposta {language} come lingua preferita"
+  }
+};
+
 // 0.3.9 completes the three integrated packs. Larger help passages stay in
 // trusted, local HTML constants so links and code examples remain usable.
 Object.assign(UI_PACKS.de, {
@@ -52,7 +64,7 @@ Object.assign(UI_PACKS.de, {
   "info.overview": "Spielinhalt", "info.notes": "Bemerkungen", "info.library": "Bibliothek", "info.libraryTitle": "Bibliothekstitel", "info.type": "Typ", "info.size": "Größe", "info.noOverview": "Für diesen Eintrag wurde noch kein Spielinhalt übernommen.", "info.noNotes": "Keine eigenen Bemerkungen hinterlegt.", "info.players": "{count} Spieler", "info.coop": "Co-op: {value}", "info.source": "Quelle ansehen", "info.translate": "Spielinhalt übersetzen", "info.translateNow": "Jetzt übersetzen", "info.translating": "Übersetze … {seconds} s", "info.noLanguages": "Der Translator meldet keine verfügbaren Sprachen.", "info.original": "Original anzeigen", "info.translation": "Übersetzung anzeigen", "info.chooseLanguage": "Zielsprache auswählen", "info.languageHint": "Sprache im Dropdown auswählen. Der Stern legt sie als bevorzugte Sprache fest.", "info.favoriteLanguage": "{language} als bevorzugte Sprache festlegen",
   "metadata.none": "Keine passenden Treffer gefunden.", "metadata.unknownPlatform": "Plattform unbekannt", "metadata.unknownYear": "Jahr unbekannt", "metadata.view": "Bei TheGamesDB ansehen", "metadata.apply": "Übernehmen", "metadata.loading": "Lade …", "metadata.applied": "Cover übernommen. Du kannst den Dialog jetzt speichern oder schließen.", "metadata.queryRequired": "Bitte einen Titel für die Suche eingeben.", "metadata.searching": "Suche bei TheGamesDB …",
   "confirm.deleteProfile": "Dieses eigene Designprofil wirklich löschen?", "confirm.removeGamesDb": "Gespeicherten TheGamesDB-API-Key wirklich entfernen?", "confirm.removeTranslator": "Translator-Verbindung und gespeicherten Translator-API-Key wirklich entfernen?", "profiles.copySuffix": "{name} Kopie", "profiles.savedExisting": "✓ Profil gespeichert", "profiles.saveFailed": "Speichern fehlgeschlagen",
-  "agent.probeRunning": "Prüfung läuft …", "agent.probeFound": "Agent erkannt", "agent.probeFailed": "Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.16 aktualisieren.",
+  "agent.probeRunning": "Prüfung läuft …", "agent.probeFound": "Agent erkannt", "agent.probeFailed": "Der Windows-Agent hat nicht geantwortet. Bitte installieren oder auf Version 0.3.17 aktualisieren.",
   "profiles.softDescription": "Runde, ruhige Karten", "profiles.angularDescription": "Kantige technische Flächen", "profiles.glassDescription": "Transparente schwebende Fenster", "profiles.terminalDescription": "Monochrom und kompakt", "profiles.pillDescription": "Stark gerundete Bedienelemente", "profiles.frameDescription": "Eckrahmen und HUD-Anmutung", "profiles.lcarsDescription": "Farbbänder, Kapselenden und schwarze Funktionsflächen", "profiles.backgroundHint": "Ohne neue Auswahl wird das aktuell zugeordnete Bild übernommen.", "profiles.livePreview": "LIVE-VORSCHAU",
   "help.connectionTitle": "Spielebibliothek mit Windows verbinden", "help.smbTitle": "SMB-Netzlaufwerk im Explorer", "help.tailscaleTitle": "SMB sicher über Tailscale", "help.ftpTitle": "Warum derzeit nicht FTP?", "help.ftpText": "FTP ist unter Windows kein vollwertiges Netzlaufwerk für diesen Workflow. EXE-Dateien und ISOs müssten zuerst lokal heruntergeladen werden. Ein späterer SFTP-/Download-Cache ist möglich; für direktes Installieren und ISO-Einbinden bleibt SMB die empfohlene Lösung.",
   "help.integrationTitle": "APIs und Mission Control Translator", "help.gamesDbTitle": "TheGamesDB für Cover und Spielinformationen", "help.translatorTitle": "Mission Control Translator – lokal auf TrueNAS", "help.translatorText": "Ab Version 0.3.12 läuft der Translator als interner zweiter Container. Er benötigt keinen externen Dienst und keinen API-Key.", "help.guideTitle": "Anleitung auf einem zweiten Gerät", "help.guideText": "PDF herunterladen oder den QR-Code mit Handy bzw. Tablet scannen. Auf dem zweiten Gerät ist anschließend die Mission-Control-Anmeldung erforderlich.", "help.guideDownload": "PDF-Anleitung herunterladen", "help.guideQr": "QR-Code zur PDF-Anleitung",
@@ -73,7 +85,7 @@ Object.assign(UI_PACKS.en, {
   "info.overview": "Game overview", "info.notes": "Notes", "info.library": "Library", "info.libraryTitle": "Library title", "info.type": "Type", "info.size": "Size", "info.noOverview": "No game overview has been imported for this entry.", "info.noNotes": "No personal notes have been added.", "info.players": "{count} players", "info.coop": "Co-op: {value}", "info.source": "View source", "info.translate": "Translate game overview", "info.translateNow": "Translate now", "info.translating": "Translating … {seconds} s", "info.noLanguages": "The Translator reports no available languages.", "info.original": "Show original", "info.translation": "Show translation", "info.chooseLanguage": "Choose target language", "info.languageHint": "Choose a language from the dropdown. The star marks it as your preferred language.", "info.favoriteLanguage": "Set {language} as preferred language",
   "metadata.none": "No matching results found.", "metadata.unknownPlatform": "Unknown platform", "metadata.unknownYear": "Unknown year", "metadata.view": "View on TheGamesDB", "metadata.apply": "Use", "metadata.loading": "Loading …", "metadata.applied": "Cover imported. You can now save or close the dialog.", "metadata.queryRequired": "Enter a title to search for.", "metadata.searching": "Searching TheGamesDB …",
   "confirm.deleteProfile": "Delete this custom design profile?", "confirm.removeGamesDb": "Remove the stored TheGamesDB API key?", "confirm.removeTranslator": "Remove the Translator connection and stored API key?", "profiles.copySuffix": "{name} Copy", "profiles.savedExisting": "✓ Profile saved", "profiles.saveFailed": "Save failed",
-  "agent.probeRunning": "Checking …", "agent.probeFound": "Agent detected", "agent.probeFailed": "The Windows Agent did not respond. Install it or update it to version 0.3.16.",
+  "agent.probeRunning": "Checking …", "agent.probeFound": "Agent detected", "agent.probeFailed": "The Windows Agent did not respond. Install it or update it to version 0.3.17.",
   "profiles.softDescription": "Calm, rounded cards", "profiles.angularDescription": "Angular technical surfaces", "profiles.glassDescription": "Transparent floating panels", "profiles.terminalDescription": "Monochrome and compact", "profiles.pillDescription": "Strongly rounded controls", "profiles.frameDescription": "Corner frames with a HUD feel", "profiles.lcarsDescription": "Color bands, capsule ends and black function areas", "profiles.backgroundHint": "The currently assigned image is retained if no new file is selected.", "profiles.livePreview": "LIVE PREVIEW",
   "help.connectionTitle": "Connect the game library to Windows", "help.smbTitle": "Map an SMB drive in File Explorer", "help.tailscaleTitle": "Use SMB securely through Tailscale", "help.ftpTitle": "Why not FTP at this time?", "help.ftpText": "Windows does not expose FTP as a full network drive for this workflow. EXE and ISO files would have to be downloaded first. A later SFTP/download cache is possible; SMB remains the recommended option for direct setup and ISO mounting.",
   "help.integrationTitle": "APIs and Mission Control Translator", "help.gamesDbTitle": "TheGamesDB for covers and game information", "help.translatorTitle": "Mission Control Translator on TrueNAS", "help.translatorText": "From version 0.3.12, the Translator runs as an internal second container. It needs no external service or API key.", "help.guideTitle": "Instructions on a second device", "help.guideText": "Download the PDF or scan the QR code with a phone or tablet. Mission Control sign-in is required on the second device.", "help.guideDownload": "Download PDF guide", "help.guideQr": "QR code for the PDF guide",
@@ -94,7 +106,7 @@ Object.assign(UI_PACKS.ru, {
   "info.overview": "Описание игры", "info.notes": "Заметки", "info.library": "Библиотека", "info.libraryTitle": "Название в библиотеке", "info.type": "Тип", "info.size": "Размер", "info.noOverview": "Для этой записи описание игры ещё не импортировано.", "info.noNotes": "Собственные заметки отсутствуют.", "info.players": "Игроки: {count}", "info.coop": "Кооператив: {value}", "info.source": "Открыть источник", "info.translate": "Перевести описание", "info.translateNow": "Перевести", "info.translating": "Перевод … {seconds} с", "info.noLanguages": "Переводчик не сообщил о доступных языках.", "info.original": "Показать оригинал", "info.translation": "Показать перевод", "info.chooseLanguage": "Выберите язык перевода", "info.languageHint": "Выберите язык в раскрывающемся списке. Звезда отмечает предпочтительный язык.", "info.favoriteLanguage": "Сделать {language} предпочтительным языком",
   "metadata.none": "Подходящие результаты не найдены.", "metadata.unknownPlatform": "Платформа неизвестна", "metadata.unknownYear": "Год неизвестен", "metadata.view": "Открыть в TheGamesDB", "metadata.apply": "Использовать", "metadata.loading": "Загрузка …", "metadata.applied": "Обложка импортирована. Теперь можно сохранить или закрыть окно.", "metadata.queryRequired": "Введите название для поиска.", "metadata.searching": "Поиск в TheGamesDB …",
   "confirm.deleteProfile": "Удалить этот пользовательский профиль дизайна?", "confirm.removeGamesDb": "Удалить сохранённый API-ключ TheGamesDB?", "confirm.removeTranslator": "Удалить соединение с переводчиком и сохранённый API-ключ?", "profiles.copySuffix": "{name} — копия", "profiles.savedExisting": "✓ Профиль сохранён", "profiles.saveFailed": "Не удалось сохранить",
-  "agent.probeRunning": "Проверка …", "agent.probeFound": "Агент обнаружен", "agent.probeFailed": "Windows Agent не ответил. Установите его или обновите до версии 0.3.16.",
+  "agent.probeRunning": "Проверка …", "agent.probeFound": "Агент обнаружен", "agent.probeFailed": "Windows Agent не ответил. Установите его или обновите до версии 0.3.17.",
   "profiles.softDescription": "Спокойные закруглённые карточки", "profiles.angularDescription": "Угловатые технические поверхности", "profiles.glassDescription": "Прозрачные плавающие панели", "profiles.terminalDescription": "Монохромный и компактный вид", "profiles.pillDescription": "Сильно закруглённые элементы", "profiles.frameDescription": "Угловые рамки в стиле HUD", "profiles.lcarsDescription": "Цветные полосы, капсулы и чёрные функциональные зоны", "profiles.backgroundHint": "Если не выбирать новый файл, текущее изображение сохранится.", "profiles.livePreview": "ПРЕДПРОСМОТР",
   "help.connectionTitle": "Подключение библиотеки игр к Windows", "help.smbTitle": "Подключение SMB-диска в Проводнике", "help.tailscaleTitle": "Безопасный SMB через Tailscale", "help.ftpTitle": "Почему пока не FTP?", "help.ftpText": "Windows не предоставляет FTP как полноценный сетевой диск для этого процесса. EXE- и ISO-файлы пришлось бы сначала скачивать. В будущем возможен SFTP-кэш; для прямой установки и подключения ISO рекомендуется SMB.",
   "help.integrationTitle": "API и Mission Control Translator", "help.gamesDbTitle": "TheGamesDB для обложек и сведений об играх", "help.translatorTitle": "Mission Control Translator на TrueNAS", "help.translatorText": "Начиная с версии 0.3.12 переводчик работает как второй внутренний контейнер. Внешняя служба и API-ключ не требуются.", "help.guideTitle": "Инструкция на втором устройстве", "help.guideText": "Скачайте PDF или отсканируйте QR-код телефоном либо планшетом. На втором устройстве потребуется вход в Mission Control.", "help.guideDownload": "Скачать PDF-инструкцию", "help.guideQr": "QR-код PDF-инструкции",
@@ -125,15 +137,17 @@ function resolveUiLanguage(language) {
 }
 
 function tr(key, variables = {}) {
-  return trIn(key, currentUiLanguage, variables);
+  const pack = UI_PACKS[currentUiLanguage] || UI_PACKS.en;
+  let value = pack[key] || UI_PACKS.en[key] || key;
+  Object.entries(variables).forEach(([name, replacement]) => {
+    value = value.split(`{${name}}`).join(String(replacement));
+  });
+  return value;
 }
 
-// Renders a key using a specific integrated language pack, independent of the
-// active interface language. Used to localize the game-info dialog to a
-// game's translated content language (only for languages we ship a full UI
-// pack for) without switching the whole interface.
-function trIn(key, language, variables = {}) {
-  const pack = UI_PACKS[language] || UI_PACKS[currentUiLanguage] || UI_PACKS.en;
+function trForLanguage(language, key, variables = {}) {
+  const normalized = String(language || "").trim().toLowerCase().split("-")[0];
+  const pack = UI_PACKS[normalized] || CONTENT_LANGUAGE_PACKS[normalized] || UI_PACKS[currentUiLanguage] || UI_PACKS.en;
   let value = pack[key] || UI_PACKS.en[key] || key;
   Object.entries(variables).forEach(([name, replacement]) => {
     value = value.split(`{${name}}`).join(String(replacement));
@@ -206,5 +220,5 @@ function applyUiLanguage(language) {
   document.dispatchEvent(new CustomEvent("mission-control-language-changed"));
 }
 
-window.MissionControlI18n = {applyUiLanguage, tr, trIn, resolveUiLanguage, supportedLanguages: SUPPORTED_UI_LANGUAGES};
+window.MissionControlI18n = {applyUiLanguage, tr, trForLanguage, resolveUiLanguage, supportedLanguages: SUPPORTED_UI_LANGUAGES};
 })();

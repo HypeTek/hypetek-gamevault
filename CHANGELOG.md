@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.17
+
+- Überschriften, Platzhalter, Bibliotheksfelder und sämtliche Aktionen im Spiele-Infofenster folgen nun der tatsächlich gespeicherten Sprache des Spielinhalts.
+- Die globale Oberflächensprache bleibt davon unabhängig; Titel, Dateinamen und eigene Bemerkungen werden nicht automatisch verändert.
+- „Spielinhalt übersetzen“ scrollt das Infofenster zuverlässig zur eingeblendeten Sprachauswahl – sowohl sofort beim Öffnen als auch nach dem Laden der Translator-Sprachen.
+
 ## 0.3.16
 
 - Zielsprachen im Spiele-Infofenster in ein kompaktes Dropdown mit Favoritenstern und getrenntem Startknopf überführt.
