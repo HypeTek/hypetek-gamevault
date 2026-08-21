@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.3.17"
+      com.hypetek.mission-control.deployment: "0.3.18"
 
     ports:
       - "9998:8080"
@@ -63,7 +63,7 @@ services:
     environment:
       LT_DISABLE_WEB_UI: "true"
       LT_UPDATE_MODELS: "true"
-      LT_LOAD_ONLY: "en,de,ru,it"
+      LT_LOAD_ONLY: "en,de,ru,it,fr,es,pt,pl,nl,tr,uk"
 
     volumes:
       - type: bind
@@ -96,7 +96,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.3.17 muss die Antwort unter anderem `"version":"0.3.17"`,
+Für Version 0.3.18 muss die Antwort unter anderem `"version":"0.3.18"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -112,8 +112,9 @@ Control übernimmt diese Adresse automatisch. Die vollständige Anleitung kann
 in Mission Control unter **API-/Translator-Hilfe** als PDF heruntergeladen oder
 per QR-Code auf einem zweiten Gerät geöffnet werden.
 
-Beim ersten Start lädt LibreTranslate ein schlankes Basispaket für Deutsch,
-Englisch, Russisch und Italienisch. Die Erkennung gemischter Inhalte ist nicht
+Beim ersten Start lädt LibreTranslate das verwaltete Paket für Deutsch,
+Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch,
+Niederländisch, Türkisch und Ukrainisch. Die Erkennung gemischter Inhalte ist nicht
 auf diese Ausgangssprachen festgelegt; verarbeitet werden alle im Translator
 installierten Sprachen. Der erste Modell-Download kann mehrere Minuten dauern.
 Der Zustand lässt sich danach unter

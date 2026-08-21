@@ -1,8 +1,14 @@
 # Changelog
 
+## 0.3.18
+
+- Aktionsbuttons im Spiele-Infofenster folgen ausschließlich der globalen Oberflächensprache und wechseln nicht mehr mit der Übersetzung des Spielinhalts.
+- Inhaltliche Überschriften, Platzhalter, Typen und Bibliotheksfelder folgen weiterhin der gewählten Sprache des Spielinhalts.
+- Das verwaltete Translator-Paket wurde um Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch, Türkisch und Ukrainisch erweitert.
+
 ## 0.3.17
 
-- Überschriften, Platzhalter, Bibliotheksfelder und sämtliche Aktionen im Spiele-Infofenster folgen nun der tatsächlich gespeicherten Sprache des Spielinhalts.
+- Überschriften, Platzhalter und Bibliotheksfelder im Spiele-Infofenster folgen nun der tatsächlich gespeicherten Sprache des Spielinhalts.
 - Die globale Oberflächensprache bleibt davon unabhängig; Titel, Dateinamen und eigene Bemerkungen werden nicht automatisch verändert.
 - „Spielinhalt übersetzen“ scrollt das Infofenster zuverlässig zur eingeblendeten Sprachauswahl – sowohl sofort beim Öffnen als auch nach dem Laden der Translator-Sprachen.
 
