@@ -153,26 +153,36 @@ try {
     if ($language -eq "auto") {
         $language = [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
     }
-    if ($language -notin @("de", "en", "ru")) { $language = "en" }
+    if ($language -notin @("de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr")) { $language = "en" }
     $actionLabels = @{
         de = @{ direct_setup = "Direktes Setup"; iso = "ISO einbinden und installieren"; open_folder = "Ordner öffnen" }
         en = @{ direct_setup = "Direct setup"; iso = "Mount ISO and install"; open_folder = "Open folder" }
         ru = @{ direct_setup = "Прямая установка"; iso = "Подключить ISO и установить"; open_folder = "Открыть папку" }
+        it = @{ direct_setup = "Installazione diretta"; iso = "Monta ISO e installa"; open_folder = "Apri cartella" }
+        fr = @{ direct_setup = "Installation directe"; iso = "Monter l’ISO et installer"; open_folder = "Ouvrir le dossier" }
+        es = @{ direct_setup = "Instalación directa"; iso = "Montar ISO e instalar"; open_folder = "Abrir carpeta" }
+        pt = @{ direct_setup = "Instalação direta"; iso = "Montar ISO e instalar"; open_folder = "Abrir pasta" }
+        pl = @{ direct_setup = "Instalacja bezpośrednia"; iso = "Zamontuj ISO i zainstaluj"; open_folder = "Otwórz folder" }
+        nl = @{ direct_setup = "Directe installatie"; iso = "ISO koppelen en installeren"; open_folder = "Map openen" }
+        tr = @{ direct_setup = "Doğrudan kurulum"; iso = "ISO bağla ve kur"; open_folder = "Klasörü aç" }
     }
     $actionLabel = $actionLabels[$language][$manifest.action]
     if ([string]::IsNullOrWhiteSpace($actionLabel)) { $actionLabel = $manifest.action }
-    if ($language -eq "en") {
-        $message = "Title: $($manifest.title)`n`nAction: $actionLabel`nSource: $source`n`nContinue?"
-        $confirmationTitle = "HypeTek Mission Control – Confirmation"
+    $dialogText = @{
+        de = @{ title = "Titel"; action = "Aktion"; source = "Quelle"; question = "Fortfahren?"; caption = "Bestätigung" }
+        en = @{ title = "Title"; action = "Action"; source = "Source"; question = "Continue?"; caption = "Confirmation" }
+        ru = @{ title = "Название"; action = "Действие"; source = "Источник"; question = "Продолжить?"; caption = "Подтверждение" }
+        it = @{ title = "Titolo"; action = "Azione"; source = "Origine"; question = "Continuare?"; caption = "Conferma" }
+        fr = @{ title = "Titre"; action = "Action"; source = "Source"; question = "Continuer ?"; caption = "Confirmation" }
+        es = @{ title = "Título"; action = "Acción"; source = "Origen"; question = "¿Continuar?"; caption = "Confirmación" }
+        pt = @{ title = "Título"; action = "Ação"; source = "Origem"; question = "Continuar?"; caption = "Confirmação" }
+        pl = @{ title = "Tytuł"; action = "Akcja"; source = "Źródło"; question = "Kontynuować?"; caption = "Potwierdzenie" }
+        nl = @{ title = "Titel"; action = "Actie"; source = "Bron"; question = "Doorgaan?"; caption = "Bevestiging" }
+        tr = @{ title = "Başlık"; action = "Eylem"; source = "Kaynak"; question = "Devam edilsin mi?"; caption = "Onay" }
     }
-    elseif ($language -eq "ru") {
-        $message = "Название: $($manifest.title)`n`nДействие: $actionLabel`nИсточник: $source`n`nПродолжить?"
-        $confirmationTitle = "HypeTek Mission Control – Подтверждение"
-    }
-    else {
-        $message = "Titel: $($manifest.title)`n`nAktion: $actionLabel`nQuelle: $source`n`nFortfahren?"
-        $confirmationTitle = "HypeTek Mission Control – Bestätigung"
-    }
+    $copy = $dialogText[$language]
+    $message = "$($copy.title): $($manifest.title)`n`n$($copy.action): $actionLabel`n$($copy.source): $source`n`n$($copy.question)"
+    $confirmationTitle = "HypeTek Mission Control – $($copy.caption)"
     $answer = [System.Windows.MessageBox]::Show(
         $message,
         $confirmationTitle,

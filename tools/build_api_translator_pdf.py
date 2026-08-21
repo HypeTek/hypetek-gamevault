@@ -214,7 +214,7 @@ def build_pdf():
                 "TheGamesDB, integrierter lokaler Translator und sichere TrueNAS-Konfiguration",
                 styles["SubtitleMC"],
             ),
-            Paragraph("Was ist ab Version 0.3.18 neu?", styles["H1MC"]),
+            Paragraph("Was ist ab Version 0.3.19 neu?", styles["H1MC"]),
             Paragraph(
                 "Mission Control kann den lokalen Translator jetzt als zweiten Dienst derselben "
                 "TrueNAS-App betreiben. Die interne Adresse wird automatisch gesetzt. Es ist weder "
@@ -320,7 +320,7 @@ def build_pdf():
                 "  image: ghcr.io/hypetek/hypetek-gamevault:latest<br/>"
                 "  pull_policy: always<br/>"
                 "  labels:<br/>"
-                "    com.hypetek.mission-control.deployment: \"0.3.18\"<br/>"
+                "    com.hypetek.mission-control.deployment: \"0.3.19\"<br/>"
                 "  environment:<br/>"
                 "    MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000<br/>"
                 "translator:<br/>"
@@ -329,7 +329,7 @@ def build_pdf():
                 "  environment:<br/>"
                 "    LT_DISABLE_WEB_UI: \"true\"<br/>"
                 "    LT_UPDATE_MODELS: \"true\"<br/>"
-                "    LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr,uk<br/>"
+                "    LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr<br/>"
                 "  volumes:<br/>"
                 "    - /mnt/Application/mission-control-translator:/home/libretranslate/.local<br/>"
                 "  healthcheck:<br/>"
@@ -355,7 +355,7 @@ def build_pdf():
             Paragraph("Gesundheitsprüfung", styles["H2MC"]),
             Paragraph("http://TRUENAS-IP:9998/health", styles["CodeMC"]),
             Paragraph(
-                "Die Antwort muss unter anderem version 0.3.18, agent_api 3 und "
+                "Die Antwort muss unter anderem version 0.3.19, agent_api 3 und "
                 "translator_managed true enthalten. Danach in Einstellungen bei Translator auf "
                 "Verbindung testen klicken. Mission Control zeigt die erreichbaren Sprachcodes.",
                 styles["BodyMC"],
@@ -366,7 +366,7 @@ def build_pdf():
             bullet("Original anzeigen und Übersetzung anzeigen wechseln zwischen beiden Fassungen.", styles),
             Paragraph("Sprachen schlank erweitern", styles["H2MC"]),
             Paragraph(
-                "Standardmäßig werden en,de,ru,it,fr,es,pt,pl,nl,tr,uk als verwaltetes Sprachpaket geladen. Die Erkennung "
+                "Standardmäßig werden en,de,ru,it,fr,es,pt,pl,nl,tr als verwaltetes Sprachpaket geladen. Die Erkennung "
                 "selbst ist nicht darauf beschränkt. Weitere Codes werden in LT_LOAD_ONLY "
                 "kommasepariert ergänzt, zum Beispiel ar,zh,ja,ko. Nur tatsächlich "
                 "benötigte Sprachen laden, weil Modelle Speicherplatz, Startzeit und Arbeitsspeicher "

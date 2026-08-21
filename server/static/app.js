@@ -452,7 +452,6 @@ async function translateGameInfo(id, targetLanguage) {
     const seconds = Math.max(0, Math.floor((Date.now() - started) / 1000));
     const label = tr("info.translating", {seconds});
     if (translateButton) translateButton.innerHTML = `<span class="button-spinner" aria-hidden="true"></span>${escapeHtml(label)}`;
-    if (status) status.textContent = label;
   };
   if (translateButton) translateButton.disabled = true;
   if (startButton) startButton.disabled = true;

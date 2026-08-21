@@ -1,10 +1,12 @@
 # Changelog
 
-## 0.3.18
+## 0.3.19
 
-- Aktionsbuttons im Spiele-Infofenster folgen ausschließlich der globalen Oberflächensprache und wechseln nicht mehr mit der Übersetzung des Spielinhalts.
-- Inhaltliche Überschriften, Platzhalter, Typen und Bibliotheksfelder folgen weiterhin der gewählten Sprache des Spielinhalts.
-- Das verwaltete Translator-Paket wurde um Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch, Türkisch und Ukrainisch erweitert.
+- Vollständige Sprachauswahl für Oberfläche, Spielinhalte und Windows-Agent vereinheitlicht: Deutsch, Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch und Türkisch.
+- Ukrainisch aus dem schlanken Standardpaket und dem verwalteten Translator-Modellsatz entfernt.
+- Italienische, französische, spanische, portugiesische, polnische, niederländische und türkische Navigation, Einstellungen, Bibliotheksaktionen und Agent-Bestätigungen ergänzt.
+- Den doppelten kleinen Übersetzungs-Timer unterhalb der Sprachauswahl entfernt; Spinner und verstrichene Zeit bleiben ausschließlich im aktiven Übersetzungsbutton sichtbar.
+- Sprachpakete erben sämtliche technischen Hilfe-, Fehler- und Barrierefreiheits-Schlüssel, damit kein auswählbares Paket unvollständige UI-Elemente erzeugt.
 
 ## 0.3.17
 

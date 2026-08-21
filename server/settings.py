@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 THEMES = {"mission", "cyberpunk", "lcars", "midnight"}
-UI_LANGUAGES = {"auto", "de", "en", "ru"}
+UI_LANGUAGES = {"auto", "de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr"}
 DEFAULT_SERVER_NAME = os.environ.get("MISSION_CONTROL_SERVER_NAME", "Mission Control").strip()
 DEFAULT_LIBRARY_NAME = os.environ.get(
     "MISSION_CONTROL_LIBRARY_NAME", f"{DEFAULT_SERVER_NAME} GAME ARCHIVE"

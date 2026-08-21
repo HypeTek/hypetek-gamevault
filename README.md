@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.3.18
+## Funktionen in Version 0.3.19
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -30,7 +30,7 @@ verändern oder in ein neues Format zu zwingen.
 - Installations- und Ordneraktionen direkt im Spiele-Infofenster
 - integrierter lokaler Mission Control Translator als interner zweiter Container
 - automatisches Translator-Ziel ohne externen Port oder API-Key
-- verwaltetes Übersetzungspaket für Deutsch, Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch, Türkisch und Ukrainisch
+- gemeinsame Sprachauswahl für Oberfläche, Spieleinhalte und Windows-Agent in Deutsch, Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch und Türkisch
 - abschnittsweise Quellsprachenerkennung für gemischte TheGamesDB-Spielinhalte
 - Translator-Verbindungstest mit Anzeige der tatsächlich verfügbaren Sprachcodes
 - sichere Windows-Agent-Erkennung über kurzlebige Prüftickets

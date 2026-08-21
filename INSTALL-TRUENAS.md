@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.3.18"
+      com.hypetek.mission-control.deployment: "0.3.19"
 
     ports:
       - "9998:8080"
@@ -63,7 +63,7 @@ services:
     environment:
       LT_DISABLE_WEB_UI: "true"
       LT_UPDATE_MODELS: "true"
-      LT_LOAD_ONLY: "en,de,ru,it,fr,es,pt,pl,nl,tr,uk"
+      LT_LOAD_ONLY: "en,de,ru,it,fr,es,pt,pl,nl,tr"
 
     volumes:
       - type: bind
@@ -96,7 +96,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.3.18 muss die Antwort unter anderem `"version":"0.3.18"`,
+Für Version 0.3.19 muss die Antwort unter anderem `"version":"0.3.19"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -120,7 +120,7 @@ installierten Sprachen. Der erste Modell-Download kann mehrere Minuten dauern.
 Der Zustand lässt sich danach unter
 **Einstellungen → Verbindung testen** prüfen; Mission Control zeigt dort auch die
 vom Container gemeldeten Sprachcodes an. Zusätzliche Modelle werden über
-`LT_LOAD_ONLY` kommasepariert ergänzt, etwa `fr,es,it,pl,uk,tr,ar,zh,ja,ko`.
+`LT_LOAD_ONLY` kommasepariert ergänzt, etwa `fr,es,it,pl,tr,ar,zh,ja,ko`.
 
 Der Translator benötigt keinen externen API-Key. Die vorhandenen Felder bleiben
 für Nutzer kompatibler externer Translator-Dienste erhalten.

@@ -149,7 +149,7 @@
         <p data-i18n="help.translatorText">Ab Version 0.3.12 läuft der Translator als interner zweiter Container. Er benötigt keinen externen Dienst und keinen API-Key.</p>
         <ol id="helpTranslatorSteps">
           <li>Die vollständige YAML aus <code>INSTALL-TRUENAS.md</code> verwenden; sie enthält <code>libretranslate/libretranslate:v1.9.6</code>.</li>
-          <li><code>LT_LOAD_ONLY=en,de,ru,it,fr,es,pt,pl,nl,tr,uk</code> ist das schlanke Basispaket für gemischtsprachige TheGamesDB-Inhalte. Weitere Sprachen werden kommasepariert ergänzt.</li>
+          <li><code>LT_LOAD_ONLY=en,de,ru,it,fr,es,pt,pl,nl,tr</code> ist das schlanke Basispaket für gemischtsprachige TheGamesDB-Inhalte. Weitere Sprachen werden kommasepariert ergänzt.</li>
           <li>Ein persistentes Volume nach <code>/home/libretranslate/.local</code> einbinden, damit Sprachmodelle nicht erneut geladen werden.</li>
           <li>Mission Control erkennt den Dienst intern automatisch unter <code>http://translator:5000</code>.</li>
           <li>Nach dem ersten Modell-Download die Verbindung prüfen und die gewünschte Zielsprache wählen.</li>
@@ -184,7 +184,7 @@
         </label>
         <label>Sprache der Oberfläche
           <select id="settingUiLanguage">
-            <option value="auto">Automatisch (Browser)</option><option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option>
+            <option value="auto" data-i18n="settings.auto">Automatisch (Browser)</option><option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option><option value="it">Italiano</option><option value="fr">Français</option><option value="es">Español</option><option value="pt">Português</option><option value="pl">Polski</option><option value="nl">Nederlands</option><option value="tr">Türkçe</option>
           </select>
           <span id="settingsUiLanguageHint" class="field-hint">Integrierte Sprachpakete; unabhängig von der Übersetzung der Spielinhalte.</span>
         </label>

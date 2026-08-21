@@ -7,7 +7,7 @@ translator:
   restart: unless-stopped
   environment:
     LT_UPDATE_MODELS: 'true'
-    LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr,uk
+    LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr
     LT_DISABLE_WEB_UI: 'true'
   volumes:
     - source: /mnt/Application/mission-control-translator
