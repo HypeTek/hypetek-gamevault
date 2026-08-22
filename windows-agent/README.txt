@@ -1,5 +1,5 @@
 HYPETEK MISSION CONTROL – WINDOWS-AGENT
-Version 0.3.19
+Version 0.3.20
 
 © 2026 Michael Härtwig · HypeTek
 
@@ -7,6 +7,35 @@ EMPFOHLENE INSTALLATION
 
 Nutze in Mission Control die Schaltfläche „Windows-Agent herunterladen“.
 Der EXE-Installer führt dich durch Serveradresse, SMB-Spielepfad und Agent-Token.
+Direkt beim Start kannst du Deutsch, Englisch, Russisch, Italienisch,
+Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch oder Türkisch wählen.
+
+EN: Choose the setup language first. Connect the SMB network drive in File
+Explorer, then enter the server address, games path and GAMEVAULT_AGENT_TOKEN.
+
+RU: Сначала выберите язык установки. Подключите сетевой SMB-диск в Проводнике,
+затем укажите адрес сервера, путь к играм и GAMEVAULT_AGENT_TOKEN.
+
+IT: Scegli prima la lingua. Collega l'unità SMB in Esplora file, quindi inserisci
+indirizzo del server, percorso giochi e GAMEVAULT_AGENT_TOKEN.
+
+FR: Choisissez d'abord la langue. Connectez le lecteur SMB dans l'Explorateur,
+puis saisissez l'adresse du serveur, le chemin des jeux et le jeton.
+
+ES: Elige primero el idioma. Conecta la unidad SMB en el Explorador e introduce
+la dirección del servidor, la ruta de juegos y el token.
+
+PT: Escolha primeiro o idioma. Ligue a unidade SMB no Explorador e introduza o
+endereço do servidor, o caminho dos jogos e o token.
+
+PL: Najpierw wybierz język. Podłącz dysk SMB w Eksploratorze, a następnie podaj
+adres serwera, ścieżkę gier i token.
+
+NL: Kies eerst de taal. Koppel het SMB-station in Verkenner en voer daarna het
+serveradres, games-pad en token in.
+
+TR: Önce dili seçin. SMB sürücüsünü Dosya Gezgini'nde bağlayın ve ardından
+sunucu adresini, oyun yolunu ve belirteci girin.
 
 POWERSHELL-FALLBACK (NUR FÜR EXPERTEN)
 

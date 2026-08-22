@@ -1,8 +1,11 @@
 # Changelog
 
-## 0.3.19
+## 0.3.20
 
 - Vollständige Sprachauswahl für Oberfläche, Spielinhalte und Windows-Agent vereinheitlicht: Deutsch, Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch und Türkisch.
+- Der EXE-Agent zeigt direkt beim Start die Inno-Setup-Sprachauswahl; Assistent, Feldbeschriftungen, SMB-Hinweise, Token-Prüfung und Hilfetexte folgen der gewählten Sprache statt nur der Windows-Systemsprache.
+- Die beim Setup gewählte Sprache wird in der lokalen Agent-Konfiguration hinterlegt; die Laufzeit-Bestätigung folgt weiterhin vorrangig der in Mission Control gewählten Oberflächensprache.
+- Das Spiele-Sprachmenü zeigt alle vom tatsächlich laufenden LibreTranslate-Container bereitgestellten Modelle. Die mitgelieferte TrueNAS-YAML lädt denselben Satz aus zehn Sprachen.
 - Ukrainisch aus dem schlanken Standardpaket und dem verwalteten Translator-Modellsatz entfernt.
 - Italienische, französische, spanische, portugiesische, polnische, niederländische und türkische Navigation, Einstellungen, Bibliotheksaktionen und Agent-Bestätigungen ergänzt.
 - Den doppelten kleinen Übersetzungs-Timer unterhalb der Sprachauswahl entfernt; Spinner und verstrichene Zeit bleiben ausschließlich im aktiven Übersetzungsbutton sichtbar.

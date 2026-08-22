@@ -104,6 +104,15 @@ class ReleaseMetadataTests(unittest.TestCase):
             (ROOT / "windows-installer" / "MissionControlAgent.iss").read_text(encoding="utf-8"),
         )
         self.assertIn("Verbinde das SMB-Netzlaufwerk zuerst", installer)
+        for language in ("de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr"):
+            self.assertIn(f'Name: "{language}"; MessagesFile:', installer)
+            self.assertIn(f'{language}.ServerTitle=', installer)
+            self.assertIn(f'{language}.LibraryDescription=', installer)
+            self.assertIn(f'{language}.TokenHelpText=', installer)
+        self.assertIn("CustomMessage('ServerTitle')", installer)
+        self.assertIn("CustomMessage('LibraryDescription')", installer)
+        self.assertIn("CustomMessage('TokenRejected')", installer)
+        self.assertIn('"installer_language": "', installer)
         agent = (ROOT / "windows-agent" / "GameVaultAgent.ps1").read_text(encoding="utf-8-sig")
         self.assertIn("$manifest.ui_language", agent)
         self.assertIn('Confirmation', agent)
@@ -119,7 +128,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("libretranslate/libretranslate:v1.9.6", compose)
         self.assertIn("MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000", compose)
         self.assertIn("LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr", compose)
-        self.assertIn('com.hypetek.mission-control.deployment: "0.3.19"', compose)
+        self.assertIn('com.hypetek.mission-control.deployment: "0.3.20"', compose)
         self.assertNotIn('"5000:5000"', compose)
 
         notice = (ROOT / "NOTICE.txt").read_text(encoding="utf-8")
