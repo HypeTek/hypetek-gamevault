@@ -210,7 +210,13 @@
     <div class="design-profile-content">
       <div class="dialog-head"><div><p class="eyebrow">VISUAL CONFIGURATION</p><h2>Designprofile</h2></div><button id="closeDesignProfiles" type="button" class="ghost" aria-label="Designprofile schließen" data-i18n-aria="accessibility.closeProfiles">×</button></div>
       <div id="designProfileList" class="design-profile-list"></div>
-      <div id="designProfileListActions" class="profile-list-actions"><button id="newDesignProfileButton" type="button" class="profile-add">+ Neues Profil</button><button id="designProfilesBackButton" type="button" class="secondary">Zurück</button></div>
+      <div id="designProfileListActions" class="profile-list-actions">
+        <button id="newDesignProfileButton" type="button" class="profile-add">+ Neues Profil</button>
+        <button id="importDesignProfileButton" type="button" class="secondary">Profil importieren</button>
+        <button id="designProfilesBackButton" type="button" class="secondary">Zurück</button>
+        <input id="importDesignProfileFile" type="file" accept="application/json,.json" hidden>
+        <span id="designProfileImportStatus" class="save-confirmation" role="status" aria-live="polite"></span>
+      </div>
       <form id="designProfileForm" class="design-profile-editor" hidden>
         <input id="designProfileId" type="hidden">
         <div class="profile-editor-grid">

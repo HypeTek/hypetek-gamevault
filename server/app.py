@@ -5,6 +5,8 @@ import re
 import secrets
 import time
 import zipfile
+import base64
+import json
 from io import BytesIO
 from functools import wraps
 from pathlib import Path, PurePosixPath
@@ -378,6 +380,126 @@ def delete_design_profile(profile_id: str):
     except ValueError as error:
         return jsonify(error=str(error)), 400
     return jsonify(public_profiles())
+
+
+def _profile_background_payload(name: str | None) -> dict | None:
+    if not name:
+        return None
+    path = BACKGROUND_DIR / Path(name).name
+    if not path.is_file():
+        return None
+    data = path.read_bytes()
+    # Base64 adds roughly one third. Keeping the raw image at 5 MiB leaves
+    # enough room for the JSON envelope below Flask's 8 MiB request limit.
+    if len(data) > 5 * 1024 * 1024:
+        return None
+    extension = path.suffix.casefold()
+    media_type = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(extension)
+    if not media_type:
+        return None
+    return {
+        "filename": f"background{extension}",
+        "media_type": media_type,
+        "data": base64.b64encode(data).decode("ascii"),
+    }
+
+
+def _decode_profile_background(value: object) -> tuple[bytes, str] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) != {"filename", "media_type", "data"}:
+        raise ValueError("Ungültiger Hintergrund im Designpaket.")
+    extension = Path(secure_filename(str(value["filename"]))).suffix.casefold()
+    expected_type = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}.get(extension)
+    if not expected_type or value["media_type"] != expected_type:
+        raise ValueError("Nicht unterstütztes Hintergrundformat im Designpaket.")
+    try:
+        data = base64.b64decode(str(value["data"]), validate=True)
+    except (ValueError, TypeError) as error:
+        raise ValueError("Beschädigte Hintergrunddaten im Designpaket.") from error
+    if not data or len(data) > 5 * 1024 * 1024:
+        raise ValueError("Der Profilhintergrund ist leer oder größer als 5 MiB.")
+    valid = (
+        data.startswith(b"\xff\xd8\xff")
+        or data.startswith(b"\x89PNG\r\n\x1a\n")
+        or (data.startswith(b"RIFF") and data[8:12] == b"WEBP")
+    )
+    if not valid:
+        raise ValueError("Der Profilhintergrund ist keine gültige Bilddatei.")
+    return data, extension
+
+
+@app.get("/api/design-profiles/<profile_id>/export")
+@login_required
+def export_design_profile(profile_id: str):
+    store = design_profiles.load(settings_store.load().get("theme", "mission"))
+    profile = store["profiles"].get(profile_id)
+    if not profile:
+        return jsonify(error="Unbekanntes Designprofil."), 404
+    portable = dict(profile)
+    portable.pop("builtin", None)
+    portable["background_name"] = None
+    package = {
+        "format": "hypetek-mission-control-design",
+        "format_version": 1,
+        "application_version": APP_VERSION,
+        "profile": portable,
+        "background": _profile_background_payload(profile.get("background_name")),
+    }
+    rendered = (json.dumps(package, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    filename = re.sub(r"[^A-Za-z0-9._-]+", "-", profile["name"]).strip("-") or "mission-control-design"
+    return send_file(
+        BytesIO(rendered),
+        mimetype="application/json",
+        as_attachment=True,
+        download_name=f"{filename}.mcdesign.json",
+    )
+
+
+@app.post("/api/design-profiles/import")
+@login_required
+@csrf_required
+def import_design_profile():
+    package = request.get_json(force=True, silent=True)
+    if not isinstance(package, dict):
+        return jsonify(error="Das Designpaket enthält kein gültiges JSON."), 400
+    if package.get("format") != "hypetek-mission-control-design" or package.get("format_version") != 1:
+        return jsonify(error="Unbekanntes oder nicht unterstütztes Designpaket."), 400
+    if not isinstance(package.get("profile"), dict):
+        return jsonify(error="Im Designpaket fehlt das Profil."), 400
+    stored_background = None
+    try:
+        background = _decode_profile_background(package.get("background"))
+        profile = dict(package["profile"])
+        profile["builtin"] = False
+        if background:
+            data, extension = background
+            stored_background = f"background-{secrets.token_hex(12)}{extension}"
+            background_path = BACKGROUND_DIR / stored_background
+            background_path.write_bytes(data)
+            os.chmod(background_path, 0o600)
+            profile["background_name"] = stored_background
+        else:
+            profile["background_name"] = None
+        # Imports never overwrite an existing profile. This also makes an
+        # exported built-in profile portable, since every installation already
+        # contains a profile named e.g. "Mission".
+        existing = design_profiles.load(settings_store.load().get("theme", "mission"))["profiles"]
+        existing_names = {item["name"].casefold() for item in existing.values()}
+        original_name = str(profile.get("name") or "").strip()
+        candidate = original_name
+        counter = 1
+        while candidate.casefold() in existing_names:
+            suffix = " (Import)" if counter == 1 else f" (Import {counter})"
+            candidate = f"{original_name[:48 - len(suffix)].rstrip()}{suffix}"
+            counter += 1
+        profile["name"] = candidate
+        created = design_profiles.create(profile, settings_store.load().get("theme", "mission"))
+    except ValueError as error:
+        if stored_background:
+            (BACKGROUND_DIR / stored_background).unlink(missing_ok=True)
+        return jsonify(error=str(error)), 400
+    return jsonify(created), 201
 
 
 @app.post("/api/design-profiles/background")

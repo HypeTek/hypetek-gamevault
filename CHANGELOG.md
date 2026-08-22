@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.22
+
+- Designprofile lassen sich als versionierte `.mcdesign.json`-Pakete exportieren und wieder importieren.
+- Optionale Profil-Hintergründe werden direkt in das portable Paket eingebettet und beim Import auf Format, Dateisignatur, Größe und Integrität geprüft.
+- Importierte Profile überschreiben keine vorhandenen Profile, erhalten bei Namenskonflikten automatisch einen eindeutigen Namen und werden direkt aktiviert.
+- Export und Import sind angemeldeten Benutzern vorbehalten; der Import ist zusätzlich CSRF-geschützt und größenbegrenzt.
+- Export-, Import- und Statusmeldungen für alle zehn integrierten Oberflächensprachen ergänzt.
+
 ## 0.3.21
 
 - Die bislang englischen technischen Hinweise und Entfernen-Aktionen im Einstellungsfenster für Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch und Türkisch vollständig lokalisiert.

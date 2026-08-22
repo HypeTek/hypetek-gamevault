@@ -598,9 +598,12 @@ function renderDesignProfiles() {
   list.hidden = false;
   document.querySelector("#designProfileListActions").hidden = false;
   document.querySelector("#designProfileForm").hidden = true;
-  list.innerHTML = designProfileState.profiles.map((profile) => `<article class="design-profile-card ${profile.id === designProfileState.active ? "is-active" : ""}" style="--profile-primary:${escapeHtml(profile.colors.primary)};--profile-secondary:${escapeHtml(profile.colors.secondary)};--profile-panel:${escapeHtml(profile.colors.panel)}"><div class="profile-swatch"></div><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.style)} · ${escapeHtml(profile.font)}</span></div><span>${profile.id === designProfileState.active ? tr("profiles.active") : ""}</span><div class="profile-card-actions">${profile.id === designProfileState.active ? "" : `<button type="button" data-profile-activate="${profile.id}">${tr("profiles.activate")}</button>`}<button type="button" class="secondary" data-profile-copy="${profile.id}">${tr("profiles.duplicate")}</button>${profile.builtin ? "" : `<button type="button" class="secondary" data-profile-edit="${profile.id}">${tr("profiles.edit")}</button><button type="button" class="ghost" data-profile-delete="${profile.id}">${tr("profiles.delete")}</button>`}</div></article>`).join("");
+  list.innerHTML = designProfileState.profiles.map((profile) => `<article class="design-profile-card ${profile.id === designProfileState.active ? "is-active" : ""}" style="--profile-primary:${escapeHtml(profile.colors.primary)};--profile-secondary:${escapeHtml(profile.colors.secondary)};--profile-panel:${escapeHtml(profile.colors.panel)}"><div class="profile-swatch"></div><div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.style)} · ${escapeHtml(profile.font)}</span></div><span>${profile.id === designProfileState.active ? tr("profiles.active") : ""}</span><div class="profile-card-actions">${profile.id === designProfileState.active ? "" : `<button type="button" data-profile-activate="${profile.id}">${tr("profiles.activate")}</button>`}<button type="button" class="secondary" data-profile-export="${profile.id}">${tr("profiles.export")}</button><button type="button" class="secondary" data-profile-copy="${profile.id}">${tr("profiles.duplicate")}</button>${profile.builtin ? "" : `<button type="button" class="secondary" data-profile-edit="${profile.id}">${tr("profiles.edit")}</button><button type="button" class="ghost" data-profile-delete="${profile.id}">${tr("profiles.delete")}</button>`}</div></article>`).join("");
   list.querySelectorAll("[data-profile-activate]").forEach((button) => button.addEventListener("click", () => activateDesignProfile(button.dataset.profileActivate)));
   list.querySelectorAll("[data-profile-copy]").forEach((button) => button.addEventListener("click", () => fillDesignProfileForm(designProfileState.profiles.find((item) => item.id === button.dataset.profileCopy), "")));
+  list.querySelectorAll("[data-profile-export]").forEach((button) => button.addEventListener("click", () => {
+    window.location.href = `/api/design-profiles/${encodeURIComponent(button.dataset.profileExport)}/export`;
+  }));
   list.querySelectorAll("[data-profile-edit]").forEach((button) => button.addEventListener("click", () => fillDesignProfileForm(designProfileState.profiles.find((item) => item.id === button.dataset.profileEdit), button.dataset.profileEdit)));
   list.querySelectorAll("[data-profile-delete]").forEach((button) => button.addEventListener("click", () => deleteDesignProfile(button.dataset.profileDelete)));
 }
@@ -624,6 +627,25 @@ async function deleteDesignProfile(id) {
   designProfileState = await api(`/api/design-profiles/${encodeURIComponent(id)}`, {method: "DELETE"});
   if (wasActive) applySettings(await api("/api/settings"));
   renderDesignProfiles();
+}
+
+async function importDesignProfile(file) {
+  const status = document.querySelector("#designProfileImportStatus");
+  status.textContent = tr("profiles.importing");
+  try {
+    if (!file || file.size > 8 * 1024 * 1024) throw new Error(tr("profiles.importInvalid"));
+    const packageData = JSON.parse(await file.text());
+    const imported = await api("/api/design-profiles/import", {method: "POST", body: JSON.stringify(packageData)});
+    applySettings(await api(`/api/design-profiles/${encodeURIComponent(imported.id)}/activate`, {method: "POST", body: "{}"}));
+    designProfileState = await api("/api/design-profiles");
+    renderDesignProfiles();
+    status.textContent = tr("profiles.imported", {name: imported.name});
+  } catch (error) {
+    status.textContent = tr("profiles.importFailed");
+    alert(error.message);
+  } finally {
+    document.querySelector("#importDesignProfileFile").value = "";
+  }
 }
 
 document.querySelector("#editorForm").addEventListener("submit", async (event) => {
@@ -788,6 +810,8 @@ document.querySelector("#settingTranslatorUrl").addEventListener("input", syncTr
 document.querySelector("#designProfilesButton").addEventListener("click", openDesignProfiles);
 document.querySelector("#closeDesignProfiles").addEventListener("click", () => designProfilesDialog.close());
 document.querySelector("#newDesignProfileButton").addEventListener("click", () => fillDesignProfileForm(state.settings.design_profile, ""));
+document.querySelector("#importDesignProfileButton").addEventListener("click", () => document.querySelector("#importDesignProfileFile").click());
+document.querySelector("#importDesignProfileFile").addEventListener("change", (event) => importDesignProfile(event.target.files[0]));
 document.querySelector("#cancelDesignProfileEdit").addEventListener("click", renderDesignProfiles);
 document.querySelector("#designProfilesBackButton").addEventListener("click", () => {
   designProfilesDialog.close();

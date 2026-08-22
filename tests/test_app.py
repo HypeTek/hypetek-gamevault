@@ -1,5 +1,7 @@
 import os
 import re
+import base64
+import json
 import tempfile
 import unittest
 import zipfile
@@ -108,7 +110,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.3.21")
+        self.assertEqual(health["version"], "0.3.22")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -149,7 +151,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.21/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.3.22/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -159,9 +161,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.3.21", html)
-        self.assertIn("/static/i18n.js?v=0.3.21", html)
-        self.assertIn("/static/app.css?v=0.3.21", html)
+        self.assertIn("/static/app.js?v=0.3.22", html)
+        self.assertIn("/static/i18n.js?v=0.3.22", html)
+        self.assertIn("/static/app.css?v=0.3.22", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -170,7 +172,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.3.21")
+        self.assertEqual(settings["version"], "0.3.22")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -252,6 +254,58 @@ class AppTests(unittest.TestCase):
         name = valid.get_json()["name"]
         self.assertRegex(name, r"^background-[a-f0-9]{24}\.png$")
         self.assertTrue((Path(os.environ["GAMEVAULT_CONFIG_DIR"]) / "backgrounds" / name).is_file())
+
+    def test_design_profile_export_and_import_are_versioned_and_safe(self):
+        self.login()
+        exported = self.client.get("/api/design-profiles/mission/export")
+        self.assertEqual(exported.status_code, 200)
+        self.assertIn("attachment", exported.headers["Content-Disposition"])
+        package = json.loads(exported.data)
+        self.assertEqual(package["format"], "hypetek-mission-control-design")
+        self.assertEqual(package["format_version"], 1)
+        self.assertEqual(package["profile"]["name"], "Mission")
+        self.assertIsNone(package["background"])
+
+        imported = self.post("/api/design-profiles/import", json=package)
+        self.assertEqual(imported.status_code, 201)
+        self.assertEqual(imported.get_json()["name"], "Mission (Import)")
+        self.assertFalse(imported.get_json()["builtin"])
+
+        invalid = self.post(
+            "/api/design-profiles/import",
+            json={**package, "format_version": 999},
+        )
+        self.assertEqual(invalid.status_code, 400)
+
+    def test_design_profile_import_validates_and_protects_embedded_background(self):
+        self.login()
+        mission = self.client.get("/api/design-profiles").get_json()["profiles"][0]
+        mission["name"] = "Portable Background"
+        mission.pop("id", None)
+        mission.pop("builtin", None)
+        image = b"\x89PNG\r\n\x1a\n" + b"portable-test"
+        package = {
+            "format": "hypetek-mission-control-design",
+            "format_version": 1,
+            "application_version": "test",
+            "profile": mission,
+            "background": {
+                "filename": "background.png",
+                "media_type": "image/png",
+                "data": base64.b64encode(image).decode("ascii"),
+            },
+        }
+        imported = self.post("/api/design-profiles/import", json=package)
+        self.assertEqual(imported.status_code, 201)
+        background_name = imported.get_json()["background_name"]
+        path = Path(os.environ["GAMEVAULT_CONFIG_DIR"]) / "backgrounds" / background_name
+        self.assertEqual(path.read_bytes(), image)
+        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
+        package["profile"]["name"] = "Broken Background"
+        package["background"]["data"] = "not-base64!"
+        rejected = self.post("/api/design-profiles/import", json=package)
+        self.assertEqual(rejected.status_code, 400)
 
     def test_thegamesdb_key_is_write_only_and_blank_patch_keeps_it(self):
         self.login()
