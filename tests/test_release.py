@@ -74,6 +74,24 @@ class ReleaseMetadataTests(unittest.TestCase):
             self.assertIn(f'<option value="{language}">', template)
         self.assertIn('const ADDITIONAL_UI_PACKS = {', translations)
         self.assertIn('UI_PACKS[language] = Object.assign({}, UI_PACKS.en', translations)
+        additional_packs = translations.split("const ADDITIONAL_UI_PACKS = {", 1)[1].split(
+            "\n};", 1
+        )[0]
+        required_localized_settings = (
+            "settings.translatorHint",
+            "settings.translatorManaged",
+            "settings.keysNote",
+            "settings.exclusionNote",
+            "settings.removeGamesDb",
+            "settings.removeTranslator",
+        )
+        for index, language in enumerate(("it", "fr", "es", "pt", "pl", "nl", "tr")):
+            next_language = ("fr", "es", "pt", "pl", "nl", "tr", None)[index]
+            language_pack = additional_packs.split(f"  {language}: {{", 1)[1]
+            if next_language:
+                language_pack = language_pack.split(f"  {next_language}: {{", 1)[0]
+            for key in required_localized_settings:
+                self.assertIn(f'"{key}"', language_pack, f"{language} is missing {key}")
         self.assertNotIn('  uk: {', translations)
         self.assertNotIn('if (status) status.textContent = label;', javascript)
         self.assertIn('scrollGameInfoToTranslationMenu(menu)', javascript)
@@ -128,7 +146,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("libretranslate/libretranslate:v1.9.6", compose)
         self.assertIn("MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000", compose)
         self.assertIn("LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr", compose)
-        self.assertIn('com.hypetek.mission-control.deployment: "0.3.20"', compose)
+        self.assertIn('com.hypetek.mission-control.deployment: "0.3.21"', compose)
         self.assertNotIn('"5000:5000"', compose)
 
         notice = (ROOT / "NOTICE.txt").read_text(encoding="utf-8")

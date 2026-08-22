@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.21
+
+- Die bislang englischen technischen Hinweise und Entfernen-Aktionen im Einstellungsfenster für Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch und Türkisch vollständig lokalisiert.
+- Translator-Verwaltung, API-Key-Speicherung und Scanner-Ausschlüsse werden nun in jeder auswählbaren Oberflächensprache erklärt.
+
 ## 0.3.20
 
 - Vollständige Sprachauswahl für Oberfläche, Spielinhalte und Windows-Agent vereinheitlicht: Deutsch, Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch und Türkisch.
