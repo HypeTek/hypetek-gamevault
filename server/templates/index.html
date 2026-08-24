@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#061117">
+  <meta name="application-name" content="HypeTek Mission Control">
   <title>HypeTek Mission Control</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v=asset_version) }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css', v=asset_version) }}">
 </head>
 <body>
@@ -83,7 +86,7 @@
         <option value="manual_image">Sonderabbild</option>
       </select>
       <div class="library-display-controls" aria-label="Bibliotheksdarstellung" data-i18n-aria="accessibility.libraryDisplay">
-        <button id="viewGridButton" class="secondary view-button" type="button" aria-pressed="true" aria-keyshortcuts="Alt+G" title="Kachelansicht">▦ <span>Kacheln</span></button>
+        <button id="viewGridButton" class="secondary view-button" type="button" aria-pressed="true" aria-keyshortcuts="Alt+K" title="Kachelansicht">▦ <span>Kacheln</span></button>
         <button id="viewListButton" class="secondary view-button" type="button" aria-pressed="false" aria-keyshortcuts="Alt+L" title="Listenansicht">☷ <span>Liste</span></button>
         <label class="page-size-label">Pro Seite
           <select id="pageSize">

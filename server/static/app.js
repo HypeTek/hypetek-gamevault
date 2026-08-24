@@ -99,29 +99,6 @@ function updateLcarsLayout() {
   document.body.style.setProperty("--lcars-clock-sticky-top", `${stickyTop}px`);
 }
 
-function parseProfileColor(value) {
-  const color = String(value || "").trim();
-  const hex = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-  if (hex) return hex.slice(1).map((part) => parseInt(part, 16));
-  const rgb = color.match(/^rgba?\(\s*(\d+)\D+(\d+)\D+(\d+)/i);
-  return rgb ? rgb.slice(1, 4).map(Number) : [0, 209, 199];
-}
-
-function animateEnergyColor(timestamp) {
-  const point = document.querySelector(".energy-line span");
-  if (!point) return;
-  if (!motionIsReduced()) {
-    const styles = getComputedStyle(document.body);
-    const start = parseProfileColor(styles.getPropertyValue("--energy-start"));
-    const end = parseProfileColor(styles.getPropertyValue("--energy-end"));
-    const elapsed = timestamp % 6500;
-    const ratio = Math.min(1, elapsed / 4750);
-    const mixed = start.map((component, index) => Math.round(component + ((end[index] - component) * ratio)));
-    point.style.setProperty("--energy-color", `rgb(${mixed.join(",")})`);
-  }
-  requestAnimationFrame(animateEnergyColor);
-}
-
 function showAgentSetup() {
   const note = document.querySelector("#agentNote");
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
@@ -934,7 +911,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "/" && !event.altKey && !event.ctrlKey && !event.metaKey) {
     event.preventDefault();
     document.querySelector("#search").focus();
-  } else if (event.altKey && event.key.toLowerCase() === "g") {
+  } else if (event.altKey && event.key.toLowerCase() === "k") {
     event.preventDefault();
     setLibraryView("grid");
   } else if (event.altKey && event.key.toLowerCase() === "l") {
@@ -954,7 +931,6 @@ document.addEventListener("keydown", (event) => {
 window.addEventListener("resize", updateLcarsLayout);
 document.fonts?.ready.then(updateLcarsLayout);
 
-requestAnimationFrame(animateEnergyColor);
 updateLcarsLayout();
 updateLcarsSystemClock();
 setInterval(updateLcarsSystemClock, 1000);
@@ -963,3 +939,9 @@ document.addEventListener("mission-control-language-changed", () => {
   if (gameInfoDialog.open && gameInfoDialog.dataset.gameId) showGameInfo(gameInfoDialog.dataset.gameId);
 });
 load();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+  });
+}

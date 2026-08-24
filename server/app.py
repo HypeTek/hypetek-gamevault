@@ -159,6 +159,14 @@ def health():
     )
 
 
+@app.get("/service-worker.js")
+def service_worker():
+    response = send_from_directory(app.static_folder, "service-worker.js")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None

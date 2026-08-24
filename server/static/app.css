@@ -83,8 +83,8 @@ body button.secondary,body .button-link.secondary{background:var(--panel2)}
 html,body{max-width:100%;overflow-x:hidden;overflow-x:clip}
 :root{--energy-start:#00d1c7;--energy-end:#f28c28}
 .energy-line{background:linear-gradient(90deg,var(--energy-start),var(--energy-end))}
-.energy-line span{--energy-color:var(--energy-start);animation-name:energy-orbit-contained}
-@keyframes energy-orbit-contained{0%{transform:translate(-18px,-50%);opacity:0}2%{opacity:1}71.077%{opacity:1}73.077%{transform:translate(calc(100vw - 18px),-50%);opacity:0}73.078%,100%{transform:translate(calc(100vw - 18px),-50%);opacity:0}}
+.energy-line span{color:var(--energy-start);background:radial-gradient(ellipse at center,color-mix(in srgb,currentColor,white 45%) 0,currentColor 48%,color-mix(in srgb,currentColor,transparent 45%) 72%,transparent 100%);box-shadow:0 0 7px 2px currentColor,0 0 18px 5px color-mix(in srgb,currentColor,transparent 55%);animation-name:energy-orbit-contained}
+@keyframes energy-orbit-contained{0%{transform:translate(-18px,-50%);opacity:0;color:var(--energy-start)}2%{opacity:1;color:var(--energy-start)}36.5%{color:color-mix(in srgb,var(--energy-start) 50%,var(--energy-end))}71.077%{opacity:1;color:var(--energy-end)}73.077%{transform:translate(calc(100vw - 18px),-50%);opacity:0;color:var(--energy-end)}73.078%,100%{transform:translate(calc(100vw - 18px),-50%);opacity:0;color:var(--energy-end)}}
 
 body[data-font="system"],.profile-live-preview[data-font="system"]{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-weight:400;letter-spacing:normal}
 body[data-font="technical"],.profile-live-preview[data-font="technical"]{font-family:Bahnschrift,"DIN Alternate","Arial Narrow","Roboto Condensed",Arial,sans-serif;font-stretch:condensed;font-weight:600;letter-spacing:.018em}
