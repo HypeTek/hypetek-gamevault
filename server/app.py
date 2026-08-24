@@ -709,7 +709,7 @@ def restore_configuration():
     try:
         with tempfile.NamedTemporaryFile(prefix="mission-control-restore-", suffix=".zip", delete=False) as temporary:
             temporary_name = temporary.name
-        uploaded.save(temporary)
+            uploaded.save(temporary)
         validate_backup(Path(temporary_name))
         automatic_backup(force=True)
         restore_backup(Path(temporary_name), CONFIG_DIR)

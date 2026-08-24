@@ -84,6 +84,36 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(set(self.module.BACKUP_DIR.glob("mission-control-auto-*.zip")), before)
 
+    def test_valid_restore_upload_remains_open_until_saved(self):
+        self.login()
+        settings_path = self.module.CONFIG_DIR / "mission-control-settings.json"
+        settings_path.parent.mkdir(parents=True, exist_ok=True)
+        settings_path.write_text(
+            json.dumps({"server_name": "Before restore", "thegamesdb_api_key": "keep-me"}),
+            encoding="utf-8",
+        )
+        backup = self.module.create_backup(
+            self.module.CONFIG_DIR,
+            self.module.APP_VERSION,
+            Path(self.temp.name) / "valid-restore.zip",
+        )
+        settings_path.write_text(
+            json.dumps({"server_name": "Changed later", "thegamesdb_api_key": "keep-me"}),
+            encoding="utf-8",
+        )
+
+        with backup.open("rb") as input_file:
+            response = self.post(
+                "/api/maintenance/restore",
+                data={"backup": (BytesIO(input_file.read()), "valid-restore.zip")},
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        restored = json.loads(settings_path.read_text(encoding="utf-8"))
+        self.assertEqual(restored["server_name"], "Before restore")
+        self.assertEqual(restored["thegamesdb_api_key"], "keep-me")
+
     def test_scan_ticket_and_one_time_agent_manifest(self):
         self.login()
         response = self.post("/api/scan")
