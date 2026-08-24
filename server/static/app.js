@@ -804,7 +804,10 @@ async function restoreMissionControlBackup(file) {
   try {
     const response = await fetch("/api/maintenance/restore", {method: "POST", headers: {"X-CSRF-Token": csrf}, body: data});
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    if (!response.ok) {
+      const detail = result.error || `HTTP ${response.status}`;
+      throw new Error(`${tr(result.message_key || "maintenance.restoreFailed")}: ${detail}`);
+    }
     output.textContent = tr("maintenance.restored");
     setTimeout(() => window.location.reload(), 900);
   } catch (error) {

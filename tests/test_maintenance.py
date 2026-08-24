@@ -1,8 +1,11 @@
 import json
+import errno
+import os
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 import sys
 
@@ -25,7 +28,7 @@ class MaintenanceTests(unittest.TestCase):
                 "translator_api_key": "translator-secret",
             }
             (config / "mission-control-settings.json").write_text(json.dumps(settings), encoding="utf-8")
-            backup = create_backup(config, "0.4.0", root / "backup.zip")
+            backup = create_backup(config, "0.4.1", root / "backup.zip")
             with zipfile.ZipFile(backup) as archive:
                 archived = json.loads(archive.read("mission-control-settings.json"))
                 self.assertNotIn("thegamesdb_api_key", archived)
@@ -53,6 +56,34 @@ class MaintenanceTests(unittest.TestCase):
                 output.writestr("manifest.json", json.dumps({"format": "hypetek-mission-control-backup", "format_version": 1}))
             with self.assertRaises(ValueError):
                 validate_backup(archive)
+
+    def test_restore_does_not_replace_files_across_filesystems(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config = root / "config"
+            config.mkdir()
+            (config / "mission-control-settings.json").write_text(
+                json.dumps({"server_name": "Before"}), encoding="utf-8"
+            )
+            (config / "covers").mkdir()
+            (config / "covers" / "example.webp").write_bytes(b"restored-cover")
+            backup = create_backup(config, "0.4.1", root / "backup.zip")
+            (config / "covers" / "example.webp").write_bytes(b"changed-cover")
+            real_replace = os.replace
+
+            def reject_cross_device(source, target):
+                source_path = Path(source)
+                target_path = Path(target)
+                if source_path.parent != target_path.parent:
+                    raise OSError(errno.EXDEV, "Invalid cross-device link")
+                return real_replace(source, target)
+
+            with patch("maintenance.os.replace", side_effect=reject_cross_device):
+                restore_backup(backup, config)
+
+            restored = json.loads((config / "mission-control-settings.json").read_text(encoding="utf-8"))
+            self.assertEqual(restored["server_name"], "Before")
+            self.assertEqual((config / "covers" / "example.webp").read_bytes(), b"restored-cover")
 
 
 if __name__ == "__main__":

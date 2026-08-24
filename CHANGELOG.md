@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- Wiederherstellungen funktionieren nun auch auf TrueNAS, wenn das temporäre Entpackverzeichnis und das `/config`-Dataset auf unterschiedlichen Dateisystemen liegen. Dateien und Verzeichnisse werden zuerst direkt im Ziel-Dataset bereitgestellt und anschließend dort atomar ausgetauscht.
+- Ein fehlgeschlagener Restore hinterlässt die bisherige Konfiguration weiterhin verwendbar; temporäre Wiederherstellungs- und Rücksetzverzeichnisse werden zuverlässig aufgeräumt.
+- Die Meldung „Sicherung wurde nicht wiederhergestellt“ folgt nun in allen zehn integrierten Sprachpaketen der gewählten Oberflächensprache. Technische Fehlerdetails bleiben zur Diagnose sichtbar.
+- Regressionstest für den unter TrueNAS aufgetretenen `Invalid cross-device link`-Fehler ergänzt.
+
 ## 0.4.0
 
 - Die installierte Web-App verwendet den standardisierten Launch Handler `focus-existing`: erneutes Starten fokussiert die vorhandene Mission-Control-Instanz, statt ein weiteres App-Fenster zu öffnen.

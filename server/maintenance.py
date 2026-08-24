@@ -5,6 +5,7 @@ import os
 import shutil
 import sqlite3
 import tempfile
+import uuid
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,6 +18,48 @@ SAFE_FILES = {
     "gamevault.sqlite3",
 }
 SECRET_KEYS = {"thegamesdb_api_key", "translator_api_key", "rawg_api_key"}
+
+
+def _install_file(source: Path, target: Path) -> None:
+    """Install a restored file atomically on the target filesystem.
+
+    Restore archives are extracted below /tmp while TrueNAS normally mounts
+    /config from a dataset. os.replace() cannot cross that filesystem boundary
+    (EXDEV), so first copy into a sibling temporary file and only then replace
+    the live file.
+    """
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}-restore-", dir=target.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as output, source.open("rb") as input_file:
+            shutil.copyfileobj(input_file, output)
+            output.flush()
+            os.fsync(output.fileno())
+        temporary.chmod(0o600)
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _install_directory(source: Path, target: Path) -> None:
+    """Replace a restored directory using staging on the target filesystem."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.parent / f".{target.name}-restore-{uuid.uuid4().hex}"
+    previous = target.parent / f".{target.name}-previous-{uuid.uuid4().hex}"
+    shutil.copytree(source, temporary)
+    had_previous = target.exists()
+    try:
+        if had_previous:
+            os.replace(target, previous)
+        os.replace(temporary, target)
+    except Exception:
+        if had_previous and previous.exists() and not target.exists():
+            os.replace(previous, target)
+        raise
+    finally:
+        shutil.rmtree(temporary, ignore_errors=True)
+        shutil.rmtree(previous, ignore_errors=True)
 
 
 def _safe_settings(path: Path) -> dict:
@@ -97,6 +140,7 @@ def validate_backup(archive_path: Path) -> dict:
 
 def restore_backup(archive_path: Path, config_dir: Path) -> None:
     validate_backup(archive_path)
+    config_dir.mkdir(parents=True, exist_ok=True)
     preserved = _safe_settings(config_dir / "mission-control-settings.json")
     try:
         existing = json.loads((config_dir / "mission-control-settings.json").read_text(encoding="utf-8"))
@@ -126,14 +170,11 @@ def restore_backup(archive_path: Path, config_dir: Path) -> None:
         for name in SAFE_FILES:
             source = stage / name
             if source.exists():
-                os.replace(source, config_dir / name)
-                (config_dir / name).chmod(0o600)
+                _install_file(source, config_dir / name)
         for folder in ("covers", "backgrounds"):
             source = stage / folder
             if source.exists():
-                target = config_dir / folder
-                shutil.rmtree(target, ignore_errors=True)
-                shutil.copytree(source, target)
+                _install_directory(source, config_dir / folder)
 
 
 def rotate_backups(directory: Path, keep: int = 5) -> None:

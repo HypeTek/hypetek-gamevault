@@ -715,7 +715,7 @@ def restore_configuration():
         settings_store.load()
         design_profiles.load(settings_store.load().get("theme", "mission"))
     except (ValueError, zipfile.BadZipFile, OSError, sqlite3.DatabaseError) as error:
-        return jsonify(error=f"Sicherung wurde nicht wiederhergestellt: {error}"), 400
+        return jsonify(error=str(error), message_key="maintenance.restoreFailed"), 400
     finally:
         if temporary_name:
             Path(temporary_name).unlink(missing_ok=True)
