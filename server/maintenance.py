@@ -138,6 +138,26 @@ def validate_backup(archive_path: Path) -> dict:
     return manifest
 
 
+def inspect_backup(archive_path: Path) -> dict:
+    """Validate a backup and return a safe, user-facing summary."""
+    manifest = validate_backup(archive_path)
+    with zipfile.ZipFile(archive_path) as archive:
+        files = [entry for entry in archive.infolist() if not entry.is_dir()]
+        names = {entry.filename for entry in files}
+        return {
+            "application_version": str(manifest.get("application_version") or "—"),
+            "created_at": str(manifest.get("created_at") or ""),
+            "file_count": len(files),
+            "cover_count": sum(entry.filename.startswith("covers/") for entry in files),
+            "background_count": sum(entry.filename.startswith("backgrounds/") for entry in files),
+            "uncompressed_size": sum(entry.file_size for entry in files),
+            "database_included": "gamevault.sqlite3" in names,
+            "settings_included": "mission-control-settings.json" in names,
+            "designs_included": "mission-control-designs.json" in names,
+            "secrets_included": bool(manifest.get("secrets_included", False)),
+        }
+
+
 def restore_backup(archive_path: Path, config_dir: Path) -> None:
     validate_backup(archive_path)
     config_dir.mkdir(parents=True, exist_ok=True)

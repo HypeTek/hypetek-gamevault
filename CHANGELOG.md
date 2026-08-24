@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2
+
+- Sicherungsdateien werden vor dem Restore geprüft und mit Version, Erstellzeit, Inhalt und Größe angezeigt.
+- Eigener lokalisierter Wiederherstellungsdialog ersetzt die Browser-Abfrage und verhindert versehentliche Doppelklicks.
+- Wartungsbereich zeigt installierte Version und Zeitpunkt der letzten automatischen Sicherung.
+- Ungültige Archive verändern den laufenden Stand nicht und erzeugen keine unnötige Rückfallsicherung.
+- Updateprüfung liefert zusätzliche Release-Informationen; Wartungstexte wurden für alle integrierten Oberflächensprachen ergänzt.
+
 ## 0.4.1
 
 - Wiederherstellungen funktionieren nun auch auf TrueNAS, wenn das temporäre Entpackverzeichnis und das `/config`-Dataset auf unterschiedlichen Dateisystemen liegen. Dateien und Verzeichnisse werden zuerst direkt im Ziel-Dataset bereitgestellt und anschließend dort atomar ausgetauscht.

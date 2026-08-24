@@ -13,7 +13,7 @@ import sys
 ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT / "server"))
 
-from maintenance import create_backup, restore_backup, validate_backup
+from maintenance import create_backup, inspect_backup, restore_backup, validate_backup
 
 
 class MaintenanceTests(unittest.TestCase):
@@ -28,7 +28,7 @@ class MaintenanceTests(unittest.TestCase):
                 "translator_api_key": "translator-secret",
             }
             (config / "mission-control-settings.json").write_text(json.dumps(settings), encoding="utf-8")
-            backup = create_backup(config, "0.4.1", root / "backup.zip")
+            backup = create_backup(config, "0.4.2", root / "backup.zip")
             with zipfile.ZipFile(backup) as archive:
                 archived = json.loads(archive.read("mission-control-settings.json"))
                 self.assertNotIn("thegamesdb_api_key", archived)
@@ -67,7 +67,7 @@ class MaintenanceTests(unittest.TestCase):
             )
             (config / "covers").mkdir()
             (config / "covers" / "example.webp").write_bytes(b"restored-cover")
-            backup = create_backup(config, "0.4.1", root / "backup.zip")
+            backup = create_backup(config, "0.4.2", root / "backup.zip")
             (config / "covers" / "example.webp").write_bytes(b"changed-cover")
             real_replace = os.replace
 
@@ -84,6 +84,23 @@ class MaintenanceTests(unittest.TestCase):
             restored = json.loads((config / "mission-control-settings.json").read_text(encoding="utf-8"))
             self.assertEqual(restored["server_name"], "Before")
             self.assertEqual((config / "covers" / "example.webp").read_bytes(), b"restored-cover")
+
+    def test_backup_preview_contains_safe_summary(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config = root / "config"
+            (config / "covers").mkdir(parents=True)
+            (config / "backgrounds").mkdir()
+            (config / "mission-control-settings.json").write_text("{}", encoding="utf-8")
+            (config / "covers" / "one.webp").write_bytes(b"cover")
+            (config / "backgrounds" / "one.webp").write_bytes(b"background")
+            backup = create_backup(config, "0.4.2", root / "backup.zip")
+            summary = inspect_backup(backup)
+            self.assertEqual(summary["application_version"], "0.4.2")
+            self.assertEqual(summary["cover_count"], 1)
+            self.assertEqual(summary["background_count"], 1)
+            self.assertGreaterEqual(summary["file_count"], 3)
+            self.assertFalse(summary["secrets_included"])
 
 
 if __name__ == "__main__":

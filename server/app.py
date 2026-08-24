@@ -10,6 +10,7 @@ import json
 import platform
 import sqlite3
 import tempfile
+from datetime import datetime, timezone
 from io import BytesIO
 from functools import wraps
 from pathlib import Path, PurePosixPath
@@ -48,7 +49,7 @@ from metadata import (
     suggest_game_title,
     validate_thegamesdb_key,
 )
-from maintenance import create_backup, restore_backup, rotate_backups, validate_backup
+from maintenance import create_backup, inspect_backup, restore_backup, rotate_backups, validate_backup
 
 
 GAME_ROOT = Path(os.environ.get("GAMEVAULT_GAME_ROOT", "/games")).resolve()
@@ -704,13 +705,13 @@ def restore_configuration():
     uploaded = request.files.get("backup")
     if not uploaded or not uploaded.filename:
         return jsonify(error="Keine Sicherungsdatei ausgewählt."), 400
-    automatic_backup(force=True)
     temporary_name = None
     try:
         with tempfile.NamedTemporaryFile(prefix="mission-control-restore-", suffix=".zip", delete=False) as temporary:
             temporary_name = temporary.name
-            uploaded.save(temporary)
+        uploaded.save(temporary)
         validate_backup(Path(temporary_name))
+        automatic_backup(force=True)
         restore_backup(Path(temporary_name), CONFIG_DIR)
         settings_store.load()
         design_profiles.load(settings_store.load().get("theme", "mission"))
@@ -720,6 +721,36 @@ def restore_configuration():
         if temporary_name:
             Path(temporary_name).unlink(missing_ok=True)
     return jsonify(ok=True, settings=public_settings())
+
+
+@app.post("/api/maintenance/backup/inspect")
+@login_required
+@csrf_required
+def inspect_configuration_backup():
+    uploaded = request.files.get("backup")
+    if not uploaded or not uploaded.filename:
+        return jsonify(error="Keine Sicherungsdatei ausgewählt.", message_key="maintenance.invalidBackup"), 400
+    temporary_name = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix="mission-control-inspect-", suffix=".zip", delete=False) as temporary:
+            temporary_name = temporary.name
+            uploaded.save(temporary)
+        return jsonify(ok=True, summary=inspect_backup(Path(temporary_name)))
+    except (ValueError, zipfile.BadZipFile, OSError) as error:
+        return jsonify(error=str(error), message_key="maintenance.invalidBackup"), 400
+    finally:
+        if temporary_name:
+            Path(temporary_name).unlink(missing_ok=True)
+
+
+@app.get("/api/maintenance/status")
+@login_required
+def maintenance_status():
+    latest = max(BACKUP_DIR.glob("mission-control-auto-*.zip"), key=lambda item: item.stat().st_mtime, default=None)
+    return jsonify(
+        current=APP_VERSION,
+        last_automatic_backup=(datetime.fromtimestamp(latest.stat().st_mtime, timezone.utc).isoformat() if latest else None),
+    )
 
 
 @app.get("/api/maintenance/diagnostics")
@@ -767,7 +798,7 @@ def check_for_update():
         latest = str(release.get("tag_name") or "").lstrip("v")
         def version_tuple(value: str) -> tuple[int, ...]:
             return tuple(int(part) for part in re.findall(r"\d+", value)[:3])
-        return jsonify(current=APP_VERSION, latest=latest, update_available=version_tuple(latest) > version_tuple(APP_VERSION), url=release.get("html_url"))
+        return jsonify(current=APP_VERSION, latest=latest, update_available=version_tuple(latest) > version_tuple(APP_VERSION), url=release.get("html_url"), name=release.get("name"), published_at=release.get("published_at"))
     except Exception as error:
         return jsonify(current=APP_VERSION, reachable=False, error=str(error)), 502
 

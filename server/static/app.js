@@ -794,13 +794,74 @@ async function searchTheGamesDbMetadata() {
   } catch (error) { target.innerHTML = `<p class="note error">${escapeHtml(error.message)}</p>`; }
 }
 
-async function restoreMissionControlBackup(file) {
-  if (!file) return;
+let pendingRestoreBackup = null;
+let restoreBackupBusy = false;
+
+function formatMaintenanceDate(value) {
+  if (!value) return tr("maintenance.noBackup");
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat(document.documentElement.lang || undefined, {dateStyle: "medium", timeStyle: "short"}).format(date);
+}
+
+function formatBackupBytes(value) {
+  const bytes = Number(value) || 0;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
+}
+
+function closeRestoreBackupPreview() {
+  if (restoreBackupBusy) return;
+  document.querySelector("#restoreBackupDialog")?.close();
+  pendingRestoreBackup = null;
+  const input = document.querySelector("#restoreBackupFile");
+  if (input) input.value = "";
+}
+
+async function inspectMissionControlBackup(file) {
+  if (!file || restoreBackupBusy) return;
+  const button = document.querySelector("#restoreBackupButton");
   const output = document.querySelector("#maintenanceStatus");
-  if (!confirm(tr("maintenance.restoreConfirm"))) return;
+  button.disabled = true;
+  output.textContent = tr("maintenance.inspecting");
   const data = new FormData();
   data.append("backup", file);
-  output.textContent = tr("maintenance.restoring");
+  try {
+    const response = await fetch("/api/maintenance/backup/inspect", {method: "POST", headers: {"X-CSRF-Token": csrf}, body: data});
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`${tr(result.message_key || "maintenance.invalidBackup")}: ${result.error || `HTTP ${response.status}`}`);
+    const summary = result.summary;
+    pendingRestoreBackup = file;
+    document.querySelector("#restoreBackupFileName").textContent = file.name;
+    document.querySelector("#restoreBackupSourceVersion").textContent = summary.application_version;
+    document.querySelector("#restoreBackupCreated").textContent = formatMaintenanceDate(summary.created_at);
+    document.querySelector("#restoreBackupContents").textContent = tr("maintenance.contentsSummary", {files: summary.file_count, covers: summary.cover_count, backgrounds: summary.background_count});
+    document.querySelector("#restoreBackupSize").textContent = formatBackupBytes(summary.uncompressed_size);
+    document.querySelector("#restoreBackupProgress").textContent = "";
+    document.querySelector("#restoreBackupDialog").showModal();
+    output.textContent = "";
+  } catch (error) {
+    output.textContent = error.message;
+    document.querySelector("#restoreBackupFile").value = "";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function restoreMissionControlBackup() {
+  const file = pendingRestoreBackup;
+  if (!file || restoreBackupBusy) return;
+  const output = document.querySelector("#maintenanceStatus");
+  const progress = document.querySelector("#restoreBackupProgress");
+  const confirmButton = document.querySelector("#confirmRestoreBackup");
+  const cancelButton = document.querySelector("#cancelRestoreBackup");
+  restoreBackupBusy = true;
+  confirmButton.disabled = true;
+  cancelButton.disabled = true;
+  confirmButton.classList.add("is-loading");
+  const data = new FormData();
+  data.append("backup", file);
+  progress.textContent = tr("maintenance.restoring");
   try {
     const response = await fetch("/api/maintenance/restore", {method: "POST", headers: {"X-CSRF-Token": csrf}, body: data});
     const result = await response.json().catch(() => ({}));
@@ -808,13 +869,27 @@ async function restoreMissionControlBackup(file) {
       const detail = result.error || `HTTP ${response.status}`;
       throw new Error(`${tr(result.message_key || "maintenance.restoreFailed")}: ${detail}`);
     }
-    output.textContent = tr("maintenance.restored");
+    progress.textContent = tr("maintenance.restored");
     setTimeout(() => window.location.reload(), 900);
   } catch (error) {
-    output.textContent = error.message;
+    progress.textContent = error.message;
+    restoreBackupBusy = false;
+    confirmButton.disabled = false;
+    cancelButton.disabled = false;
+    confirmButton.classList.remove("is-loading");
   } finally {
     document.querySelector("#restoreBackupFile").value = "";
   }
+}
+
+async function loadMaintenanceStatus() {
+  try {
+    const result = await api("/api/maintenance/status");
+    const version = document.querySelector("#maintenanceCurrentVersion");
+    const backup = document.querySelector("#maintenanceLastBackup");
+    if (version) version.textContent = result.current;
+    if (backup) backup.textContent = formatMaintenanceDate(result.last_automatic_backup);
+  } catch (_) { /* Maintenance remains usable if the status request fails. */ }
 }
 
 async function checkMissionControlUpdate() {
@@ -838,8 +913,12 @@ async function checkMissionControlUpdate() {
 
 document.querySelector("#metadataSearchButton").addEventListener("click", searchTheGamesDbMetadata);
 document.querySelector("#restoreBackupButton")?.addEventListener("click", () => document.querySelector("#restoreBackupFile").click());
-document.querySelector("#restoreBackupFile")?.addEventListener("change", (event) => restoreMissionControlBackup(event.target.files[0]));
+document.querySelector("#restoreBackupFile")?.addEventListener("change", (event) => inspectMissionControlBackup(event.target.files[0]));
+document.querySelector("#confirmRestoreBackup")?.addEventListener("click", restoreMissionControlBackup);
+document.querySelector("#cancelRestoreBackup")?.addEventListener("click", closeRestoreBackupPreview);
+document.querySelector("#closeRestoreBackupDialog")?.addEventListener("click", closeRestoreBackupPreview);
 document.querySelector("#checkUpdateButton")?.addEventListener("click", checkMissionControlUpdate);
+loadMaintenanceStatus();
 document.querySelector("#metadataQuery").addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   event.preventDefault();

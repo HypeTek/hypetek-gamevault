@@ -219,6 +219,10 @@
       <details class="maintenance-panel settings-wide">
         <summary data-i18n="maintenance.title">Wartung, Sicherung und Updates</summary>
         <p data-i18n="maintenance.hint">Sicherungen enthalten Konfiguration, Datenbank, Cover und Hintergründe – niemals Kennwörter, Tokens oder API-Keys.</p>
+        <div class="maintenance-overview">
+          <span><strong data-i18n="maintenance.installedVersion">Installierte Version</strong><span id="maintenanceCurrentVersion">–</span></span>
+          <span><strong data-i18n="maintenance.lastBackup">Letzte automatische Sicherung</strong><span id="maintenanceLastBackup">–</span></span>
+        </div>
         <div class="maintenance-actions">
           <a class="button-link secondary" href="/api/maintenance/backup" data-i18n="maintenance.backup">Sicherung herunterladen</a>
           <button id="restoreBackupButton" type="button" class="secondary" data-i18n="maintenance.restore">Sicherung wiederherstellen</button>
@@ -233,6 +237,23 @@
         <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="restoreBackupDialog" class="restore-backup-dialog">
+    <div class="restore-backup-content">
+      <div class="dialog-head"><h2 data-i18n="maintenance.restoreTitle">Sicherung prüfen</h2><button id="closeRestoreBackupDialog" type="button" class="ghost" aria-label="Dialog schließen">×</button></div>
+      <p class="restore-warning" data-i18n="maintenance.restoreWarning">Vor dem Wiederherstellen wird der aktuelle Stand automatisch gesichert.</p>
+      <dl class="restore-backup-summary">
+        <dt data-i18n="maintenance.fileName">Datei</dt><dd id="restoreBackupFileName">–</dd>
+        <dt data-i18n="maintenance.sourceVersion">Quellversion</dt><dd id="restoreBackupSourceVersion">–</dd>
+        <dt data-i18n="maintenance.created">Erstellt</dt><dd id="restoreBackupCreated">–</dd>
+        <dt data-i18n="maintenance.contents">Inhalt</dt><dd id="restoreBackupContents">–</dd>
+        <dt data-i18n="maintenance.size">Entpackte Größe</dt><dd id="restoreBackupSize">–</dd>
+      </dl>
+      <p class="field-hint" data-i18n="maintenance.secretsExcluded">Kennwörter, Tokens und API-Keys sind nicht Teil der Sicherung.</p>
+      <p id="restoreBackupProgress" class="field-hint" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><button id="cancelRestoreBackup" type="button" class="secondary" data-i18n="common.cancel">Abbrechen</button><button id="confirmRestoreBackup" type="button" data-i18n="maintenance.restoreNow">Jetzt wiederherstellen</button></div>
+    </div>
   </dialog>
 
   <dialog id="designProfilesDialog" class="design-profiles-dialog">
