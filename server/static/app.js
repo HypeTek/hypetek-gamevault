@@ -794,7 +794,49 @@ async function searchTheGamesDbMetadata() {
   } catch (error) { target.innerHTML = `<p class="note error">${escapeHtml(error.message)}</p>`; }
 }
 
+async function restoreMissionControlBackup(file) {
+  if (!file) return;
+  const output = document.querySelector("#maintenanceStatus");
+  if (!confirm(tr("maintenance.restoreConfirm"))) return;
+  const data = new FormData();
+  data.append("backup", file);
+  output.textContent = tr("maintenance.restoring");
+  try {
+    const response = await fetch("/api/maintenance/restore", {method: "POST", headers: {"X-CSRF-Token": csrf}, body: data});
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    output.textContent = tr("maintenance.restored");
+    setTimeout(() => window.location.reload(), 900);
+  } catch (error) {
+    output.textContent = error.message;
+  } finally {
+    document.querySelector("#restoreBackupFile").value = "";
+  }
+}
+
+async function checkMissionControlUpdate() {
+  const button = document.querySelector("#checkUpdateButton");
+  const output = document.querySelector("#maintenanceStatus");
+  button.disabled = true;
+  output.textContent = tr("maintenance.checking");
+  try {
+    const result = await api("/api/maintenance/update");
+    if (result.update_available) {
+      output.innerHTML = `${escapeHtml(tr("maintenance.available", {version: result.latest}))} <a href="${escapeHtml(result.url)}" target="_blank" rel="noopener">GitHub</a>`;
+    } else {
+      output.textContent = tr("maintenance.current");
+    }
+  } catch (error) {
+    output.textContent = tr("maintenance.failed", {error: error.message});
+  } finally {
+    button.disabled = false;
+  }
+}
+
 document.querySelector("#metadataSearchButton").addEventListener("click", searchTheGamesDbMetadata);
+document.querySelector("#restoreBackupButton")?.addEventListener("click", () => document.querySelector("#restoreBackupFile").click());
+document.querySelector("#restoreBackupFile")?.addEventListener("change", (event) => restoreMissionControlBackup(event.target.files[0]));
+document.querySelector("#checkUpdateButton")?.addEventListener("click", checkMissionControlUpdate);
 document.querySelector("#metadataQuery").addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   event.preventDefault();
@@ -942,6 +984,25 @@ load();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+    navigator.serviceWorker.register("/service-worker.js").then((registration) => {
+      const showUpdate = (worker) => {
+        if (!worker || !navigator.serviceWorker.controller) return;
+        const notice = document.querySelector("#appUpdateNotice");
+        notice.hidden = false;
+        document.querySelector("#applyAppUpdate").onclick = () => worker.postMessage({type: "SKIP_WAITING"});
+      };
+      if (registration.waiting) showUpdate(registration.waiting);
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        worker?.addEventListener("statechange", () => { if (worker.state === "installed") showUpdate(worker); });
+      });
+      document.querySelector("#dismissAppUpdate").onclick = () => { document.querySelector("#appUpdateNotice").hidden = true; };
+    }).catch(() => {});
+  });
+  let reloadingForUpdate = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    window.location.reload();
   });
 }

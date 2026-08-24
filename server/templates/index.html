@@ -11,6 +11,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css', v=asset_version) }}">
 </head>
 <body>
+  <aside id="appUpdateNotice" class="app-update-notice" hidden role="status" aria-live="polite">
+    <span data-i18n="maintenance.pwaReady">Eine neue App-Version ist bereit.</span>
+    <button id="applyAppUpdate" type="button" data-i18n="maintenance.reload">Jetzt neu laden</button>
+    <button id="dismissAppUpdate" type="button" class="ghost" aria-label="Schließen">×</button>
+  </aside>
   <a id="skipToMain" class="skip-link" href="#mainContent" data-i18n="accessibility.skipToMain">Zum Hauptinhalt springen</a>
   <button id="brandHomeButton" class="floating-brand-home" type="button" aria-label="Zum Seitenanfang" title="Zum Seitenanfang" data-i18n-aria="accessibility.top" data-i18n-title="accessibility.top">
     <img class="floating-brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
@@ -211,6 +216,18 @@
       </div>
       <p id="settingsKeysNote" class="note">API-Keys werden ausschließlich in deiner lokalen Mission-Control-Konfiguration gespeichert. <button id="settingsIntegrationHelpButton" class="inline-help" type="button">Einrichtung für TheGamesDB und Translator anzeigen</button></p>
       <p id="settingsExclusionNote" class="note">Ausschlüsse gelten für Namen auf der obersten Ebene des Games-Ordners. Bestehende Cover und Metadaten bleiben erhalten.</p>
+      <details class="maintenance-panel settings-wide">
+        <summary data-i18n="maintenance.title">Wartung, Sicherung und Updates</summary>
+        <p data-i18n="maintenance.hint">Sicherungen enthalten Konfiguration, Datenbank, Cover und Hintergründe – niemals Kennwörter, Tokens oder API-Keys.</p>
+        <div class="maintenance-actions">
+          <a class="button-link secondary" href="/api/maintenance/backup" data-i18n="maintenance.backup">Sicherung herunterladen</a>
+          <button id="restoreBackupButton" type="button" class="secondary" data-i18n="maintenance.restore">Sicherung wiederherstellen</button>
+          <input id="restoreBackupFile" type="file" accept="application/zip,.zip" hidden>
+          <a class="button-link secondary" href="/api/maintenance/diagnostics" data-i18n="maintenance.diagnostics">Diagnosepaket herunterladen</a>
+          <button id="checkUpdateButton" type="button" class="secondary" data-i18n="maintenance.update">Auf Updates prüfen</button>
+        </div>
+        <span id="maintenanceStatus" class="field-hint" role="status" aria-live="polite"></span>
+      </details>
       <div class="settings-footer">
         <div class="version-mark"><strong>HypeTek Mission Control <span id="appVersion">–</span></strong><span>© 2026 Michael Härtwig · HypeTek</span></div>
         <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>

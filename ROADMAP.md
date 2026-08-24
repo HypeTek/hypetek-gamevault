@@ -39,7 +39,7 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 - nativer Mission-Control-Desktop-Client, bevorzugt als schlanke Tauri-Anwendung
 - Weboberfläche parallel als Browser- und installierbare PWA-Version erhalten
-  (installierbare PWA-Basis mit bewusst statischem Offline-Cache seit 0.3.24)
+  (installierbare PWA-Basis mit bewusst statischem Offline-Cache seit 0.4.0)
 - Dashboard und Agent in der Desktop-App verbinden, damit Windows-Aktionen ohne
   externe Browser-Protokollabfrage ausgelöst werden können
 - Geräte-Pairing mit eigenen Geräteschlüsseln und dauerhaft vertrauenswürdigen Servern

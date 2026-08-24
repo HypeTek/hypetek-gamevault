@@ -226,3 +226,5 @@ body[data-style="lcars"] #settingsDialog{
 @media(max-height:719px){#settingsDialog{max-height:94dvh;overflow:auto}}
 @media(max-width:900px){body[data-style="lcars"] .agent-note-content{padding-left:calc(var(--lcars-rail-width) + 14px)}}
 @media(max-width:560px){body[data-style="lcars"] .agent-note-content{padding-left:0}}
+
+.app-update-notice{position:fixed;right:18px;bottom:18px;z-index:10000;display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 12px 40px #0009}.app-update-notice[hidden]{display:none}.maintenance-panel{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.maintenance-panel summary{cursor:pointer;font-weight:800}.maintenance-panel p{color:var(--muted);margin:8px 0}.maintenance-actions{display:flex;flex-wrap:wrap;gap:8px}.maintenance-actions .button-link,.maintenance-actions button{font-size:.88rem;padding:9px 11px}

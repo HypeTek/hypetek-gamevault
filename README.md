@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.3.24
+## Funktionen in Version 0.4.0
 
 - direkte Setup-Programme und Windows-ISOs automatisch erkennen
 - CUE/BIN, Archive und unklare Einträge bewusst nur anzeigen
@@ -49,6 +49,10 @@ verändern oder in ein neues Format zu zwingen.
 - vollständiger integrierter Oberflächenkern für Deutsch, Englisch und Russisch; unabhängig von der Sprache der Spielinhalte
 - automatische Browser-Spracherkennung mit Fallback von Region zu Basissprache und anschließend Englisch
 - direkt prüfbarer Status des integrierten Mission Control Translators
+- Ein-Instanz-Start der installierten PWA: erneutes Öffnen fokussiert das vorhandene App-Fenster
+- Wartungszentrale für vollständige Sicherungen, Wiederherstellung, Diagnose und Update-Prüfung
+- automatische rotierende Sicherungen vor Bibliotheksscans und ein frischer Rücksetzpunkt vor jeder Wiederherstellung
+- Sicherungs- und Diagnosepakete ohne Kennwörter, Tokens oder API-Keys
 
 Mission Control installiert Spiele niemals unbeaufsichtigt. Vor jeder automatischen
 Aktion zeigt der Agent Titel, Aktion und vollständigen SMB-Pfad an. Erst nach einer

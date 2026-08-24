@@ -1,6 +1,10 @@
-const STATIC_CACHE = "hypetek-mission-control-static-v0.3.24";
+const STATIC_CACHE = "hypetek-mission-control-static-v0.4.0";
 
-self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("install", () => {});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+});
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(

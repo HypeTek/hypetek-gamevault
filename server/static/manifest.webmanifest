@@ -3,8 +3,10 @@
   "short_name": "Mission Control",
   "description": "Private Bibliothek und Windows-Installationssteuerung für TrueNAS.",
   "start_url": "/",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
+  "launch_handler": {"client_mode": "focus-existing"},
   "background_color": "#061117",
   "theme_color": "#061117",
   "icons": [

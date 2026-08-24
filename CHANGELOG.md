@@ -1,7 +1,13 @@
 # Changelog
 
-## 0.3.24
+## 0.4.0
 
+- Die installierte Web-App verwendet den standardisierten Launch Handler `focus-existing`: erneutes Starten fokussiert die vorhandene Mission-Control-Instanz, statt ein weiteres App-Fenster zu öffnen.
+- Neue Wartungszentrale in den Einstellungen: vollständige Sicherung herunterladen, sicher wiederherstellen, Diagnosepaket ohne Geheimnisse erzeugen und GitHub-Version prüfen.
+- Vor Bibliotheksscans werden automatisch rotierende Sicherungen angelegt; vor einer Wiederherstellung wird immer ein frischer Rücksetzpunkt erzeugt.
+- Sicherungen enthalten Datenbank, Einstellungen, Cover, Hintergründe und Designprofile, aber bewusst keine Passwörter, Tokens oder API-Keys. Lokale API-Keys bleiben beim Wiederherstellen erhalten.
+- Backup-Import gegen Pfadtraversal, unbekannte Inhalte, beschädigte SQLite-Datenbanken, übergroße Archive und zu viele Dateien gehärtet.
+- PWA-Updates werden kontrolliert angeboten und nicht mehr mitten in einer laufenden Sitzung unbemerkt aktiviert.
 - Tastaturkürzel für die Kachelansicht von `Alt+G` auf `Alt+K` geändert; `Alt+L` bleibt für die Listenansicht erhalten.
 - Bewegung und Farbverlauf des Energiepunkts laufen nun in derselben CSS-Animation. Dadurch fadet der Punkt auch im LCARS-Stil ohne abrupten Farbwechsel durch den eingestellten Verlauf.
 - Installierbare PWA-Basis mit Web-App-Manifest, App-Symbolen und Service Worker ergänzt. Der Offline-Cache ist bewusst auf statische Oberflächen-Dateien begrenzt; API-, Anmelde- und Bibliotheksdaten werden nicht zwischengespeichert.

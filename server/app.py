@@ -7,10 +7,14 @@ import time
 import zipfile
 import base64
 import json
+import platform
+import sqlite3
+import tempfile
 from io import BytesIO
 from functools import wraps
 from pathlib import Path, PurePosixPath
 from urllib.parse import parse_qs, urlparse
+from urllib.request import Request, urlopen
 
 from flask import (
     Flask,
@@ -44,6 +48,7 @@ from metadata import (
     suggest_game_title,
     validate_thegamesdb_key,
 )
+from maintenance import create_backup, restore_backup, rotate_backups, validate_backup
 
 
 GAME_ROOT = Path(os.environ.get("GAMEVAULT_GAME_ROOT", "/games")).resolve()
@@ -51,6 +56,7 @@ CONFIG_DIR = Path(os.environ.get("GAMEVAULT_CONFIG_DIR", "/config")).resolve()
 AGENT_DIR = Path(os.environ.get("GAMEVAULT_AGENT_DIR", "/app/windows-agent")).resolve()
 COVER_DIR = CONFIG_DIR / "covers"
 BACKGROUND_DIR = CONFIG_DIR / "backgrounds"
+BACKUP_DIR = CONFIG_DIR / "backups"
 GUIDE_DIR = Path(__file__).with_name("static") / "docs"
 ADMIN_PASSWORD = os.environ.get("GAMEVAULT_ADMIN_PASSWORD", "")
 AGENT_TOKEN = os.environ.get("GAMEVAULT_AGENT_TOKEN", "")
@@ -84,15 +90,22 @@ if not ADMIN_PASSWORD or not AGENT_TOKEN or not SECRET_KEY:
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 COVER_DIR.mkdir(parents=True, exist_ok=True)
 BACKGROUND_DIR.mkdir(parents=True, exist_ok=True)
+BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 app.config.update(
-    MAX_CONTENT_LENGTH=8 * 1024 * 1024,
+    MAX_CONTENT_LENGTH=256 * 1024 * 1024,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Strict",
     SESSION_COOKIE_SECURE=os.environ.get("GAMEVAULT_HTTPS", "0") == "1",
 )
+
+IMAGE_UPLOAD_LIMIT = 8 * 1024 * 1024
+
+
+def image_upload_too_large() -> bool:
+    return bool(request.content_length and request.content_length > IMAGE_UPLOAD_LIMIT)
 database = Database(CONFIG_DIR / "gamevault.sqlite3")
 settings_store = SettingsStore(CONFIG_DIR / "mission-control-settings.json")
 design_profiles = DesignProfileStore(CONFIG_DIR / "mission-control-designs.json")
@@ -515,6 +528,8 @@ def import_design_profile():
 @login_required
 @csrf_required
 def upload_design_profile_background():
+    if image_upload_too_large():
+        return jsonify(error="Bilddatei ist größer als 8 MiB"), 413
     upload = request.files.get("background")
     if not upload or not upload.filename:
         return jsonify(error="Keine Hintergrunddatei empfangen"), 400
@@ -539,6 +554,8 @@ def upload_design_profile_background():
 @login_required
 @csrf_required
 def upload_background():
+    if image_upload_too_large():
+        return jsonify(error="Bilddatei ist größer als 8 MiB"), 413
     upload = request.files.get("background")
     if not upload or not upload.filename:
         return jsonify(error="Keine Hintergrunddatei empfangen"), 400
@@ -655,10 +672,104 @@ def games():
 @login_required
 @csrf_required
 def scan():
+    automatic_backup()
     exclusions = set(settings_store.load().get("scan_exclusions", []))
     results = scan_library(GAME_ROOT, exclusions)
     database.apply_scan(results)
     return jsonify(scanned=len(results))
+
+
+def automatic_backup(force: bool = False) -> Path:
+    latest = max(BACKUP_DIR.glob("mission-control-auto-*.zip"), key=lambda item: item.stat().st_mtime, default=None)
+    if not force and latest and time.time() - latest.stat().st_mtime < 300:
+        return latest
+    name = f"mission-control-auto-{time.strftime('%Y%m%d-%H%M%S')}-{time.time_ns() % 1_000_000:06d}.zip"
+    result = create_backup(CONFIG_DIR, APP_VERSION, BACKUP_DIR / name)
+    rotate_backups(BACKUP_DIR)
+    return result
+
+
+@app.get("/api/maintenance/backup")
+@login_required
+def download_backup():
+    name = time.strftime("HypeTek-Mission-Control-backup-%Y%m%d-%H%M%S.zip")
+    path = create_backup(CONFIG_DIR, APP_VERSION, BACKUP_DIR / name)
+    return send_file(path, as_attachment=True, download_name=name, mimetype="application/zip")
+
+
+@app.post("/api/maintenance/restore")
+@login_required
+@csrf_required
+def restore_configuration():
+    uploaded = request.files.get("backup")
+    if not uploaded or not uploaded.filename:
+        return jsonify(error="Keine Sicherungsdatei ausgewählt."), 400
+    automatic_backup(force=True)
+    temporary_name = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix="mission-control-restore-", suffix=".zip", delete=False) as temporary:
+            temporary_name = temporary.name
+            uploaded.save(temporary)
+        validate_backup(Path(temporary_name))
+        restore_backup(Path(temporary_name), CONFIG_DIR)
+        settings_store.load()
+        design_profiles.load(settings_store.load().get("theme", "mission"))
+    except (ValueError, zipfile.BadZipFile, OSError, sqlite3.DatabaseError) as error:
+        return jsonify(error=f"Sicherung wurde nicht wiederhergestellt: {error}"), 400
+    finally:
+        if temporary_name:
+            Path(temporary_name).unlink(missing_ok=True)
+    return jsonify(ok=True, settings=public_settings())
+
+
+@app.get("/api/maintenance/diagnostics")
+@login_required
+def download_diagnostics():
+    settings = settings_store.load().copy()
+    for key in ("thegamesdb_api_key", "translator_api_key", "rawg_api_key"):
+        settings.pop(key, None)
+    integrity = "unavailable"
+    try:
+        with database.connect() as connection:
+            integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
+    except sqlite3.DatabaseError:
+        integrity = "error"
+    report = {
+        "application": "HypeTek Mission Control",
+        "version": APP_VERSION,
+        "generated_at": int(time.time()),
+        "python": platform.python_version(),
+        "database_integrity": integrity,
+        "game_count": len(database.list_games()),
+        "game_root_exists": GAME_ROOT.is_dir(),
+        "translator_managed": bool(DEFAULT_TRANSLATOR_URL),
+        "settings_without_secrets": settings,
+        "secrets_included": False,
+    }
+    output = BytesIO()
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("diagnostics.json", json.dumps(report, ensure_ascii=False, indent=2))
+        archive.writestr("README.txt", "HypeTek Mission Control diagnostics\nNo passwords, tokens or API keys are included.\n")
+    output.seek(0)
+    return send_file(output, as_attachment=True, download_name=f"mission-control-diagnostics-{APP_VERSION}.zip", mimetype="application/zip")
+
+
+@app.get("/api/maintenance/update")
+@login_required
+def check_for_update():
+    try:
+        query = Request(
+            "https://api.github.com/repos/HypeTek/hypetek-gamevault/releases/latest",
+            headers={"Accept": "application/vnd.github+json", "User-Agent": f"HypeTek-Mission-Control/{APP_VERSION}"},
+        )
+        with urlopen(query, timeout=6) as response:
+            release = json.loads(response.read().decode("utf-8"))
+        latest = str(release.get("tag_name") or "").lstrip("v")
+        def version_tuple(value: str) -> tuple[int, ...]:
+            return tuple(int(part) for part in re.findall(r"\d+", value)[:3])
+        return jsonify(current=APP_VERSION, latest=latest, update_available=version_tuple(latest) > version_tuple(APP_VERSION), url=release.get("html_url"))
+    except Exception as error:
+        return jsonify(current=APP_VERSION, reachable=False, error=str(error)), 502
 
 
 @app.patch("/api/games/<game_id>")
@@ -818,6 +929,8 @@ def upload_cover(game_id: str):
     game = database.get_game(game_id)
     if not game:
         abort(404)
+    if image_upload_too_large():
+        return jsonify(error="Bilddatei ist größer als 8 MiB"), 413
     upload = request.files.get("cover")
     if not upload or not upload.filename:
         return jsonify(error="Keine Bilddatei empfangen"), 400
