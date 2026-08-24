@@ -26,7 +26,7 @@ Copyright © 2026 Michael Härtwig · HypeTek
 - Designprofile mit eigenen Farben, Hintergründen und regelbaren Effekten (Basis seit 0.3.0)
 - unabhängige Karten-, Fenster- und Schriftstile (Basis seit 0.3.0)
 - Profil-Export und -Import mit geprüftem, versioniertem Austauschformat (vollständig seit 0.3.22)
-- Barrierefreiheit, Tastaturbedienung und reduzierte Animationen
+- Barrierefreiheit, Tastaturbedienung und reduzierte Animationen (Basis seit 0.3.23)
 
 ### Veröffentlichung
 

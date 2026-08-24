@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css', v=asset_version) }}">
 </head>
 <body>
+  <a id="skipToMain" class="skip-link" href="#mainContent" data-i18n="accessibility.skipToMain">Zum Hauptinhalt springen</a>
   <button id="brandHomeButton" class="floating-brand-home" type="button" aria-label="Zum Seitenanfang" title="Zum Seitenanfang" data-i18n-aria="accessibility.top" data-i18n-title="accessibility.top">
     <img class="floating-brand-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
   </button>
@@ -61,7 +62,7 @@
       </section>
     </div>
   </aside>
-  <main>
+  <main id="mainContent" tabindex="-1">
     <section class="hero">
       <div>
         <p id="libraryName" class="eyebrow">MISSION CONTROL GAME ARCHIVE</p>
@@ -71,7 +72,7 @@
       <div id="stats" class="stats"></div>
     </section>
     <section class="toolbar">
-      <input id="search" type="search" placeholder="Titel durchsuchen …">
+      <input id="search" type="search" placeholder="Titel durchsuchen …" aria-keyshortcuts="/">
       <select id="filter">
         <option value="all">Alle Typen</option>
         <option value="favorites">★ Favoriten</option>
@@ -82,8 +83,8 @@
         <option value="manual_image">Sonderabbild</option>
       </select>
       <div class="library-display-controls" aria-label="Bibliotheksdarstellung" data-i18n-aria="accessibility.libraryDisplay">
-        <button id="viewGridButton" class="secondary view-button" type="button" aria-pressed="true" title="Kachelansicht">▦ <span>Kacheln</span></button>
-        <button id="viewListButton" class="secondary view-button" type="button" aria-pressed="false" title="Listenansicht">☷ <span>Liste</span></button>
+        <button id="viewGridButton" class="secondary view-button" type="button" aria-pressed="true" aria-keyshortcuts="Alt+G" title="Kachelansicht">▦ <span>Kacheln</span></button>
+        <button id="viewListButton" class="secondary view-button" type="button" aria-pressed="false" aria-keyshortcuts="Alt+L" title="Listenansicht">☷ <span>Liste</span></button>
         <label class="page-size-label">Pro Seite
           <select id="pageSize">
             <option value="12">12</option>
@@ -188,6 +189,14 @@
           </select>
           <span id="settingsUiLanguageHint" class="field-hint">Integrierte Sprachpakete; unabhängig von der Übersetzung der Spielinhalte.</span>
         </label>
+        <label><span data-i18n="settings.motion">Bewegung und Animation</span>
+          <select id="settingMotionPreference">
+            <option value="auto" data-i18n="settings.motionAuto">Automatisch (System)</option>
+            <option value="reduce" data-i18n="settings.motionReduce">Reduziert</option>
+            <option value="full" data-i18n="settings.motionFull">Voll</option>
+          </select>
+          <span class="field-hint" data-i18n="settings.motionHint">Reduziert Bewegungen, Glüheffekte und weiches Scrollen.</span>
+        </label>
         <label>Mission Control Translator (optional)
           <input id="settingTranslatorUrl" type="url" placeholder="http://translator:5000">
           <span class="translator-status-row"><span id="translatorStatus" class="field-hint"></span><button id="testTranslatorButton" type="button" class="secondary" data-i18n="translator.test" disabled>Verbindung testen</button></span>
@@ -256,7 +265,7 @@
 
   <dialog id="editor">
     <form id="editorForm" method="dialog">
-      <div class="dialog-head"><h2>Eintrag bearbeiten</h2><button value="cancel" class="ghost">×</button></div>
+      <div class="dialog-head"><h2>Eintrag bearbeiten</h2><button id="closeEditorButton" type="button" class="ghost" aria-label="Editor schließen" data-i18n-aria="accessibility.closeEditor">×</button></div>
       <input type="hidden" id="editId">
       <label>Titel<input id="editTitle" type="text"></label>
       <label>Plattform<input id="editPlatform" type="text" placeholder="Windows, DOS, PlayStation …"></label>
@@ -289,7 +298,7 @@
         <div id="metadataResults" class="metadata-results"></div>
       </section>
       <div id="editNote" class="note"></div>
-      <div class="dialog-actions"><button value="cancel" class="secondary">Abbrechen</button><button id="saveButton" value="default">Speichern</button></div>
+      <div class="dialog-actions"><button id="cancelEditorButton" type="button" class="secondary">Abbrechen</button><button id="saveButton" type="submit" value="default">Speichern</button></div>
     </form>
   </dialog>
 

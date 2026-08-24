@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.23
+
+- Abbrechen und Schließen im Eintragseditor lösen keinen Speichervorgang mehr aus; eine ungültige Coverdatei wird verworfen und kann den Dialog nicht erneut blockieren.
+- Escape verhält sich im Editor wie Abbrechen und räumt temporäre Cover-Vorschauen zuverlässig auf.
+- Neue Animationseinstellung mit den Modi Automatisch (System), Reduziert und Voll ergänzt; reduzierte Bewegung gilt auch für den Energiepunkt und weiches Scrollen.
+- Sichtbare Tastaturfokusse, Sprunglink zum Hauptinhalt und Shortcuts für Suche (`/`), Kachel-/Listenansicht (`Alt+G`/`Alt+L`) sowie Seitenwechsel (`Alt+←`/`Alt+→`) ergänzt.
+- Die neuen Barrierefreiheits- und Animationstexte sind in allen zehn integrierten Oberflächensprachen enthalten.
+
 ## 0.3.22
 
 - Designprofile lassen sich als versionierte `.mcdesign.json`-Pakete exportieren und wieder importieren.

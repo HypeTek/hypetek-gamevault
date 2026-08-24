@@ -26,6 +26,14 @@ let designProfileState = {active: "mission", profiles: []};
 let coverPreviewObjectUrl = null;
 let coverDrag = null;
 
+function motionIsReduced() {
+  return document.body.dataset.motion === "reduce";
+}
+
+function preferredScrollBehavior() {
+  return motionIsReduced() ? "auto" : "smooth";
+}
+
 // Register the critical agent check before optional interface enhancements.
 // Function declarations are initialized before this statement is evaluated.
 document.querySelector("#agentProbeButton")?.addEventListener("click", probeWindowsAgent);
@@ -60,6 +68,9 @@ function applySettings(settings) {
   document.body.dataset.theme = settings.active_design_profile || settings.theme;
   document.body.dataset.style = profile.style || "soft";
   document.body.dataset.font = profile.font || "system";
+  const motionPreference = settings.motion_preference || "auto";
+  const systemRequestsReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.body.dataset.motion = motionPreference === "reduce" || (motionPreference === "auto" && systemRequestsReducedMotion) ? "reduce" : "full";
   const colorVariables = {background: "--bg", panel: "--panel", panel_alt: "--panel2", text: "--text", muted: "--muted", primary: "--teal", secondary: "--orange", line: "--line", energy_start: "--energy-start", energy_end: "--energy-end"};
   Object.entries(colorVariables).forEach(([key, variable]) => {
     if (colors[key]) document.body.style.setProperty(variable, colors[key]);
@@ -98,14 +109,16 @@ function parseProfileColor(value) {
 
 function animateEnergyColor(timestamp) {
   const point = document.querySelector(".energy-line span");
-  if (!point || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const styles = getComputedStyle(document.body);
-  const start = parseProfileColor(styles.getPropertyValue("--energy-start"));
-  const end = parseProfileColor(styles.getPropertyValue("--energy-end"));
-  const elapsed = timestamp % 6500;
-  const ratio = Math.min(1, elapsed / 4750);
-  const mixed = start.map((component, index) => Math.round(component + ((end[index] - component) * ratio)));
-  point.style.setProperty("--energy-color", `rgb(${mixed.join(",")})`);
+  if (!point) return;
+  if (!motionIsReduced()) {
+    const styles = getComputedStyle(document.body);
+    const start = parseProfileColor(styles.getPropertyValue("--energy-start"));
+    const end = parseProfileColor(styles.getPropertyValue("--energy-end"));
+    const elapsed = timestamp % 6500;
+    const ratio = Math.min(1, elapsed / 4750);
+    const mixed = start.map((component, index) => Math.round(component + ((end[index] - component) * ratio)));
+    point.style.setProperty("--energy-color", `rgb(${mixed.join(",")})`);
+  }
   requestAnimationFrame(animateEnergyColor);
 }
 
@@ -114,7 +127,7 @@ function showAgentSetup() {
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
   document.querySelector("#agentSetupBackButton").hidden = !agentValidated;
   note.hidden = false;
-  document.querySelector("#agentSetup").scrollIntoView({behavior: "smooth", block: "start"});
+  document.querySelector("#agentSetup").scrollIntoView({behavior: preferredScrollBehavior(), block: "start"});
 }
 
 function closeAgentSetup() {
@@ -199,7 +212,7 @@ function renderPagination(total, pageCount, firstIndex, shown) {
   pagination.hidden = false;
   const start = firstIndex + 1;
   const end = firstIndex + shown;
-  pagination.innerHTML = `<span>${start}–${end} / ${total}</span><div><button type="button" class="secondary" data-page="previous" ${state.page <= 1 ? "disabled" : ""}>← ${tr("pagination.previous")}</button><strong>${tr("pagination.page", {current: state.page, total: pageCount})}</strong><button type="button" class="secondary" data-page="next" ${state.page >= pageCount ? "disabled" : ""}>${tr("pagination.next")} →</button></div>`;
+  pagination.innerHTML = `<span>${start}–${end} / ${total}</span><div><button type="button" class="secondary" data-page="previous" aria-keyshortcuts="Alt+ArrowLeft" ${state.page <= 1 ? "disabled" : ""}>← ${tr("pagination.previous")}</button><strong>${tr("pagination.page", {current: state.page, total: pageCount})}</strong><button type="button" class="secondary" data-page="next" aria-keyshortcuts="Alt+ArrowRight" ${state.page >= pageCount ? "disabled" : ""}>${tr("pagination.next")} →</button></div>`;
   pagination.querySelector('[data-page="previous"]')?.addEventListener("click", () => changePage(state.page - 1));
   pagination.querySelector('[data-page="next"]')?.addEventListener("click", () => changePage(state.page + 1));
 }
@@ -207,7 +220,7 @@ function renderPagination(total, pageCount, firstIndex, shown) {
 function changePage(page) {
   state.page = page;
   render();
-  document.querySelector("#library").scrollIntoView({behavior: "smooth", block: "start"});
+  document.querySelector("#library").scrollIntoView({behavior: preferredScrollBehavior(), block: "start"});
 }
 
 function setLibraryView(view) {
@@ -247,6 +260,19 @@ function editGame(id) {
   document.querySelector("#editNote").textContent = tr("editor.detected", {type: typeLabel(game.detected_type), note: game.detection_note, path: game.relative_path});
   updateCoverPositionPreview();
   editor.showModal();
+}
+
+function resetEditorCoverSelection() {
+  document.querySelector("#editCover").value = "";
+  if (coverPreviewObjectUrl) URL.revokeObjectURL(coverPreviewObjectUrl);
+  coverPreviewObjectUrl = null;
+  coverDrag = null;
+}
+
+function closeEditor() {
+  resetEditorCoverSelection();
+  document.querySelector("#metadataResults").innerHTML = "";
+  if (editor.open) editor.close("cancel");
 }
 
 function updateCoverPositionPreview() {
@@ -407,7 +433,7 @@ function scrollGameInfoToTranslationMenu(menu) {
   const dialogBox = dialog.getBoundingClientRect();
   const menuBox = menu.getBoundingClientRect();
   const target = dialog.scrollTop + menuBox.top - dialogBox.top - 20;
-  dialog.scrollTo({top: Math.max(0, target), behavior: "smooth"});
+  dialog.scrollTo({top: Math.max(0, target), behavior: preferredScrollBehavior()});
 }
 
 async function setFavoriteTranslationLanguage(id, language) {
@@ -492,6 +518,7 @@ function openSettings() {
   document.querySelector("#settingTheGamesDbApiKey").value = "";
   document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? tr("settings.keyStored") : tr("settings.keyMissing");
   document.querySelector("#settingUiLanguage").value = settings.ui_language || "auto";
+  document.querySelector("#settingMotionPreference").value = settings.motion_preference || "auto";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
   document.querySelector("#translatorStatus").textContent = settings.translator_managed
@@ -668,7 +695,7 @@ document.querySelector("#editorForm").addEventListener("submit", async (event) =
       const response = await fetch(`/api/games/${id}/cover`, {method: "POST", headers: {"X-CSRF-Token": csrf}, body: form});
       if (!response.ok) throw new Error((await response.json()).error);
     }
-    editor.close();
+    closeEditor();
     await load();
   } catch (error) { alert(error.message); }
 });
@@ -681,6 +708,7 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
     crosshair_cursor: document.querySelector("#settingCrosshair").checked,
     scan_exclusions: document.querySelector("#settingExclusions").value.split(/[,\n]/).map((value) => value.trim()).filter(Boolean),
     ui_language: document.querySelector("#settingUiLanguage").value,
+    motion_preference: document.querySelector("#settingMotionPreference").value,
     translator_url: document.querySelector("#settingTranslatorUrl").value.trim(),
   };
   const theGamesDbApiKey = document.querySelector("#settingTheGamesDbApiKey").value.trim();
@@ -870,6 +898,12 @@ document.querySelector("#integrationHelpDone").addEventListener("click", () => i
 document.querySelector("#closeConnectionHelp").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#connectionHelpDone").addEventListener("click", () => connectionHelpDialog.close());
 document.querySelector("#closeGameInfo").addEventListener("click", () => gameInfoDialog.close());
+document.querySelector("#closeEditorButton").addEventListener("click", closeEditor);
+document.querySelector("#cancelEditorButton").addEventListener("click", closeEditor);
+editor.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeEditor();
+});
 document.querySelector("#editTitle").addEventListener("input", updateCoverPositionPreview);
 document.querySelector("#editCover").addEventListener("change", (event) => {
   if (coverPreviewObjectUrl) URL.revokeObjectURL(coverPreviewObjectUrl);
@@ -881,7 +915,7 @@ document.querySelector("#coverPositionPreview").addEventListener("pointermove", 
 document.querySelector("#coverPositionPreview").addEventListener("pointerup", stopCoverDrag);
 document.querySelector("#coverPositionPreview").addEventListener("pointercancel", stopCoverDrag);
 document.querySelector("#coverPositionPreview").addEventListener("keydown", nudgeCoverPosition);
-document.querySelector("#brandHomeButton").addEventListener("click", () => window.scrollTo({top: 0, behavior: "smooth"}));
+document.querySelector("#brandHomeButton").addEventListener("click", () => window.scrollTo({top: 0, behavior: preferredScrollBehavior()}));
 document.querySelector("#viewGridButton").addEventListener("click", () => setLibraryView("grid"));
 document.querySelector("#viewListButton").addEventListener("click", () => setLibraryView("list"));
 document.querySelector("#pageSize").addEventListener("change", (event) => {
@@ -892,6 +926,31 @@ document.querySelector("#pageSize").addEventListener("change", (event) => {
 });
 document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; state.page = 1; render(); });
 document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; state.page = 1; render(); });
+document.addEventListener("keydown", (event) => {
+  const target = event.target;
+  const isEditing = target instanceof HTMLElement && (target.matches("input, select, textarea") || target.isContentEditable);
+  const dialogOpen = Boolean(document.querySelector("dialog[open]"));
+  if (event.defaultPrevented || isEditing || dialogOpen) return;
+  if (event.key === "/" && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    document.querySelector("#search").focus();
+  } else if (event.altKey && event.key.toLowerCase() === "g") {
+    event.preventDefault();
+    setLibraryView("grid");
+  } else if (event.altKey && event.key.toLowerCase() === "l") {
+    event.preventDefault();
+    setLibraryView("list");
+  } else if (event.altKey && event.key === "ArrowLeft" && state.page > 1) {
+    event.preventDefault();
+    changePage(state.page - 1);
+  } else if (event.altKey && event.key === "ArrowRight") {
+    const nextButton = document.querySelector('#pagination [data-page="next"]');
+    if (nextButton && !nextButton.disabled) {
+      event.preventDefault();
+      nextButton.click();
+    }
+  }
+});
 window.addEventListener("resize", updateLcarsLayout);
 document.fonts?.ready.then(updateLcarsLayout);
 

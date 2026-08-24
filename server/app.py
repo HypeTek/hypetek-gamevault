@@ -283,6 +283,7 @@ def update_settings():
         "thegamesdb_api_key",
         "favorite_content_language",
         "ui_language",
+        "motion_preference",
         "translator_url",
         "translator_api_key",
     }
