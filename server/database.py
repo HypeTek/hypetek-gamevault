@@ -174,6 +174,10 @@ class Database:
                     ON CONFLICT(id) DO UPDATE SET
                         library_id=excluded.library_id,
                         relative_path=excluded.relative_path,
+                        custom_title=CASE
+                            WHEN games.custom_title = games.detected_title THEN NULL
+                            ELSE games.custom_title
+                        END,
                         detected_title=excluded.detected_title,
                         detected_type=excluded.detected_type,
                         detected_launcher=excluded.detected_launcher,

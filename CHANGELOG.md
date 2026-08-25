@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.3
+
+- Seitennavigation um anklickbare Seitennummern, Sprung zur ersten und Sprung zur letzten Seite erweitert.
+- Die Navigation bleibt auch bei großen Bibliotheken kompakt und zeigt ausgelassene Bereiche mit Auslassungspunkten an.
+- Frühere automatisch erkannte Titel, die von älteren Editorversionen unverändert als benutzerdefinierter Titel gespiegelt wurden, blockieren keine bessere lokale Dateinamenerkennung mehr.
+- Tatsächlich selbst vergebene Titel und übernommene Katalogmetadaten bleiben bei erneuten Scans weiterhin geschützt.
+
 ## 0.5.2
 
 - Automatische Titelwahl vergleicht Ordnernamen mit ISO-, Archiv- und Abbildnamen und bevorzugt den aussagekräftigeren Kandidaten.

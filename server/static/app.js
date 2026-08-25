@@ -197,9 +197,30 @@ function renderPagination(total, pageCount, firstIndex, shown) {
   pagination.hidden = false;
   const start = firstIndex + 1;
   const end = firstIndex + shown;
-  pagination.innerHTML = `<span>${start}–${end} / ${total}</span><div><button type="button" class="secondary" data-page="previous" aria-keyshortcuts="Alt+ArrowLeft" ${state.page <= 1 ? "disabled" : ""}>← ${tr("pagination.previous")}</button><strong>${tr("pagination.page", {current: state.page, total: pageCount})}</strong><button type="button" class="secondary" data-page="next" aria-keyshortcuts="Alt+ArrowRight" ${state.page >= pageCount ? "disabled" : ""}>${tr("pagination.next")} →</button></div>`;
+  const pageItems = paginationPageItems(state.page, pageCount).map((item) => item === "…"
+    ? '<span class="pagination-ellipsis" aria-hidden="true">…</span>'
+    : `<button type="button" class="secondary pagination-number${item === state.page ? " is-current" : ""}" data-page-number="${item}" ${item === state.page ? 'aria-current="page"' : ""}>${item}</button>`
+  ).join("");
+  pagination.innerHTML = `<span>${start}–${end} / ${total}</span><div class="pagination-controls"><button type="button" class="secondary pagination-edge" data-page="first" aria-label="${escapeHtml(tr("pagination.first"))}" title="${escapeHtml(tr("pagination.first"))}" ${state.page <= 1 ? "disabled" : ""}>«</button><button type="button" class="secondary" data-page="previous" aria-keyshortcuts="Alt+ArrowLeft" ${state.page <= 1 ? "disabled" : ""}>← ${tr("pagination.previous")}</button><span class="pagination-pages">${pageItems}</span><strong>${tr("pagination.page", {current: state.page, total: pageCount})}</strong><button type="button" class="secondary" data-page="next" aria-keyshortcuts="Alt+ArrowRight" ${state.page >= pageCount ? "disabled" : ""}>${tr("pagination.next")} →</button><button type="button" class="secondary pagination-edge" data-page="last" aria-label="${escapeHtml(tr("pagination.last"))}" title="${escapeHtml(tr("pagination.last"))}" ${state.page >= pageCount ? "disabled" : ""}>»</button></div>`;
+  pagination.querySelector('[data-page="first"]')?.addEventListener("click", () => changePage(1));
   pagination.querySelector('[data-page="previous"]')?.addEventListener("click", () => changePage(state.page - 1));
   pagination.querySelector('[data-page="next"]')?.addEventListener("click", () => changePage(state.page + 1));
+  pagination.querySelector('[data-page="last"]')?.addEventListener("click", () => changePage(pageCount));
+  pagination.querySelectorAll("[data-page-number]").forEach((button) => button.addEventListener("click", () => changePage(Number(button.dataset.pageNumber))));
+}
+
+function paginationPageItems(current, total) {
+  if (total <= 7) return Array.from({length: total}, (_, index) => index + 1);
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+  if (current <= 3) [2, 3, 4].forEach((page) => pages.add(page));
+  if (current >= total - 2) [total - 3, total - 2, total - 1].forEach((page) => pages.add(page));
+  const sorted = [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
+  const result = [];
+  sorted.forEach((page, index) => {
+    if (index && page - sorted[index - 1] > 1) result.push("…");
+    result.push(page);
+  });
+  return result;
 }
 
 function changePage(page) {

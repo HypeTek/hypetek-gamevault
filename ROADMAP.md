@@ -25,7 +25,9 @@ Copyright © 2026 Michael Härtwig · HypeTek
 - kontrollierte Stapelzuordnung von Covers mit Trefferprüfung
 - weitere Metadatenfelder, ohne vorhandene Ordnernamen zu verändern
 - intelligente lokale Titelwahl aus Ordner- und Installationsmediennamen, ohne manuelle
-  Titel oder Katalogmetadaten zu überschreiben (vollständig seit 0.5.2)
+  Titel oder Katalogmetadaten zu überschreiben (vollständig seit 0.5.3 einschließlich Altbeständen)
+- kompakte Seitennummerierung mit direktem Sprung zum Anfang und Ende großer Bibliotheken
+  (vollständig seit 0.5.3)
 - Designprofile mit eigenen Farben, Hintergründen und regelbaren Effekten (Basis seit 0.3.0)
 - unabhängige Karten-, Fenster- und Schriftstile (Basis seit 0.3.0)
 - Profil-Export und -Import mit geprüftem, versioniertem Austauschformat (vollständig seit 0.3.22)
