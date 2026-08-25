@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.5.0
+## Funktionen in Version 0.5.1
 
 - mehrere getrennte Spielebibliotheken mit eigener TrueNAS- und Windows-/SMB-Zuordnung verwalten
 - Bibliotheken einzeln oder gemeinsam scannen und im Dashboard filtern

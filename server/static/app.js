@@ -521,11 +521,38 @@ function renderLibrarySettings(items) {
     <input data-library-field="id" value="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr("library.id"))}" ${index === 0 ? "readonly" : ""}>
     <input data-library-field="name" value="${escapeHtml(item.name)}" aria-label="${escapeHtml(tr("library.name"))}" placeholder="${escapeHtml(tr("library.name"))}">
     <input data-library-field="container_path" value="${escapeHtml(item.container_path)}" aria-label="${escapeHtml(tr("library.containerPath"))}" placeholder="/libraries/archive2">
-    <input data-library-field="windows_path" value="${escapeHtml(item.windows_path)}" aria-label="${escapeHtml(tr("library.windowsPath"))}" placeholder="Y:\\Games">
+    <span class="library-path-field"><input data-library-field="windows_path" value="${escapeHtml(item.windows_path)}" aria-label="${escapeHtml(tr("library.windowsPath"))}" placeholder="Y:\\Games"><button class="secondary browse-library-path" type="button">${escapeHtml(tr("library.browse"))}</button></span>
     <label class="library-enabled"><input data-library-field="enabled" type="checkbox" ${item.enabled !== false ? "checked" : ""}> ${escapeHtml(tr("library.enabled"))}</label>
     <button class="ghost remove-library" type="button" ${index === 0 ? "disabled" : ""}>×</button>
   </div>`).join("");
   rows.querySelectorAll(".remove-library").forEach((button) => button.addEventListener("click", () => button.closest("[data-library-row]").remove()));
+  rows.querySelectorAll(".browse-library-path").forEach((button) => button.addEventListener("click", () => browseLibraryPath(button)));
+}
+
+async function browseLibraryPath(button) {
+  const input = button.closest(".library-path-field").querySelector('[data-library-field="windows_path"]');
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = tr("library.browseWaiting");
+  try {
+    const picker = await api("/api/agent/folder-pickers", {method: "POST", body: "{}"});
+    window.location.href = picker.protocol_url;
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const result = await api(`/api/agent/folder-pickers/${encodeURIComponent(picker.token)}`);
+      if (result.completed) {
+        if (result.selected_path) input.value = result.selected_path;
+        return;
+      }
+      if (result.expired) break;
+    }
+    throw new Error(tr("library.browseTimeout"));
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
 }
 
 function collectLibrarySettings() {
@@ -732,6 +759,8 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
     settingsDialog.close();
   } catch (error) { alert(error.message); }
 });
+
+document.querySelectorAll("[data-close-settings]").forEach((button) => button.addEventListener("click", () => settingsDialog.close()));
 
 document.querySelector("#removeTheGamesDbKeyButton").addEventListener("click", async () => {
   if (!confirm(tr("confirm.removeGamesDb"))) return;

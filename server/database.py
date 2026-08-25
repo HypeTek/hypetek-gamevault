@@ -56,6 +56,12 @@ CREATE TABLE IF NOT EXISTS agent_probes (
     expires_at INTEGER NOT NULL,
     confirmed_at INTEGER
 );
+CREATE TABLE IF NOT EXISTS folder_pickers (
+    token TEXT PRIMARY KEY,
+    expires_at INTEGER NOT NULL,
+    selected_path TEXT,
+    confirmed_at INTEGER
+);
 """
 
 LAUNCH_TICKETS_SCHEMA = """
@@ -303,6 +309,34 @@ class Database:
         with self.connect() as connection:
             row = connection.execute(
                 "SELECT expires_at, confirmed_at FROM agent_probes WHERE token = ?",
+                (token,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def create_folder_picker(self, token: str, expires_at: int) -> None:
+        with self.connect() as connection:
+            connection.execute("DELETE FROM folder_pickers WHERE expires_at < ?", (int(time.time()),))
+            connection.execute(
+                "INSERT INTO folder_pickers(token, expires_at) VALUES (?, ?)",
+                (token, expires_at),
+            )
+
+    def complete_folder_picker(self, token: str, selected_path: str) -> bool:
+        now = int(time.time())
+        with self.connect() as connection:
+            result = connection.execute(
+                """
+                UPDATE folder_pickers SET selected_path = ?, confirmed_at = ?
+                WHERE token = ? AND expires_at >= ? AND confirmed_at IS NULL
+                """,
+                (selected_path, now, token, now),
+            )
+        return result.rowcount == 1
+
+    def get_folder_picker(self, token: str) -> dict | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT expires_at, selected_path, confirmed_at FROM folder_pickers WHERE token = ?",
                 (token,),
             ).fetchone()
         return dict(row) if row else None

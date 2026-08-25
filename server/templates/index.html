@@ -178,7 +178,7 @@
 
   <dialog id="settingsDialog" class="settings-dialog">
     <form id="settingsForm" method="dialog">
-      <div class="dialog-head"><h2>Mission Control konfigurieren</h2><button value="cancel" class="ghost">×</button></div>
+      <div class="dialog-head"><h2>Mission Control konfigurieren</h2><button type="button" data-close-settings class="ghost">×</button></div>
       <div class="settings-grid">
         <label>Servername<input id="settingServerName" type="text" maxlength="80"></label>
         <label>Archivname<input id="settingLibraryName" type="text" maxlength="120"></label>
@@ -192,7 +192,7 @@
             <button id="addLibraryButton" class="secondary" type="button" data-i18n="settings.addLibrary">+ Bibliothek</button>
           </div>
           <div id="librarySettingsRows" class="library-settings-rows"></div>
-          <span class="field-hint"><span data-i18n="settings.libraryMountHint">Zusätzliche Containerpfade müssen in der TrueNAS-YAML bereits als Volume unter</span> <code>/libraries/…</code> <span data-i18n="settings.libraryMountHintEnd">eingebunden sein.</span></span>
+          <span class="field-hint"><span data-i18n="settings.libraryMountHint">Zusätzliche Containerpfade müssen in der TrueNAS-YAML bereits als Volume unter</span> <code>/libraries/…</code> <span data-i18n="settings.libraryMountHintEnd">eingebunden sein. Der Windows-Pfad ist nur die Zuordnung auf diesem PC.</span></span>
         </section>
         <label class="checkbox-label"><input id="settingCrosshair" type="checkbox"> Fadenkreuz als Mauszeiger</label>
         <label>Scanner-Ausschlüsse
@@ -245,7 +245,7 @@
       </details>
       <div class="settings-footer">
         <div class="version-mark"><strong>HypeTek Mission Control <span id="appVersion">–</span></strong><span>© 2026 Michael Härtwig · HypeTek</span></div>
-        <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button value="cancel" class="secondary">Abbrechen</button><button id="saveSettingsButton" value="default">Speichern</button></div>
+        <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button type="button" data-close-settings class="secondary">Abbrechen</button><button id="saveSettingsButton" type="submit" value="default">Speichern</button></div>
       </div>
     </form>
   </dialog>

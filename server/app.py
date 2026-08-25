@@ -1134,6 +1134,49 @@ def confirm_agent_probe(token: str):
     return response
 
 
+@app.post("/api/agent/folder-pickers")
+@login_required
+@csrf_required
+def create_folder_picker():
+    token = secrets.token_urlsafe(32)
+    database.create_folder_picker(token, int(time.time()) + 120)
+    return jsonify(
+        token=token,
+        protocol_url=f"hypetek-gamevault://browse?token={token}",
+        expires_in=120,
+    )
+
+
+@app.get("/api/agent/folder-pickers/<token>")
+@login_required
+def folder_picker_status(token: str):
+    picker = database.get_folder_picker(token)
+    if not picker:
+        abort(404)
+    return jsonify(
+        completed=bool(picker.get("confirmed_at")),
+        selected_path=picker.get("selected_path"),
+        expired=int(picker["expires_at"]) < int(time.time()),
+    )
+
+
+@app.post("/api/agent/folder-pickers/<token>/complete")
+def complete_folder_picker(token: str):
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    payload = request.get_json(silent=True) or {}
+    cancelled = payload.get("cancelled") is True
+    selected_path = str(payload.get("selected_path", "")).strip()
+    if (not cancelled and not selected_path) or len(selected_path) > 1024:
+        return jsonify(error="Ungültiger Windows-Pfad"), 400
+    if not database.complete_folder_picker(token, selected_path):
+        return jsonify(error="Ordnerauswahl ungültig, abgelaufen oder bereits bestätigt"), 404
+    response = app.response_class(status=204)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.post("/api/agent/validate")
 def validate_agent_token():
     authorization = request.headers.get("Authorization", "")

@@ -5,7 +5,7 @@ services:
     container_name: hypetek-gamevault
     restart: unless-stopped
     labels:
-      com.hypetek.mission-control.deployment: "0.5.0"
+      com.hypetek.mission-control.deployment: "0.5.1"
     ports:
       - "9998:8080"
     environment:

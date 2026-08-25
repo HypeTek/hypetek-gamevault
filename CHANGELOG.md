@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1
+
+- Einstellungsdialog bleibt auch im verkleinerten Browser- und App-Fenster vollständig bedienbar; die Aktionsleiste bleibt beim Scrollen sichtbar.
+- „Abbrechen“ im Einstellungsdialog löst keine Bibliotheksvalidierung mehr aus und schließt nach einer Fehlermeldung zuverlässig.
+- Windows-Pfade zusätzlicher Bibliotheken lassen sich über den installierten Mission-Control-Agent mit einem nativen Ordnerdialog auswählen.
+- Abgebrochene Ordnerauswahlen werden sauber an die Weboberfläche zurückgemeldet, ohne anschließend eine Zeitüberschreitung anzuzeigen.
+- Hinweise unterscheiden nun deutlicher zwischen dem TrueNAS-Containerpfad und dessen Windows-/SMB-Zuordnung.
+
 ## 0.5.0
 
 - Mehrere getrennte Spielebibliotheken mit eigener stabiler ID, Bezeichnung, nur-lesbarem Container-Mount und Windows-/SMB-Pfad ergänzt.

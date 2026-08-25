@@ -11,6 +11,7 @@ if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf) -and (Test-Path -Li
 }
 
 Add-Type -AssemblyName PresentationFramework
+Add-Type -AssemblyName System.Windows.Forms
 
 function Show-Error([string]$Message) {
     [System.Windows.MessageBox]::Show(
@@ -104,6 +105,17 @@ function Confirm-Probe([string]$ServerUrl, [string]$AgentToken, [string]$Token) 
     }
 }
 
+function Complete-FolderPicker([string]$ServerUrl, [string]$AgentToken, [string]$Token, [string]$SelectedPath, [bool]$Cancelled) {
+    $headers = @{ Authorization = "Bearer $AgentToken" }
+    $body = @{ selected_path = $SelectedPath; cancelled = $Cancelled } | ConvertTo-Json -Compress
+    Invoke-RestMethod -Method Post `
+        -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/folder-pickers/$([Uri]::EscapeDataString($Token))/complete" `
+        -Headers $headers `
+        -ContentType "application/json; charset=utf-8" `
+        -Body $body `
+        -TimeoutSec 15 | Out-Null
+}
+
 function Find-InstallerOnMountedIso([string]$DriveLetter) {
     $root = "$($DriveLetter):\"
     $autorun = Join-Path $root "autorun.inf"
@@ -139,7 +151,7 @@ try {
     }
     if ([string]::IsNullOrWhiteSpace($ProtocolUrl)) { throw "Kein Mission-Control-Auftrag empfangen." }
     $uri = [Uri]$ProtocolUrl
-    if ($uri.Scheme -ne "hypetek-gamevault" -or $uri.Host -notin @("launch", "probe")) {
+    if ($uri.Scheme -ne "hypetek-gamevault" -or $uri.Host -notin @("launch", "probe", "browse")) {
         throw "Ungültiger Mission-Control-Link."
     }
 
@@ -155,6 +167,27 @@ try {
         }
         if ([string]::IsNullOrWhiteSpace($probeToken)) { throw "Prüftoken fehlt im Mission-Control-Link." }
         Confirm-Probe $config.server_url $config.agent_token $probeToken
+        exit 0
+    }
+    if ($uri.Host -eq "browse") {
+        $pickerToken = $null
+        foreach ($pair in $uri.Query.TrimStart('?').Split('&')) {
+            if ([string]::IsNullOrWhiteSpace($pair)) { continue }
+            $parts = $pair -split '=', 2
+            if ([Uri]::UnescapeDataString($parts[0]) -eq "token" -and $parts.Count -eq 2) {
+                $pickerToken = [Uri]::UnescapeDataString($parts[1])
+                break
+            }
+        }
+        if ([string]::IsNullOrWhiteSpace($pickerToken)) { throw "Auswahltoken fehlt im Mission-Control-Link." }
+        $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+        $dialog.Description = "Windows- oder SMB-Ordner für die Mission-Control-Bibliothek auswählen"
+        $dialog.ShowNewFolderButton = $false
+        if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+            Complete-FolderPicker $config.server_url $config.agent_token $pickerToken $dialog.SelectedPath $false
+        } else {
+            Complete-FolderPicker $config.server_url $config.agent_token $pickerToken "" $true
+        }
         exit 0
     }
     $ticket = $null
