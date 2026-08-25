@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.5.3"
+      com.hypetek.mission-control.deployment: "0.6.0"
 
     ports:
       - "9998:8080"
@@ -106,7 +106,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.5.3 muss die Antwort unter anderem `"version":"0.5.3"`,
+Für Version 0.6.0 muss die Antwort unter anderem `"version":"0.6.0"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -116,7 +116,7 @@ Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
 ## Mehrere Spielebibliotheken
 
 Unter **Einstellungen → Spielebibliotheken** erhält jedes Archiv eine dauerhafte ID,
-einen Namen, den Containerpfad und den passenden Windows-/SMB-Pfad. Die primäre
+einen Namen, den Containerpfad und passende lokale Windows-/SMB- und Linux-Pfade. Die primäre
 Bibliothek bleibt automatisch mit `/games` kompatibel. Zusätzliche Bibliotheken
 werden unter `/libraries/<id>` nur-lesbar eingebunden. Nach dem Speichern kann jede
 Bibliothek einzeln oder gemeinsam gescannt und im Dashboard gefiltert werden.

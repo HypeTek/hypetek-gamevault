@@ -343,7 +343,7 @@ function showGameInfo(id) {
   const hero = document.querySelector("#gameInfoHero");
   hero.style.backgroundImage = game.cover_name ? `url('${coverUrl(game)}')` : "none";
   hero.style.backgroundPosition = `center ${coverPosition(game)}%`;
-  document.querySelector("#gameInfoProvider").textContent = game.metadata_provider === "thegamesdb" ? "TheGamesDB" : "Mission Control";
+  document.querySelector("#gameInfoProvider").textContent = ({thegamesdb: "TheGamesDB", rawg: "RAWG"})[game.metadata_provider] || "Mission Control";
   document.querySelector("#gameInfoTitle").textContent = game.metadata_title || game.title;
   const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? infoTr("info.players", {count: game.metadata_players}) : "", game.metadata_coop ? infoTr("info.coop", {value: game.metadata_coop}) : ""].filter(Boolean);
   document.querySelector("#gameInfoMeta").innerHTML = metadata.map((value) => `<span>${escapeHtml(value)}</span>`).join("");
@@ -523,6 +523,8 @@ function openSettings() {
   document.querySelector("#settingExclusions").value = settings.scan_exclusions.join(", ");
   document.querySelector("#settingTheGamesDbApiKey").value = "";
   document.querySelector("#theGamesDbKeyStatus").textContent = settings.thegamesdb_configured ? tr("settings.keyStored") : tr("settings.keyMissing");
+  document.querySelector("#settingRawgApiKey").value = "";
+  document.querySelector("#rawgKeyStatus").textContent = settings.rawg_configured ? tr("settings.keyStored") : tr("settings.keyMissing");
   document.querySelector("#settingUiLanguage").value = settings.ui_language || "auto";
   document.querySelector("#settingMotionPreference").value = settings.motion_preference || "auto";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
@@ -543,6 +545,7 @@ function renderLibrarySettings(items) {
     <input data-library-field="name" value="${escapeHtml(item.name)}" aria-label="${escapeHtml(tr("library.name"))}" placeholder="${escapeHtml(tr("library.name"))}">
     <input data-library-field="container_path" value="${escapeHtml(item.container_path)}" aria-label="${escapeHtml(tr("library.containerPath"))}" placeholder="/libraries/archive2">
     <span class="library-path-field"><input data-library-field="windows_path" value="${escapeHtml(item.windows_path)}" aria-label="${escapeHtml(tr("library.windowsPath"))}" placeholder="Y:\\Games"><button class="secondary browse-library-path" type="button">${escapeHtml(tr("library.browse"))}</button></span>
+    <input data-library-field="linux_path" value="${escapeHtml(item.linux_path || "")}" aria-label="${escapeHtml(tr("library.linuxPath"))}" placeholder="/mnt/games">
     <label class="library-enabled"><input data-library-field="enabled" type="checkbox" ${item.enabled !== false ? "checked" : ""}> ${escapeHtml(tr("library.enabled"))}</label>
     <button class="ghost remove-library" type="button" ${index === 0 ? "disabled" : ""}>×</button>
   </div>`).join("");
@@ -582,6 +585,7 @@ function collectLibrarySettings() {
     name: row.querySelector('[data-library-field="name"]').value.trim(),
     container_path: row.querySelector('[data-library-field="container_path"]').value.trim(),
     windows_path: row.querySelector('[data-library-field="windows_path"]').value.trim(),
+    linux_path: row.querySelector('[data-library-field="linux_path"]').value.trim(),
     enabled: row.querySelector('[data-library-field="enabled"]').checked,
   }));
 }
@@ -771,6 +775,8 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
   };
   const theGamesDbApiKey = document.querySelector("#settingTheGamesDbApiKey").value.trim();
   if (theGamesDbApiKey) payload.thegamesdb_api_key = theGamesDbApiKey;
+  const rawgApiKey = document.querySelector("#settingRawgApiKey").value.trim();
+  if (rawgApiKey) payload.rawg_api_key = rawgApiKey;
   const translatorApiKey = document.querySelector("#settingTranslatorApiKey").value.trim();
   if (translatorApiKey) payload.translator_api_key = translatorApiKey;
   try {
@@ -790,6 +796,16 @@ document.querySelector("#removeTheGamesDbKeyButton").addEventListener("click", a
     applySettings(settings);
     document.querySelector("#settingTheGamesDbApiKey").value = "";
     document.querySelector("#theGamesDbKeyStatus").textContent = tr("settings.keyMissing");
+  } catch (error) { alert(error.message); }
+});
+
+document.querySelector("#removeRawgKeyButton").addEventListener("click", async () => {
+  if (!confirm(tr("confirm.removeRawg"))) return;
+  try {
+    const settings = await api("/api/settings", {method: "PATCH", body: JSON.stringify({rawg_api_key: null})});
+    applySettings(settings);
+    document.querySelector("#settingRawgApiKey").value = "";
+    document.querySelector("#rawgKeyStatus").textContent = tr("settings.keyMissing");
   } catch (error) { alert(error.message); }
 });
 
@@ -847,10 +863,12 @@ function updateLcarsSystemClock() {
   date.textContent = now.toLocaleDateString(language, {day: "2-digit", month: "2-digit", year: "numeric"});
 }
 
-function renderMetadataResults(results) {
+function renderMetadataResults(results, warnings = []) {
   const target = document.querySelector("#metadataResults");
   if (!results.length) { target.innerHTML = `<p class="note">${tr("metadata.none")}</p>`; return; }
-  target.innerHTML = results.map((item, index) => `<article class="metadata-result"><img src="${escapeHtml(item.preview_url)}" alt="" loading="lazy"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.platform || tr("metadata.unknownPlatform"))} · ${escapeHtml(item.released || tr("metadata.unknownYear"))}</span><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer">${tr("metadata.view")}</a></div><button type="button" data-metadata-index="${index}">${tr("metadata.apply")}</button></article>`).join("");
+  const providerNames = {thegamesdb: "TheGamesDB", rawg: "RAWG"};
+  const warningHtml = warnings.length ? `<p class="note metadata-warning">${escapeHtml(tr("metadata.partial", {providers: warnings.join(" · ")}))}</p>` : "";
+  target.innerHTML = results.map((item, index) => `<article class="metadata-result"><img src="${escapeHtml(item.preview_url)}" alt="" loading="lazy"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(providerNames[item.provider] || item.provider)} · ${escapeHtml(item.platform || tr("metadata.unknownPlatform"))} · ${escapeHtml(item.released || tr("metadata.unknownYear"))}</span><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noopener noreferrer">${tr("metadata.viewProvider", {provider: providerNames[item.provider] || item.provider})}</a></div><button type="button" data-metadata-index="${index}">${tr("metadata.apply")}</button></article>`).join("") + warningHtml;
   target.querySelectorAll("[data-metadata-index]").forEach((button) => button.addEventListener("click", async () => {
     const item = results[Number(button.dataset.metadataIndex)];
     const id = document.querySelector("#editId").value;
@@ -873,7 +891,7 @@ async function searchTheGamesDbMetadata() {
   target.innerHTML = `<p class="note">${tr("metadata.searching")}</p>`;
   try {
     const data = await api(`/api/games/${id}/metadata/search`, {method: "POST", body: JSON.stringify({query})});
-    renderMetadataResults(data.results);
+    renderMetadataResults(data.results, data.warnings || []);
   } catch (error) { target.innerHTML = `<p class="note error">${escapeHtml(error.message)}</p>`; }
 }
 
@@ -1022,7 +1040,7 @@ document.querySelector("#addLibraryButton").addEventListener("click", () => {
   let number = existing.length + 1;
   let id = `library-${number}`;
   while (existing.some((item) => item.id === id)) { number += 1; id = `library-${number}`; }
-  existing.push({id, name: `Bibliothek ${number}`, container_path: `/libraries/${id}`, windows_path: "", enabled: true});
+  existing.push({id, name: `Bibliothek ${number}`, container_path: `/libraries/${id}`, windows_path: "", linux_path: "", enabled: true});
   renderLibrarySettings(existing);
 });
 document.querySelector("#testTranslatorButton").addEventListener("click", testTranslatorConnection);

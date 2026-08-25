@@ -61,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.5.3")
+        self.assertEqual(status.get_json()["current"], "0.6.0")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -71,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.5.3")
+        self.assertEqual(summary["application_version"], "0.6.0")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -174,7 +174,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.5.3")
+        self.assertEqual(health["version"], "0.6.0")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -226,7 +226,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.5.3/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.6.0/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -236,9 +236,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.5.3", html)
-        self.assertIn("/static/i18n.js?v=0.5.3", html)
-        self.assertIn("/static/app.css?v=0.5.3", html)
+        self.assertIn("/static/app.js?v=0.6.0", html)
+        self.assertIn("/static/i18n.js?v=0.6.0", html)
+        self.assertIn("/static/app.css?v=0.6.0", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -247,7 +247,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.5.3")
+        self.assertEqual(settings["version"], "0.6.0")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -282,7 +282,8 @@ class AppTests(unittest.TestCase):
         current = self.client.get("/api/settings").get_json()
         libraries = current["libraries"] + [{
             "id": "archive", "name": "Second Archive",
-            "container_path": str(second), "windows_path": "Y:\\Games", "enabled": True,
+            "container_path": str(second), "windows_path": "Y:\\Games",
+            "linux_path": "/mnt/games/archive", "enabled": True,
         }]
         saved = self.client.patch(
             "/api/settings", json={"libraries": libraries},
@@ -302,6 +303,7 @@ class AppTests(unittest.TestCase):
         ).get_json()
         self.assertEqual(manifest["library_id"], "archive")
         self.assertEqual(manifest["windows_path_hint"], "Y:\\Games")
+        self.assertEqual(manifest["linux_path_hint"], "/mnt/games/archive")
 
     def test_invalid_library_definition_is_rejected_instead_of_dropped(self):
         self.login()
@@ -476,6 +478,24 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 502)
         self.assertFalse(self.module.settings_store.load()["thegamesdb_api_key"])
 
+    def test_invalid_rawg_key_is_not_saved(self):
+        self.login()
+        original_validate = self.module.validate_rawg_key
+        try:
+            def reject(_key):
+                raise self.module.MetadataError("RAWG-API-Key wurde abgelehnt")
+
+            self.module.validate_rawg_key = reject
+            response = self.client.patch(
+                "/api/settings",
+                json={"rawg_api_key": "wrong-key"},
+                headers={"X-CSRF-Token": self.csrf},
+            )
+        finally:
+            self.module.validate_rawg_key = original_validate
+        self.assertEqual(response.status_code, 502)
+        self.assertFalse(self.module.settings_store.load()["rawg_api_key"])
+
     def test_manual_thegamesdb_search_and_cover_selection(self):
         self.login()
         self.post("/api/scan")
@@ -555,6 +575,57 @@ class AppTests(unittest.TestCase):
         finally:
             self.module.search_thegamesdb = original_search
             self.module.download_thegamesdb_image = original_download
+
+    def test_metadata_search_combines_thegamesdb_then_rawg(self):
+        self.login()
+        self.post("/api/scan")
+        game = self.client.get("/api/games").get_json()[0]
+        self.module.settings_store.update({
+            "thegamesdb_api_key": "tgdb-key",
+            "rawg_api_key": "rawg-key",
+        })
+        tgdb = {"provider": "thegamesdb", "provider_id": "1", "name": "TGDB", "image_url": "https://cdn.thegamesdb.net/images/original/a.jpg", "source_url": "https://thegamesdb.net/game.php?id=1"}
+        rawg = {"provider": "rawg", "provider_id": "2", "name": "RAWG", "image_url": "https://media.rawg.io/media/a.jpg", "source_url": "https://rawg.io/games/rawg"}
+        original_tgdb = self.module.search_thegamesdb
+        original_rawg = self.module.search_rawg
+        calls = []
+        try:
+            self.module.search_thegamesdb = lambda key, query: calls.append(("tgdb", key, query)) or [dict(tgdb)]
+            self.module.search_rawg = lambda key, query: calls.append(("rawg", key, query)) or [dict(rawg)]
+            response = self.post(f"/api/games/{game['id']}/metadata/search", json={"query": "Test Game"})
+        finally:
+            self.module.search_thegamesdb = original_tgdb
+            self.module.search_rawg = original_rawg
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual([item["provider"] for item in payload["results"]], ["thegamesdb", "rawg"])
+        self.assertEqual(calls, [("tgdb", "tgdb-key", "Test Game"), ("rawg", "rawg-key", "Test Game")])
+        self.assertEqual(payload["warnings"], [])
+
+    def test_metadata_search_keeps_rawg_results_if_thegamesdb_fails(self):
+        self.login()
+        self.post("/api/scan")
+        game = self.client.get("/api/games").get_json()[0]
+        self.module.settings_store.update({"thegamesdb_api_key": "tgdb-key", "rawg_api_key": "rawg-key"})
+        original_tgdb = self.module.search_thegamesdb
+        original_rawg = self.module.search_rawg
+        try:
+            def fail_tgdb(_key, _query):
+                raise self.module.MetadataError("temporär nicht erreichbar")
+            self.module.search_thegamesdb = fail_tgdb
+            self.module.search_rawg = lambda _key, _query: [{
+                "provider": "rawg", "provider_id": "2", "name": "RAWG",
+                "image_url": "https://media.rawg.io/media/a.jpg",
+                "source_url": "https://rawg.io/games/rawg",
+            }]
+            response = self.post(f"/api/games/{game['id']}/metadata/search", json={"query": "Test Game"})
+        finally:
+            self.module.search_thegamesdb = original_tgdb
+            self.module.search_rawg = original_rawg
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual([item["provider"] for item in payload["results"]], ["rawg"])
+        self.assertIn("TheGamesDB", payload["warnings"][0])
 
     def test_cover_position_is_stored_and_clamped(self):
         self.login()

@@ -23,6 +23,7 @@ class SettingsMigrationTests(unittest.TestCase):
                 "name": "TrueTitan Archive",
                 "container_path": DEFAULT_GAME_ROOT,
                 "windows_path": DEFAULT_WINDOWS_ROOT,
+                "linux_path": "",
                 "enabled": True,
             }])
 

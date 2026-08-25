@@ -27,6 +27,7 @@ DEFAULTS = {
         "name": DEFAULT_LIBRARY_NAME,
         "container_path": DEFAULT_GAME_ROOT,
         "windows_path": DEFAULT_WINDOWS_ROOT,
+        "linux_path": "",
         "enabled": True,
     }],
     "theme": "mission",
@@ -72,6 +73,7 @@ class SettingsStore:
                 "name": str(values.get("library_name") or DEFAULT_LIBRARY_NAME),
                 "container_path": DEFAULT_GAME_ROOT,
                 "windows_path": DEFAULT_WINDOWS_ROOT,
+                "linux_path": "",
                 "enabled": True,
             }]
         # 0.3.12+ can manage the local Translator through the Compose
@@ -148,12 +150,17 @@ class SettingsStore:
                 continue
             container_path = str(item.get("container_path") or "").strip()
             windows_path = str(item.get("windows_path") or "").strip()
+            linux_path = str(item.get("linux_path") or "").strip()
             if not container_path.startswith("/") or ".." in Path(container_path).parts:
                 continue
-            if not (
+            if windows_path and not (
                 re.fullmatch(r"[A-Za-z]:\\(?:[^<>:\"|?*]+\\?)*", windows_path)
                 or re.fullmatch(r"\\\\[^\\/]+\\[^\\/]+(?:\\[^<>:\"|?*]+)*\\?", windows_path)
             ):
+                continue
+            if linux_path and (not linux_path.startswith("/") or ".." in Path(linux_path).parts):
+                continue
+            if not windows_path and not linux_path:
                 continue
             seen_ids.add(library_id)
             validated_libraries.append({
@@ -161,6 +168,7 @@ class SettingsStore:
                 "name": str(item.get("name") or library_id).strip()[:120] or library_id,
                 "container_path": str(Path(container_path)),
                 "windows_path": windows_path.rstrip("\\") or windows_path,
+                "linux_path": str(Path(linux_path)) if linux_path else "",
                 "enabled": bool(item.get("enabled", True)),
             })
         if not validated_libraries:

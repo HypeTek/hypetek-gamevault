@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from html import unescape
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
@@ -51,7 +52,7 @@ def game_title_search_queries(value: str) -> list[str]:
 
 
 def _get_json(url: str, timeout: int = 12) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.5.3"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.6.0"})
     try:
         with urlopen(request, timeout=timeout) as response:
             return json.load(response)
@@ -84,10 +85,57 @@ def search_rawg(api_key: str, title: str, limit: int = 6) -> list[dict]:
             "provider_id": str(game_id),
             "name": str(item.get("name") or query)[:160],
             "released": str(item.get("released") or "")[:10],
+            "platform": ", ".join(
+                str((entry.get("platform") or {}).get("name") or "").strip()
+                for entry in (item.get("platforms") or [])
+                if str((entry.get("platform") or {}).get("name") or "").strip()
+            )[:80],
+            "overview": "",
+            "rating": str(item.get("rating") or "")[:80],
+            "players": "",
+            "coop": "",
             "image_url": image_url,
             "source_url": f"https://rawg.io/games/{slug}",
         })
     return results[:limit]
+
+
+def fetch_rawg_game(api_key: str, provider_id: str) -> dict:
+    key = str(api_key or "").strip()
+    game_id = str(provider_id or "").strip()
+    if not key:
+        raise MetadataError("In den Einstellungen ist kein RAWG-API-Key hinterlegt")
+    if not game_id.isdigit():
+        raise MetadataError("Ungültige RAWG-Spiel-ID")
+    payload = _get_json(
+        f"https://{RAWG_API_HOST}/api/games/{game_id}?{urlencode({'key': key})}"
+    )
+    slug = str(payload.get("slug") or "").strip()
+    image_url = str(payload.get("background_image") or "").strip()
+    if not slug or not image_url:
+        raise MetadataError("RAWG lieferte keinen vollständigen Datensatz")
+    description = str(payload.get("description_raw") or "")
+    if not description and payload.get("description"):
+        description = re.sub(r"<[^>]+>", " ", unescape(str(payload["description"])))
+        description = re.sub(r"\s+", " ", description).strip()
+    platforms = ", ".join(
+        str((entry.get("platform") or {}).get("name") or "").strip()
+        for entry in (payload.get("platforms") or [])
+        if str((entry.get("platform") or {}).get("name") or "").strip()
+    )
+    return {
+        "provider": "rawg",
+        "provider_id": game_id,
+        "name": str(payload.get("name") or "")[:160],
+        "released": str(payload.get("released") or "")[:10],
+        "platform": platforms[:80],
+        "overview": description[:12000],
+        "rating": str(payload.get("rating") or "")[:80],
+        "players": "",
+        "coop": "",
+        "image_url": image_url,
+        "source_url": f"https://rawg.io/games/{slug}",
+    }
 
 
 def validate_rawg_key(api_key: str) -> None:
@@ -99,7 +147,7 @@ def validate_rawg_key(api_key: str) -> None:
 
 
 def _get_thegamesdb_json(url: str, timeout: int = 15) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.5.3"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.6.0"})
     try:
         with urlopen(request, timeout=timeout) as response:
             payload = json.load(response)
@@ -198,7 +246,7 @@ def fetch_thegamesdb_image(image_url: str) -> tuple[bytes, str]:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != THEGAMESDB_MEDIA_HOST:
         raise MetadataError("Ungültige TheGamesDB-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.5.3"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.6.0"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()
@@ -231,7 +279,7 @@ def download_rawg_image(image_url: str, destination: Path) -> str:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != RAWG_MEDIA_HOST:
         raise MetadataError("Ungültige RAWG-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.5.3"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.6.0"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()
@@ -253,3 +301,25 @@ def download_rawg_image(image_url: str, destination: Path) -> str:
     target = destination.with_suffix(extension)
     target.write_bytes(data)
     return target.name
+
+
+def fetch_rawg_image(image_url: str) -> tuple[bytes, str]:
+    parsed = urlparse(str(image_url or ""))
+    if parsed.scheme != "https" or parsed.hostname != RAWG_MEDIA_HOST:
+        raise MetadataError("Ungültige RAWG-Bildadresse")
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.6.0"})
+    try:
+        with urlopen(request, timeout=20) as response:
+            content_type = (response.headers.get_content_type() or "").lower()
+            if content_type not in {"image/jpeg", "image/png", "image/webp"}:
+                raise MetadataError("RAWG lieferte keine unterstützte Bilddatei")
+            data = response.read(MAX_IMAGE_BYTES + 1)
+    except HTTPError as error:
+        raise MetadataError(f"RAWG-Bildserver antwortete mit HTTP {error.code}") from error
+    except (URLError, TimeoutError) as error:
+        raise MetadataError("RAWG-Bild konnte nicht heruntergeladen werden") from error
+    if len(data) > MAX_IMAGE_BYTES:
+        raise MetadataError("RAWG-Bild ist größer als 8 MiB")
+    if not (data.startswith(b"\xff\xd8\xff") or data.startswith(b"\x89PNG\r\n\x1a\n") or (data.startswith(b"RIFF") and data[8:12] == b"WEBP")):
+        raise MetadataError("RAWG-Bildsignatur ist ungültig")
+    return data, content_type

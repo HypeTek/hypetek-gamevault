@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- Gemeinsame Metadatensuche in TheGamesDB und RAWG ergänzt. Bei zwei hinterlegten API-Keys stehen TheGamesDB-Treffer zuerst und RAWG-Treffer nahtlos direkt darunter.
+- Ein einzelner ausgefallener Anbieter blockiert die Ergebnisse des anderen nicht; Teilfehler werden sichtbar gemeldet.
+- RAWG-Keys werden vor dem Speichern geprüft, bleiben ausschließlich serverseitig und RAWG-Cover werden über den abgesicherten Bild-Proxy übernommen.
+- Bibliotheken können neben Windows-/SMB-Zuordnungen einen validierten absoluten Linux-Pfad speichern; Starttickets stellen beide Client-Zuordnungen bereit.
+- Oberflächentexte, TrueNAS-Anleitung und Regressionstests für beide Metadatenanbieter und die erweiterten Bibliothekszuordnungen aktualisiert.
+
 ## 0.5.3
 
 - Seitennavigation um anklickbare Seitennummern, Sprung zur ersten und Sprung zur letzten Seite erweitert.

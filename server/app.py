@@ -43,10 +43,15 @@ from translation import (
 )
 from metadata import (
     MetadataError,
+    download_rawg_image,
     download_thegamesdb_image,
+    fetch_rawg_game,
+    fetch_rawg_image,
     fetch_thegamesdb_image,
+    search_rawg,
     search_thegamesdb,
     suggest_game_title,
+    validate_rawg_key,
     validate_thegamesdb_key,
 )
 from maintenance import create_backup, inspect_backup, restore_backup, rotate_backups, validate_backup
@@ -270,6 +275,7 @@ def public_settings() -> dict:
         active_profile["background_name"] = active_profile.get("background_name") or values.get("background_name")
     values["design_profile"] = active_profile
     values["thegamesdb_configured"] = bool(values.get("thegamesdb_api_key"))
+    values["rawg_configured"] = bool(values.get("rawg_api_key"))
     values["translator_configured"] = bool(values.get("translator_url"))
     values["translator_managed"] = bool(DEFAULT_TRANSLATOR_URL)
     values["translator_api_key_configured"] = bool(values.get("translator_api_key"))
@@ -350,6 +356,7 @@ def update_settings():
         "crosshair_cursor",
         "scan_exclusions",
         "thegamesdb_api_key",
+        "rawg_api_key",
         "favorite_content_language",
         "ui_language",
         "motion_preference",
@@ -369,6 +376,11 @@ def update_settings():
             validate_thegamesdb_key(str(changes["thegamesdb_api_key"]))
         except MetadataError as error:
             return jsonify(error=f"TheGamesDB-Key wurde nicht gespeichert: {error}"), 502
+    if changes.get("rawg_api_key"):
+        try:
+            validate_rawg_key(str(changes["rawg_api_key"]))
+        except MetadataError as error:
+            return jsonify(error=f"RAWG-Key wurde nicht gespeichert: {error}"), 502
     if "translator_url" in changes:
         try:
             changes["translator_url"] = normalize_translator_url(changes["translator_url"])
@@ -912,24 +924,42 @@ def search_game_metadata(game_id: str):
         abort(404)
     payload = request.get_json(silent=True) or {}
     query = suggest_game_title(str(payload.get("query") or game["title"]).strip()[:160])
-    try:
-        results = search_thegamesdb(
-            settings_store.load().get("thegamesdb_api_key", ""), query
-        )
-    except MetadataError as error:
-        return jsonify(error=str(error)), 502
+    settings = settings_store.load()
+    providers = (
+        ("TheGamesDB", settings.get("thegamesdb_api_key", ""), search_thegamesdb),
+        ("RAWG", settings.get("rawg_api_key", ""), search_rawg),
+    )
+    results, warnings, attempted = [], [], 0
+    for provider_name, api_key, search_function in providers:
+        if not api_key:
+            continue
+        attempted += 1
+        try:
+            # Provider order is intentional: TheGamesDB first, RAWG directly
+            # below it in the same result list.
+            results.extend(search_function(api_key, query))
+        except MetadataError as error:
+            warnings.append(f"{provider_name}: {error}")
+    if not attempted:
+        return jsonify(error="Bitte zuerst einen TheGamesDB- oder RAWG-API-Key hinterlegen"), 409
+    if not results and warnings:
+        return jsonify(error=" · ".join(warnings)), 502
     for result in results:
         result["preview_url"] = url_for(
-            "metadata_preview", url=result["image_url"]
+            "metadata_preview", provider=result["provider"], url=result["image_url"]
         )
-    return jsonify(query=query, results=results)
+    return jsonify(query=query, results=results, warnings=warnings)
 
 
 @app.get("/api/metadata/preview")
 @login_required
 def metadata_preview():
     try:
-        data, content_type = fetch_thegamesdb_image(request.args.get("url", ""))
+        provider = request.args.get("provider", "thegamesdb")
+        fetcher = fetch_rawg_image if provider == "rawg" else fetch_thegamesdb_image
+        if provider not in {"rawg", "thegamesdb"}:
+            return jsonify(error="Unbekannter Metadatenanbieter"), 400
+        data, content_type = fetcher(request.args.get("url", ""))
     except MetadataError as error:
         return jsonify(error=str(error)), 502
     response = send_file(BytesIO(data), mimetype=content_type, max_age=14400)
@@ -945,23 +975,33 @@ def apply_game_metadata(game_id: str):
     if not game:
         abort(404)
     payload = request.get_json(force=True)
-    if payload.get("provider") != "thegamesdb":
+    provider = str(payload.get("provider") or "")
+    if provider not in {"thegamesdb", "rawg"}:
         return jsonify(error="Unbekannter Metadatenanbieter"), 400
     source_url = str(payload.get("source_url") or "")
     parsed_source = urlparse(source_url)
     provider_id = str(payload.get("provider_id") or "")[:80]
-    source_id = (parse_qs(parsed_source.query).get("id") or [""])[0]
-    if (
-        parsed_source.scheme != "https"
-        or parsed_source.hostname != "thegamesdb.net"
-        or parsed_source.path != "/game.php"
-        or not provider_id.isdigit()
-        or source_id != provider_id
-    ):
-        return jsonify(error="Ungültiger TheGamesDB-Quellenlink"), 400
+    if not provider_id.isdigit():
+        return jsonify(error="Ungültige Anbieter-ID"), 400
+    if provider == "thegamesdb":
+        source_id = (parse_qs(parsed_source.query).get("id") or [""])[0]
+        if parsed_source.scheme != "https" or parsed_source.hostname != "thegamesdb.net" or parsed_source.path != "/game.php" or source_id != provider_id:
+            return jsonify(error="Ungültiger TheGamesDB-Quellenlink"), 400
+        authoritative = payload
+        downloader = download_thegamesdb_image
+    else:
+        if parsed_source.scheme != "https" or parsed_source.hostname != "rawg.io" or not parsed_source.path.startswith("/games/"):
+            return jsonify(error="Ungültiger RAWG-Quellenlink"), 400
+        try:
+            authoritative = fetch_rawg_game(settings_store.load().get("rawg_api_key", ""), provider_id)
+        except MetadataError as error:
+            return jsonify(error=str(error)), 502
+        if authoritative["source_url"] != source_url:
+            return jsonify(error="RAWG-Datensatz und Quellenlink stimmen nicht überein"), 400
+        downloader = download_rawg_image
     try:
-        name = download_thegamesdb_image(
-            str(payload.get("image_url") or ""),
+        name = downloader(
+            str(authoritative.get("image_url") or ""),
             COVER_DIR / f"{game_id}-{secrets.token_hex(5)}",
         )
     except MetadataError as error:
@@ -969,18 +1009,18 @@ def apply_game_metadata(game_id: str):
     delete_game_covers(game_id, keep_name=name)
     database.update_game(game_id, {
         "cover_name": name,
-        "metadata_provider": "thegamesdb",
+        "metadata_provider": provider,
         "metadata_provider_id": provider_id,
         "metadata_source_url": source_url[:500],
-        "metadata_title": str(payload.get("name") or "")[:160],
-        "metadata_overview": str(payload.get("overview") or "")[:12000],
-        "metadata_overview_original": str(payload.get("overview") or "")[:12000],
+        "metadata_title": str(authoritative.get("name") or "")[:160],
+        "metadata_overview": str(authoritative.get("overview") or "")[:12000],
+        "metadata_overview_original": str(authoritative.get("overview") or "")[:12000],
         "metadata_overview_language": "original",
-        "metadata_release_date": str(payload.get("released") or "")[:10],
-        "metadata_platform": str(payload.get("platform") or "")[:80],
-        "metadata_rating": str(payload.get("rating") or "")[:80],
-        "metadata_players": str(payload.get("players") or "")[:40],
-        "metadata_coop": str(payload.get("coop") or "")[:40],
+        "metadata_release_date": str(authoritative.get("released") or "")[:10],
+        "metadata_platform": str(authoritative.get("platform") or "")[:80],
+        "metadata_rating": str(authoritative.get("rating") or "")[:80],
+        "metadata_players": str(authoritative.get("players") or "")[:40],
+        "metadata_coop": str(authoritative.get("coop") or "")[:40],
     })
     return jsonify(database.get_game(game_id))
 
@@ -1216,6 +1256,7 @@ def agent_ticket(token: str):
         library_id=game["library_id"],
         library_name=library_by_id(game["library_id"])["name"],
         windows_path_hint=library_by_id(game["library_id"])["windows_path"],
+        linux_path_hint=library_by_id(game["library_id"]).get("linux_path", ""),
         ui_language=settings_store.load().get("ui_language", "auto"),
     )
 

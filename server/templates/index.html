@@ -198,9 +198,13 @@
         <label>Scanner-Ausschlüsse
           <textarea id="settingExclusions" rows="3" placeholder="hadmin, System Volume Information"></textarea>
         </label>
-        <label>TheGamesDB-API-Key (optional)
+        <label><span data-i18n="settings.gamesDbKey">TheGamesDB-API-Key (optional)</span>
           <input id="settingTheGamesDbApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
           <span id="theGamesDbKeyStatus" class="field-hint"></span>
+        </label>
+        <label><span data-i18n="settings.rawgKey">RAWG-API-Key (optional)</span>
+          <input id="settingRawgApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
+          <span id="rawgKeyStatus" class="field-hint"></span>
         </label>
         <label>Sprache der Oberfläche
           <select id="settingUiLanguage">
@@ -245,7 +249,7 @@
       </details>
       <div class="settings-footer">
         <div class="version-mark"><strong>HypeTek Mission Control <span id="appVersion">–</span></strong><span>© 2026 Michael Härtwig · HypeTek</span></div>
-        <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button type="button" data-close-settings class="secondary">Abbrechen</button><button id="saveSettingsButton" type="submit" value="default">Speichern</button></div>
+        <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeRawgKeyButton" type="button" class="ghost" data-i18n="settings.removeRawg">RAWG-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button type="button" data-close-settings class="secondary">Abbrechen</button><button id="saveSettingsButton" type="submit" value="default">Speichern</button></div>
       </div>
     </form>
   </dialog>
@@ -343,10 +347,10 @@
         </div>
       </section>
       <section class="metadata-search">
-        <label>Cover bei TheGamesDB suchen
+        <label>Cover und Spielinformationen suchen
           <div class="metadata-searchbar"><input id="metadataQuery" type="search" maxlength="160"><button id="metadataSearchButton" type="button" class="secondary">Suchen</button></div>
         </label>
-        <p id="metadataSearchHint" class="field-hint">Nur beim Klick auf „Suchen“ wird der eingegebene Titel an TheGamesDB übertragen. Bei Abkürzungen bitte den vollständigen Namen verwenden, zum Beispiel „Assassin’s Creed Valhalla“. Ein Treffer wird erst nach deiner Auswahl gespeichert.</p>
+        <p id="metadataSearchHint" class="field-hint">TheGamesDB und RAWG werden gemeinsam durchsucht. TheGamesDB-Treffer stehen zuerst, RAWG-Treffer direkt darunter. Ein Treffer wird erst nach deiner Auswahl gespeichert.</p>
         <div id="metadataResults" class="metadata-results"></div>
       </section>
       <div id="editNote" class="note"></div>

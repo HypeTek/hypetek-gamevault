@@ -19,6 +19,9 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 ### Bibliothek und Darstellung
 
+- kombinierte Metadatensuche in TheGamesDB und RAWG mit stabiler Provider-Reihenfolge und unabhängigem Fehler-Fallback (vollständig seit 0.6.0)
+- sichere Windows- und Linux-Pfadzuordnungen je Bibliothek in Einstellungen und Starttickets (Grundlage seit 0.6.0); nativer Linux-Agent folgt
+
 - echtes Mehrbibliotheken-Modell für zusätzliche Server-/Container-Pfade mit eigener
   sicherer Windows-Pfadzuordnung je Bibliothek; keine unüberprüften Browserpfade
   (vollständig seit 0.5.0)

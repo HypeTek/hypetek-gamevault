@@ -5,9 +5,9 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.5.3
+## Funktionen in Version 0.6.0
 
-- mehrere getrennte Spielebibliotheken mit eigener TrueNAS- und Windows-/SMB-Zuordnung verwalten
+- mehrere getrennte Spielebibliotheken mit eigener TrueNAS-, Windows-/SMB- und Linux-Zuordnung verwalten
 - Bibliotheken einzeln oder gemeinsam scannen und im Dashboard filtern
 - kompakte Seitennummerierung mit direktem Sprung zur ersten und letzten Seite
 - vorhandene 0.4.x-Datenbank automatisch und ohne Verlust als primäre Bibliothek übernehmen
@@ -32,7 +32,7 @@ verändern oder in ein neues Format zu zwingen.
 - geführter Windows-EXE-Installer mit Serveradresse, Games-Pfad und Agent-Token
 - unsichtbarer Agentenstart; nur die Sicherheitsabfrage wird angezeigt
 - Windows PowerShell 5.1 und PowerShell 7
-- optionale, manuell ausgelöste TheGamesDB-Coversuche mit Vorschau und Quellenlink
+- gemeinsame, manuell ausgelöste Metadatensuche in TheGamesDB und RAWG mit Vorschau und Quellenlink
 - Spiele-Infofenster mit lokal gespeichertem Spielinhalt und getrennten eigenen Bemerkungen
 - Installations- und Ordneraktionen direkt im Spiele-Infofenster
 - integrierter lokaler Mission Control Translator als interner zweiter Container
@@ -99,20 +99,26 @@ Die alten `GAMEVAULT_*`-Umgebungsvariablen bleiben für Upgrades gültig. Allgem
 Darstellungswerte werden in `/config/mission-control-settings.json`, eigene Profile
 atomar in `/config/mission-control-designs.json` gespeichert.
 
-### Optionale TheGamesDB-Coversuche
+### Optionale Metadatensuche in TheGamesDB und RAWG
 
-Unter **Einstellungen** kann ein eigener TheGamesDB-API-Key hinterlegt werden. Mission
-Control gibt den gespeicherten Key nicht an den Browser zurück. Erst wenn im
-Bearbeiten-Dialog ausdrücklich **Suchen** gewählt wird, wird der dort eingegebene
-Titel an TheGamesDB übertragen. Ein Cover wird erst nach manueller Auswahl lokal unter
-`/config/covers` gespeichert. Die jeweilige Karte verlinkt die TheGamesDB-Quelle. Ohne Key
-bleiben Bibliothek, manuelle Cover-Uploads und alle Startfunktionen unverändert nutzbar.
+Unter **Einstellungen** können eigene API-Keys für TheGamesDB und RAWG hinterlegt werden.
+Mission Control gibt die gespeicherten Keys nicht an den Browser zurück. Sind beide Keys
+vorhanden, durchsucht ein Klick auf **Suchen** zuerst TheGamesDB und danach RAWG. Die
+Treffer erscheinen ohne getrennte Ansicht in genau dieser Reihenfolge in derselben Liste.
+Fällt ein Anbieter aus, bleiben Treffer des anderen nutzbar und die Oberfläche zeigt eine
+Warnung. Cover und Metadaten werden erst nach manueller Auswahl lokal gespeichert.
 
 API-Key: <https://api.thegamesdb.net/key.php>  
 Offizielle API-Dokumentation: <https://api.thegamesdb.net/>
 
-RAWG bleibt als inaktiver, später erneut prüfbarer Provider im Code erhalten. Bereits
-übernommene RAWG-Cover und Quellenangaben werden bei einem Upgrade nicht entfernt.
+Auch mit nur einem der beiden Keys bleibt die Suche verwendbar. Ohne API-Key bleiben
+Bibliothek, manuelle Cover-Uploads und alle Startfunktionen unverändert nutzbar.
+
+Die Bibliothekseinstellungen unterscheiden zwischen dem im Container eingebundenen
+Pfad und lokalen Zuordnungen auf Clients. Windows verwendet Laufwerks- oder UNC-Pfade;
+für künftige Linux-Clients kann zusätzlich ein absoluter Linux-Pfad gespeichert werden.
+Der Linux-Pfad wird bereits sicher validiert und in Starttickets bereitgestellt; ein
+vollständiger nativer Linux-Agent gehört weiterhin zur Roadmap.
 
 ## Tests
 
