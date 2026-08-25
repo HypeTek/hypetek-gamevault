@@ -186,7 +186,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("libretranslate/libretranslate:v1.9.6", compose)
         self.assertIn("MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000", compose)
         self.assertIn("LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr", compose)
-        self.assertIn('com.hypetek.mission-control.deployment: "0.5.1"', compose)
+        self.assertIn('com.hypetek.mission-control.deployment: "0.5.2"', compose)
         self.assertNotIn('"5000:5000"', compose)
 
         notice = (ROOT / "NOTICE.txt").read_text(encoding="utf-8")

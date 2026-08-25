@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.2
+
+- Automatische Titelwahl vergleicht Ordnernamen mit ISO-, Archiv- und Abbildnamen und bevorzugt den aussagekräftigeren Kandidaten.
+- Kryptische Archivcodes wie `HIFRUS`, `WOBBLLIF` oder `HAITTHRAINBO` werden dadurch als „Hi-Fi Rush“, „Wobbly Life“ beziehungsweise „Hail to the Rainbow“ angezeigt.
+- Generische Mediennamen wie `game.iso`, `disc1.iso` oder `setup` ersetzen weiterhin keinen brauchbaren Ordnernamen.
+- Manuell gepflegte Titel und bereits übernommene TheGamesDB-Metadaten bleiben bei einem erneuten Scan erhalten.
+
 ## 0.5.1
 
 - Einstellungsdialog bleibt auch im verkleinerten Browser- und App-Fenster vollständig bedienbar; die Aktionsleiste bleibt beim Scrollen sichtbar.

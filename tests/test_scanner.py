@@ -74,6 +74,32 @@ class ScannerTests(unittest.TestCase):
                 "the primary library must keep pre-0.5 game IDs",
             )
 
+    def test_readable_media_name_beats_cryptic_folder_code(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            samples = {
+                "HIFRUS": "Hi-Fi Rush.iso",
+                "WOBBLLIF": "Wobbly Life.iso",
+                "HAITTHRAINBO": "Hail to the Rainbow.iso",
+            }
+            for folder, image in samples.items():
+                entry = root / folder
+                entry.mkdir()
+                (entry / image).write_bytes(b"iso")
+
+            result = {item.relative_path: item.title for item in scan_library(root)}
+            self.assertEqual(result["HIFRUS"], "Hi-Fi Rush")
+            self.assertEqual(result["WOBBLLIF"], "Wobbly Life")
+            self.assertEqual(result["HAITTHRAINBO"], "Hail to the Rainbow")
+
+    def test_generic_media_name_does_not_replace_useful_folder(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            entry = root / "DOOM"
+            entry.mkdir()
+            (entry / "game.iso").write_bytes(b"iso")
+            self.assertEqual(scan_library(root)[0].title, "DOOM")
+
 
 if __name__ == "__main__":
     unittest.main()

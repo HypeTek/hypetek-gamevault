@@ -31,6 +31,22 @@ EXCLUDED_DIRS = {
 ARCHIVE_EXTENSIONS = {".zip", ".7z", ".rar"}
 NATIVE_IMAGE_EXTENSIONS = {".iso"}
 MANUAL_IMAGE_EXTENSIONS = {".cue", ".bin", ".img", ".mdf", ".mds"}
+TITLE_SOURCE_EXTENSIONS = NATIVE_IMAGE_EXTENSIONS | ARCHIVE_EXTENSIONS | MANUAL_IMAGE_EXTENSIONS
+GENERIC_MEDIA_TITLES = {
+    "cd",
+    "cd1",
+    "disc",
+    "disc1",
+    "disk",
+    "disk1",
+    "dvd",
+    "dvd1",
+    "game",
+    "image",
+    "install",
+    "installer",
+    "setup",
+}
 
 
 @dataclass(frozen=True)
@@ -54,14 +70,65 @@ def stable_id(relative_path: str, library_id: str = "primary") -> str:
 
 
 def clean_title(name: str) -> str:
-    title = Path(name).stem if Path(name).suffix.lower() in (
-        NATIVE_IMAGE_EXTENSIONS | ARCHIVE_EXTENSIONS
-    ) else name
+    title = Path(name).stem if Path(name).suffix.lower() in TITLE_SOURCE_EXTENSIONS else name
     title = re.sub(r"\s*\[(?:fitgirl(?: repack)?|repack)\]\s*", " ", title, flags=re.I)
     title = re.sub(r"\s*--[_ ]*fitgirl-repacks(?:\.site)?[_ ]*--\s*", " ", title, flags=re.I)
     title = re.sub(r"[._]+", " ", title)
     title = re.sub(r"\s+", " ", title).strip(" -_")
     return title or name
+
+
+def _title_quality(title: str, *, is_folder: bool) -> int:
+    """Rate how likely a filesystem label is to be a useful display title.
+
+    Release collections often use short catalogue codes as directory names,
+    while the installation image inside carries the human-readable title.
+    The score intentionally favours readable multi-word names but keeps a
+    meaningful directory name over generic media such as ``game.iso``.
+    """
+    normalized = re.sub(r"[^a-z0-9]+", "", title.casefold())
+    if not normalized:
+        return -1000
+    if normalized in GENERIC_MEDIA_TITLES or re.fullmatch(r"(?:cd|disc|disk|dvd)\d+", normalized):
+        return -120
+
+    words = re.findall(r"[\w]+", title, flags=re.UNICODE)
+    score = min(len(title), 40)
+    if len(words) >= 2:
+        score += 42 + min(len(words), 5) * 3
+    if re.search(r"[a-z]", title) and re.search(r"[A-Z]", title):
+        score += 12
+    if re.search(r"[-'’:]", title):
+        score += 5
+    if is_folder:
+        score += 5
+
+    # A compact all-caps token is often an archive/catalogue code (HIFRUS,
+    # WOBBLLIF, ...). Do not reject genuine short titles such as DOOM, but let
+    # a clearly readable media filename beat longer code-like labels.
+    if len(words) == 1 and title.isupper() and len(normalized) >= 5:
+        score -= 38
+    return score
+
+
+def select_detected_title(entry: Path, files: list[Path]) -> str:
+    """Choose the best automatic title without consulting an online service."""
+    folder_title = clean_title(entry.name)
+    candidates: list[tuple[int, int, str]] = [
+        (_title_quality(folder_title, is_folder=True), 0, folder_title)
+    ]
+    for file in files:
+        if file.suffix.casefold() not in TITLE_SOURCE_EXTENSIONS:
+            continue
+        title = clean_title(file.name)
+        try:
+            depth = len(file.relative_to(entry).parts) - 1 if entry.is_dir() else 0
+        except ValueError:
+            depth = 0
+        # Prefer a top-level image when otherwise equally readable.
+        score = _title_quality(title, is_folder=False) - min(depth, 8) * 3
+        candidates.append((score, -depth, title))
+    return max(candidates, key=lambda candidate: (candidate[0], candidate[1], len(candidate[2])))[2]
 
 
 def _is_excluded(file: Path, entry: Path) -> bool:
@@ -150,7 +217,7 @@ def scan_entry(root: Path, entry: Path, library_id: str = "primary") -> ScanResu
     return ScanResult(
         game_id=stable_id(relative_path, library_id),
         relative_path=relative_path,
-        title=clean_title(entry.name),
+        title=select_detected_title(entry, files),
         detected_type=detected_type,
         launcher_relative_path=launcher_relative,
         file_count=file_count,
