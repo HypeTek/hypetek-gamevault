@@ -38,6 +38,9 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('id="designProfileSaveStatus"', template)
         self.assertIn('id="settingUiLanguage"', template)
         self.assertIn('id="settingMotionPreference"', template)
+        self.assertIn('id="librarySettingsRows"', template)
+        self.assertIn('id="libraryFilter"', template)
+        self.assertIn('libraries: collectLibrarySettings()', javascript)
         self.assertIn('id="skipToMain"', template)
         self.assertIn('id="cancelEditorButton" type="button"', template)
         self.assertIn('id="closeEditorButton" type="button"', template)
@@ -179,7 +182,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("libretranslate/libretranslate:v1.9.6", compose)
         self.assertIn("MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000", compose)
         self.assertIn("LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr", compose)
-        self.assertIn('com.hypetek.mission-control.deployment: "0.4.2"', compose)
+        self.assertIn('com.hypetek.mission-control.deployment: "0.5.0"', compose)
         self.assertNotIn('"5000:5000"', compose)
 
         notice = (ROOT / "NOTICE.txt").read_text(encoding="utf-8")

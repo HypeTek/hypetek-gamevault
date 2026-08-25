@@ -11,7 +11,8 @@ from scanner import ScanResult
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS games (
     id TEXT PRIMARY KEY,
-    relative_path TEXT NOT NULL UNIQUE,
+    library_id TEXT NOT NULL DEFAULT 'primary',
+    relative_path TEXT NOT NULL,
     detected_title TEXT NOT NULL,
     custom_title TEXT,
     detected_type TEXT NOT NULL,
@@ -57,6 +58,17 @@ CREATE TABLE IF NOT EXISTS agent_probes (
 );
 """
 
+LAUNCH_TICKETS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS launch_tickets (
+    token TEXT PRIMARY KEY,
+    game_id TEXT NOT NULL,
+    requested_action TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    FOREIGN KEY(game_id) REFERENCES games(id)
+);
+"""
+
 
 class Database:
     def __init__(self, path: Path):
@@ -75,6 +87,19 @@ class Database:
             game_columns = {
                 row["name"] for row in connection.execute("PRAGMA table_info(games)").fetchall()
             }
+            if "library_id" not in game_columns:
+                connection.execute(
+                    "ALTER TABLE games ADD COLUMN library_id TEXT NOT NULL DEFAULT 'primary'"
+                )
+                # Older databases have an automatic UNIQUE index on
+                # relative_path. It is harmless for the migrated primary
+                # library but would block equal paths in later libraries, so
+                # rebuild the table once using the current schema.
+                self._rebuild_games_for_libraries(connection)
+                game_columns = {
+                    row["name"]
+                    for row in connection.execute("PRAGMA table_info(games)").fetchall()
+                }
             if "cover_position_y" not in game_columns:
                 connection.execute(
                     "ALTER TABLE games ADD COLUMN cover_position_y INTEGER NOT NULL DEFAULT 50"
@@ -99,25 +124,49 @@ class Database:
             ):
                 if name not in game_columns:
                     connection.execute(f"ALTER TABLE games ADD COLUMN {name} TEXT")
+            connection.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS games_library_path "
+                "ON games(library_id, relative_path)"
+            )
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path)
         connection.row_factory = sqlite3.Row
         return connection
 
-    def apply_scan(self, results: list[ScanResult]) -> None:
+    @staticmethod
+    def _rebuild_games_for_libraries(connection: sqlite3.Connection) -> None:
+        columns = [row["name"] for row in connection.execute("PRAGMA table_info(games)")]
+        # Tickets live for only two minutes and can safely be discarded during
+        # this one-time migration. Dropping them avoids SQLite rewriting their
+        # foreign key to the temporary legacy table name.
+        connection.execute("DROP TABLE IF EXISTS launch_tickets")
+        connection.execute("ALTER TABLE games RENAME TO games_legacy_library_migration")
+        schema = SCHEMA.split("CREATE TABLE IF NOT EXISTS launch_tickets", 1)[0]
+        connection.executescript(schema)
+        target_columns = [row["name"] for row in connection.execute("PRAGMA table_info(games)")]
+        shared = [name for name in target_columns if name in columns]
+        names = ", ".join(shared)
+        connection.execute(
+            f"INSERT INTO games ({names}) SELECT {names} FROM games_legacy_library_migration"
+        )
+        connection.execute("DROP TABLE games_legacy_library_migration")
+        connection.executescript(LAUNCH_TICKETS_SCHEMA)
+
+    def apply_scan(self, results: list[ScanResult], library_id: str = "primary") -> None:
         now = int(time.time())
         with self.connect() as connection:
-            connection.execute("UPDATE games SET present = 0")
+            connection.execute("UPDATE games SET present = 0 WHERE library_id = ?", (library_id,))
             for result in results:
                 connection.execute(
                     """
                     INSERT INTO games (
-                        id, relative_path, detected_title, detected_type,
+                        id, library_id, relative_path, detected_title, detected_type,
                         detected_launcher, detection_note, file_count,
                         logical_size, present, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
                     ON CONFLICT(id) DO UPDATE SET
+                        library_id=excluded.library_id,
                         relative_path=excluded.relative_path,
                         detected_title=excluded.detected_title,
                         detected_type=excluded.detected_type,
@@ -130,6 +179,7 @@ class Database:
                     """,
                     (
                         result.game_id,
+                        library_id,
                         result.relative_path,
                         result.title,
                         result.detected_type,
@@ -141,11 +191,16 @@ class Database:
                     ),
                 )
 
-    def list_games(self, include_hidden: bool = False) -> list[dict]:
+    def list_games(self, include_hidden: bool = False, library_id: str | None = None) -> list[dict]:
         where = "present = 1" if include_hidden else "present = 1 AND hidden = 0"
+        parameters: tuple = ()
+        if library_id:
+            where += " AND library_id = ?"
+            parameters = (library_id,)
         with self.connect() as connection:
             rows = connection.execute(
-                f"SELECT * FROM games WHERE {where} ORDER BY COALESCE(custom_title, detected_title) COLLATE NOCASE"
+                f"SELECT * FROM games WHERE {where} ORDER BY COALESCE(custom_title, detected_title) COLLATE NOCASE",
+                parameters,
             ).fetchall()
         return [self._row_to_game(row) for row in rows]
 

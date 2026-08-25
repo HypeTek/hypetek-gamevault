@@ -16,10 +16,19 @@ DEFAULT_LIBRARY_NAME = os.environ.get(
 DEFAULT_TRANSLATOR_URL = os.environ.get(
     "MISSION_CONTROL_TRANSLATOR_URL", ""
 ).strip().rstrip("/")
+DEFAULT_GAME_ROOT = os.environ.get("GAMEVAULT_GAME_ROOT", "/games").strip() or "/games"
+DEFAULT_WINDOWS_ROOT = os.environ.get("GAMEVAULT_WINDOWS_ROOT", "Z:\\Game").strip() or "Z:\\Game"
 
 DEFAULTS = {
     "server_name": DEFAULT_SERVER_NAME,
     "library_name": DEFAULT_LIBRARY_NAME,
+    "libraries": [{
+        "id": "primary",
+        "name": DEFAULT_LIBRARY_NAME,
+        "container_path": DEFAULT_GAME_ROOT,
+        "windows_path": DEFAULT_WINDOWS_ROOT,
+        "enabled": True,
+    }],
     "theme": "mission",
     "background_name": None,
     "background_opacity": 0.28,
@@ -45,12 +54,26 @@ class SettingsStore:
 
     def load(self) -> dict:
         values = DEFAULTS.copy()
+        stored = {}
         try:
             stored = json.loads(self.path.read_text(encoding="utf-8"))
             if isinstance(stored, dict):
                 values.update(stored)
+            else:
+                stored = {}
         except (OSError, ValueError, TypeError):
-            pass
+            stored = {}
+        # Upgrade older single-library installations without changing their
+        # visible archive name or paths. The first library remains "primary"
+        # and therefore keeps the historic game IDs and all attached metadata.
+        if "libraries" not in stored:
+            values["libraries"] = [{
+                "id": "primary",
+                "name": str(values.get("library_name") or DEFAULT_LIBRARY_NAME),
+                "container_path": DEFAULT_GAME_ROOT,
+                "windows_path": DEFAULT_WINDOWS_ROOT,
+                "enabled": True,
+            }]
         # 0.3.12+ can manage the local Translator through the Compose
         # environment. Existing installations usually have an explicitly
         # stored empty value from older releases; in that case the managed
@@ -111,9 +134,42 @@ class SettingsStore:
         if background_name is not None:
             background_name = Path(str(background_name)).name
 
+        libraries = values.get("libraries")
+        if not isinstance(libraries, list) or not libraries:
+            libraries = DEFAULTS["libraries"]
+        validated_libraries = []
+        seen_ids = set()
+        for index, item in enumerate(libraries[:32]):
+            if not isinstance(item, dict):
+                continue
+            raw_id = str(item.get("id") or ("primary" if index == 0 else "")).strip().casefold()
+            library_id = re.sub(r"[^a-z0-9_-]+", "-", raw_id).strip("-")[:40]
+            if not library_id or library_id in seen_ids:
+                continue
+            container_path = str(item.get("container_path") or "").strip()
+            windows_path = str(item.get("windows_path") or "").strip()
+            if not container_path.startswith("/") or ".." in Path(container_path).parts:
+                continue
+            if not (
+                re.fullmatch(r"[A-Za-z]:\\(?:[^<>:\"|?*]+\\?)*", windows_path)
+                or re.fullmatch(r"\\\\[^\\/]+\\[^\\/]+(?:\\[^<>:\"|?*]+)*\\?", windows_path)
+            ):
+                continue
+            seen_ids.add(library_id)
+            validated_libraries.append({
+                "id": library_id,
+                "name": str(item.get("name") or library_id).strip()[:120] or library_id,
+                "container_path": str(Path(container_path)),
+                "windows_path": windows_path.rstrip("\\") or windows_path,
+                "enabled": bool(item.get("enabled", True)),
+            })
+        if not validated_libraries:
+            validated_libraries = [dict(DEFAULTS["libraries"][0])]
+
         return {
             "server_name": server_name or DEFAULT_SERVER_NAME,
             "library_name": library_name or DEFAULT_LIBRARY_NAME,
+            "libraries": validated_libraries,
             "theme": theme,
             "background_name": background_name,
             "background_opacity": opacity,

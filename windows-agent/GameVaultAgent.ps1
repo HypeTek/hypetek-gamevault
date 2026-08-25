@@ -21,6 +21,32 @@ function Show-Error([string]$Message) {
     ) | Out-Null
 }
 
+function Save-AgentConfig($Config) {
+    $json = $Config | ConvertTo-Json -Depth 8
+    $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+    [IO.File]::WriteAllText($ConfigPath, $json + [Environment]::NewLine, $utf8WithoutBom)
+}
+
+function Confirm-LibraryMapping($Config, [string]$LibraryId, [string]$LibraryName, [string]$SuggestedPath) {
+    if ([string]::IsNullOrWhiteSpace($SuggestedPath) -or -not (Test-Path -LiteralPath $SuggestedPath -PathType Container)) {
+        return $null
+    }
+    $message = "Mission Control möchte die Bibliothek '$LibraryName' auf diesem PC zuordnen:`n`n$SuggestedPath`n`nDiesen erreichbaren Pfad verwenden und lokal speichern?"
+    $answer = [System.Windows.MessageBox]::Show(
+        $message,
+        "HypeTek Mission Control – Bibliothek zuordnen",
+        [System.Windows.MessageBoxButton]::YesNo,
+        [System.Windows.MessageBoxImage]::Question
+    )
+    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return $null }
+    if (-not $Config.libraries) {
+        $Config | Add-Member -NotePropertyName libraries -NotePropertyValue ([PSCustomObject]@{}) -Force
+    }
+    $Config.libraries | Add-Member -NotePropertyName $LibraryId -NotePropertyValue $SuggestedPath -Force
+    Save-AgentConfig $Config
+    return $SuggestedPath
+}
+
 function Assert-PathInsideRoot([string]$Root, [string]$RelativePath) {
     if ([string]::IsNullOrWhiteSpace($RelativePath)) {
         throw "Der Server hat keinen Startpfad geliefert."
@@ -105,8 +131,11 @@ try {
         throw "Agent-Konfiguration fehlt: $ConfigPath"
     }
     $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
-    foreach ($required in @("server_url", "agent_token", "game_root")) {
+    foreach ($required in @("server_url", "agent_token")) {
         if ([string]::IsNullOrWhiteSpace($config.$required)) { throw "Konfigurationswert fehlt: $required" }
+    }
+    if (-not $config.libraries -and [string]::IsNullOrWhiteSpace($config.game_root)) {
+        throw "Konfigurationswert fehlt: libraries"
     }
     if ([string]::IsNullOrWhiteSpace($ProtocolUrl)) { throw "Kein Mission-Control-Auftrag empfangen." }
     $uri = [Uri]$ProtocolUrl
@@ -141,7 +170,22 @@ try {
     if ([string]::IsNullOrWhiteSpace($ticket)) { throw "Ticket fehlt im Mission-Control-Link." }
 
     $manifest = Get-Ticket $config.server_url $config.agent_token $ticket
-    $source = Assert-PathInsideRoot $config.game_root $manifest.launcher
+    $libraryId = if ([string]::IsNullOrWhiteSpace([string]$manifest.library_id)) { "primary" } else { [string]$manifest.library_id }
+    $gameRoot = $null
+    if ($config.libraries) {
+        $mapping = $config.libraries.PSObject.Properties[$libraryId]
+        if ($mapping) { $gameRoot = [string]$mapping.Value }
+    }
+    if ([string]::IsNullOrWhiteSpace($gameRoot) -and $libraryId -eq "primary") {
+        $gameRoot = [string]$config.game_root
+    }
+    if ([string]::IsNullOrWhiteSpace($gameRoot)) {
+        $gameRoot = Confirm-LibraryMapping $config $libraryId ([string]$manifest.library_name) ([string]$manifest.windows_path_hint)
+    }
+    if ([string]::IsNullOrWhiteSpace($gameRoot)) {
+        throw "Für die Bibliothek '$libraryId' ist auf diesem Windows-PC kein bestätigter Pfad eingerichtet. Prüfe das SMB-Laufwerk und starte die Aktion erneut."
+    }
+    $source = Assert-PathInsideRoot $gameRoot $manifest.launcher
     if (-not (Test-Path -LiteralPath $source)) {
         throw "Der Pfad ist über SMB nicht erreichbar:`n$source"
     }

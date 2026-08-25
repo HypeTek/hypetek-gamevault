@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- Mehrere getrennte Spielebibliotheken mit eigener stabiler ID, Bezeichnung, nur-lesbarem Container-Mount und Windows-/SMB-Pfad ergänzt.
+- Bibliotheksfilter im Dashboard sowie gezielter oder gemeinsamer Scan aller aktivierten Bibliotheken hinzugefügt.
+- Datenbank migrationssicher auf bibliotheksbezogene Pfade umgestellt; gleiche Ordnernamen dürfen in verschiedenen Archiven vorkommen und ein Scan verändert nur die Anwesenheit seiner eigenen Bibliothek.
+- Starttickets enthalten Bibliotheks-ID und -Name. Der Windows-Agent verwendet lokale Pfadzuordnungen und übernimmt neue erreichbare Pfade erst nach ausdrücklicher Bestätigung.
+- Containerpfade werden auf freigegebene Mount-Wurzeln begrenzt; identische und ineinander verschachtelte Bibliotheken werden abgelehnt.
+- TrueNAS-, Compose- und Windows-Agent-Dokumentation für zusätzliche Archive erweitert. Sämtliche Wartungs-, PWA-, Übersetzungs- und Designfunktionen aus 0.4.2 bleiben erhalten.
+
 ## 0.4.2
 
 - Sicherungsdateien werden vor dem Restore geprüft und mit Version, Erstellzeit, Inhalt und Größe angezeigt.

@@ -90,6 +90,9 @@
         <option value="archive">Archiv</option>
         <option value="manual_image">Sonderabbild</option>
       </select>
+      <select id="libraryFilter" aria-label="Bibliothek">
+        <option value="all">Alle Bibliotheken</option>
+      </select>
       <div class="library-display-controls" aria-label="Bibliotheksdarstellung" data-i18n-aria="accessibility.libraryDisplay">
         <button id="viewGridButton" class="secondary view-button" type="button" aria-pressed="true" aria-keyshortcuts="Alt+K" title="Kachelansicht">▦ <span>Kacheln</span></button>
         <button id="viewListButton" class="secondary view-button" type="button" aria-pressed="false" aria-keyshortcuts="Alt+L" title="Listenansicht">☷ <span>Liste</span></button>
@@ -182,6 +185,14 @@
         <section class="settings-wide design-profile-launcher">
           <div><strong>Designprofile</strong><span id="settingsProfileDescription" class="field-hint">Farben, Stil, Schrift und Hintergrundeffekte als eigenes Profil speichern.</span></div>
           <button id="designProfilesButton" class="secondary" type="button">Profile verwalten</button>
+        </section>
+        <section class="settings-wide library-settings">
+          <div class="library-settings-head">
+            <div><strong data-i18n="settings.libraries">Bibliotheken</strong><span class="field-hint" data-i18n="settings.librariesHint">Containerpfad und sichere Windows-Zuordnung je Bibliothek.</span></div>
+            <button id="addLibraryButton" class="secondary" type="button" data-i18n="settings.addLibrary">+ Bibliothek</button>
+          </div>
+          <div id="librarySettingsRows" class="library-settings-rows"></div>
+          <span class="field-hint"><span data-i18n="settings.libraryMountHint">Zusätzliche Containerpfade müssen in der TrueNAS-YAML bereits als Volume unter</span> <code>/libraries/…</code> <span data-i18n="settings.libraryMountHintEnd">eingebunden sein.</span></span>
         </section>
         <label class="checkbox-label"><input id="settingCrosshair" type="checkbox"> Fadenkreuz als Mauszeiger</label>
         <label>Scanner-Ausschlüsse

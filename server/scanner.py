@@ -45,8 +45,12 @@ class ScanResult:
     detection_note: str
 
 
-def stable_id(relative_path: str) -> str:
-    return hashlib.sha256(relative_path.encode("utf-8")).hexdigest()[:20]
+def stable_id(relative_path: str, library_id: str = "primary") -> str:
+    # Keep the historic primary-library IDs stable so an upgrade does not
+    # detach existing covers, metadata, favourites, or manual edits. Only
+    # additional libraries need an explicit namespace to prevent collisions.
+    identity = relative_path if library_id == "primary" else f"{library_id}\0{relative_path}"
+    return hashlib.sha256(identity.encode("utf-8")).hexdigest()[:20]
 
 
 def clean_title(name: str) -> str:
@@ -92,7 +96,7 @@ def _collect_files(entry: Path) -> list[Path]:
     return files
 
 
-def scan_entry(root: Path, entry: Path) -> ScanResult:
+def scan_entry(root: Path, entry: Path, library_id: str = "primary") -> ScanResult:
     files = _collect_files(entry)
     file_count = len(files)
     logical_size = 0
@@ -144,7 +148,7 @@ def scan_entry(root: Path, entry: Path) -> ScanResult:
     relative_path = entry.relative_to(root).as_posix()
     launcher_relative = launcher.relative_to(root).as_posix() if launcher else None
     return ScanResult(
-        game_id=stable_id(relative_path),
+        game_id=stable_id(relative_path, library_id),
         relative_path=relative_path,
         title=clean_title(entry.name),
         detected_type=detected_type,
@@ -155,7 +159,11 @@ def scan_entry(root: Path, entry: Path) -> ScanResult:
     )
 
 
-def scan_library(root: Path, excluded_names: set[str] | None = None) -> list[ScanResult]:
+def scan_library(
+    root: Path,
+    excluded_names: set[str] | None = None,
+    library_id: str = "primary",
+) -> list[ScanResult]:
     if not root.is_dir():
         raise FileNotFoundError(f"Games-Verzeichnis nicht gefunden: {root}")
     excluded_names = {name.casefold() for name in (excluded_names or set())}
@@ -168,7 +176,7 @@ def scan_library(root: Path, excluded_names: set[str] | None = None) -> list[Sca
         if not (entry.is_file() or entry.is_dir()):
             continue
         try:
-            results.append(scan_entry(root, entry))
+            results.append(scan_entry(root, entry, library_id))
         except (OSError, PermissionError):
             continue
     return results

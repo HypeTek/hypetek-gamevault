@@ -21,6 +21,7 @@ class AppTests(unittest.TestCase):
         (game / "setup.exe").write_bytes(b"MZ")
         os.environ.update(
             GAMEVAULT_GAME_ROOT=str(games),
+            GAMEVAULT_ALLOWED_LIBRARY_ROOTS=str(root),
             GAMEVAULT_CONFIG_DIR=str(config),
             GAMEVAULT_ADMIN_PASSWORD="admin-test",
             GAMEVAULT_AGENT_TOKEN="agent-test",
@@ -60,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.4.2")
+        self.assertEqual(status.get_json()["current"], "0.5.0")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -70,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.4.2")
+        self.assertEqual(summary["application_version"], "0.5.0")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -173,7 +174,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.4.2")
+        self.assertEqual(health["version"], "0.5.0")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -225,7 +226,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.4.2/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.5.0/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -235,9 +236,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.4.2", html)
-        self.assertIn("/static/i18n.js?v=0.4.2", html)
-        self.assertIn("/static/app.css?v=0.4.2", html)
+        self.assertIn("/static/app.js?v=0.5.0", html)
+        self.assertIn("/static/i18n.js?v=0.5.0", html)
+        self.assertIn("/static/app.css?v=0.5.0", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -246,7 +247,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.4.2")
+        self.assertEqual(settings["version"], "0.5.0")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -271,6 +272,49 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.get_json()["motion_preference"], "reduce")
         scan = self.post("/api/scan")
         self.assertEqual(scan.get_json()["scanned"], 0)
+
+    def test_multiple_libraries_scan_filter_and_agent_hint(self):
+        self.login()
+        second = Path(self.temp.name) / "archive"
+        game = second / "Test Game"
+        game.mkdir(parents=True)
+        (game / "setup.exe").write_bytes(b"MZ")
+        current = self.client.get("/api/settings").get_json()
+        libraries = current["libraries"] + [{
+            "id": "archive", "name": "Second Archive",
+            "container_path": str(second), "windows_path": "Y:\\Games", "enabled": True,
+        }]
+        saved = self.client.patch(
+            "/api/settings", json={"libraries": libraries},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(saved.status_code, 200)
+        scanned = self.post("/api/scan", json={})
+        self.assertEqual(scanned.get_json()["libraries"], {"archive": 1, "primary": 1})
+        archive_games = self.client.get("/api/games?library=archive").get_json()
+        self.assertEqual(len(archive_games), 1)
+        self.assertEqual(archive_games[0]["library_name"], "Second Archive")
+        protocol_url = self.post(f"/api/games/{archive_games[0]['id']}/launch-ticket", json={}).get_json()["protocol_url"]
+        ticket = protocol_url.split("ticket=", 1)[1]
+        manifest = self.client.get(
+            f"/api/agent/tickets/{ticket}",
+            headers={"Authorization": "Bearer agent-test"},
+        ).get_json()
+        self.assertEqual(manifest["library_id"], "archive")
+        self.assertEqual(manifest["windows_path_hint"], "Y:\\Games")
+
+    def test_invalid_library_definition_is_rejected_instead_of_dropped(self):
+        self.login()
+        current = self.client.get("/api/settings").get_json()
+        libraries = current["libraries"] + [{
+            "id": "broken", "name": "Broken", "container_path": "/outside",
+            "windows_path": "", "enabled": True,
+        }]
+        response = self.client.patch(
+            "/api/settings", json={"libraries": libraries},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_design_profiles_are_validated_persistent_and_protected(self):
         self.login()

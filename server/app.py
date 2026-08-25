@@ -53,6 +53,14 @@ from maintenance import create_backup, inspect_backup, restore_backup, rotate_ba
 
 
 GAME_ROOT = Path(os.environ.get("GAMEVAULT_GAME_ROOT", "/games")).resolve()
+ALLOWED_LIBRARY_ROOTS = tuple(dict.fromkeys(
+    [GAME_ROOT]
+    + [
+        Path(value.strip()).resolve()
+        for value in os.environ.get("GAMEVAULT_ALLOWED_LIBRARY_ROOTS", "/games,/libraries").split(",")
+        if value.strip()
+    ]
+))
 CONFIG_DIR = Path(os.environ.get("GAMEVAULT_CONFIG_DIR", "/config")).resolve()
 AGENT_DIR = Path(os.environ.get("GAMEVAULT_AGENT_DIR", "/app/windows-agent")).resolve()
 COVER_DIR = CONFIG_DIR / "covers"
@@ -141,14 +149,50 @@ def csrf_required(function):
 app.jinja_env.globals["csrf_token"] = csrf_token
 
 
-def safe_relative_path(value: str | None) -> str | None:
+def configured_libraries() -> list[dict]:
+    return settings_store.load().get("libraries", [])
+
+
+def library_by_id(library_id: str | None) -> dict:
+    candidate = str(library_id or "primary").strip().casefold()
+    for library in configured_libraries():
+        if library["id"] == candidate and library.get("enabled", True):
+            return library
+    raise ValueError("Unbekannte oder deaktivierte Bibliothek")
+
+
+def validate_library_definitions(libraries: object) -> list[dict]:
+    if not isinstance(libraries, list) or not libraries:
+        raise ValueError("Mindestens eine Bibliothek ist erforderlich")
+    if len(libraries) > 32:
+        raise ValueError("Es sind höchstens 32 Bibliotheken möglich")
+    candidate = SettingsStore.validate({**settings_store.load(), "libraries": libraries})["libraries"]
+    if len(candidate) != len(libraries):
+        raise ValueError("Mindestens eine Bibliothek enthält eine ungültige ID oder einen ungültigen Pfad")
+    resolved_paths: list[Path] = []
+    for library in candidate:
+        root = Path(library["container_path"]).resolve()
+        if not root.is_dir():
+            raise ValueError(f"Bibliothek '{library['name']}' ist im Container nicht erreichbar: {root}")
+        if not any(root == allowed or allowed in root.parents for allowed in ALLOWED_LIBRARY_ROOTS):
+            raise ValueError(
+                f"Bibliothek '{library['name']}' liegt außerhalb der erlaubten Containerpfade"
+            )
+        if any(root == other or root in other.parents or other in root.parents for other in resolved_paths):
+            raise ValueError("Bibliothekspfade dürfen nicht identisch oder ineinander verschachtelt sein")
+        resolved_paths.append(root)
+    return candidate
+
+
+def safe_relative_path(value: str | None, library_id: str = "primary") -> str | None:
     if not value:
         return None
     path = PurePosixPath(value.replace("\\", "/"))
     if path.is_absolute() or ".." in path.parts:
         raise ValueError("Ungültiger relativer Pfad")
-    resolved = (GAME_ROOT / Path(*path.parts)).resolve()
-    if resolved != GAME_ROOT and GAME_ROOT not in resolved.parents:
+    root = Path(library_by_id(library_id)["container_path"]).resolve()
+    resolved = (root / Path(*path.parts)).resolve()
+    if resolved != root and root not in resolved.parents:
         raise ValueError("Pfad verlässt das Games-Verzeichnis")
     if not resolved.exists():
         raise ValueError("Pfad existiert nicht")
@@ -169,6 +213,7 @@ def health():
         version=APP_VERSION,
         agent_api=3,
         game_root=str(GAME_ROOT),
+        libraries=[{"id": item["id"], "name": item["name"], "container_path": item["container_path"]} for item in configured_libraries()],
         translator_managed=bool(DEFAULT_TRANSLATOR_URL),
     )
 
@@ -218,6 +263,7 @@ def public_settings() -> dict:
     profile_store = design_profiles.load(values.get("theme", "mission"))
     active_profile = profile_store["profiles"][profile_store["active"]]
     values["version"] = APP_VERSION
+    values["libraries"] = [dict(item) for item in values.get("libraries", [])]
     values["active_design_profile"] = profile_store["active"]
     active_profile = dict(active_profile)
     if active_profile.get("builtin"):
@@ -297,6 +343,7 @@ def update_settings():
     allowed = {
         "server_name",
         "library_name",
+        "libraries",
         "theme",
         "background_opacity",
         "background_blur",
@@ -310,6 +357,11 @@ def update_settings():
         "translator_api_key",
     }
     changes = {key: payload[key] for key in allowed if key in payload}
+    if "libraries" in changes:
+        try:
+            changes["libraries"] = validate_library_definitions(changes["libraries"])
+        except ValueError as error:
+            return jsonify(error=str(error)), 400
     if "theme" in changes and changes["theme"] not in THEMES:
         return jsonify(error="Unbekanntes Design"), 400
     if changes.get("thegamesdb_api_key"):
@@ -663,8 +715,17 @@ def api_and_translator_guide_qr():
 @app.get("/api/games")
 @login_required
 def games():
-    items = database.list_games()
+    requested_library = request.args.get("library") or None
+    if requested_library:
+        try:
+            library_by_id(requested_library)
+        except ValueError as error:
+            return jsonify(error=str(error)), 400
+    items = database.list_games(library_id=requested_library)
+    libraries = {item["id"]: item for item in configured_libraries()}
     for game in items:
+        library = libraries.get(game.get("library_id"), {})
+        game["library_name"] = library.get("name", game.get("library_id", "primary"))
         game["metadata_search_title"] = suggest_game_title(game["title"])
     return jsonify(items)
 
@@ -675,9 +736,19 @@ def games():
 def scan():
     automatic_backup()
     exclusions = set(settings_store.load().get("scan_exclusions", []))
-    results = scan_library(GAME_ROOT, exclusions)
-    database.apply_scan(results)
-    return jsonify(scanned=len(results))
+    payload = request.get_json(silent=True) or {}
+    requested = payload.get("library_id")
+    try:
+        libraries = [library_by_id(requested)] if requested else [item for item in configured_libraries() if item.get("enabled", True)]
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    counts = {}
+    for library in libraries:
+        root = Path(library["container_path"]).resolve()
+        results = scan_library(root, exclusions, library["id"])
+        database.apply_scan(results, library["id"])
+        counts[library["id"]] = len(results)
+    return jsonify(scanned=sum(counts.values()), libraries=counts)
 
 
 def automatic_backup(force: bool = False) -> Path:
@@ -816,7 +887,7 @@ def update_game(game_id: str):
         return jsonify(error="Ungültige Aktion"), 400
     try:
         if "launcher_override" in payload:
-            payload["launcher_override"] = safe_relative_path(payload.get("launcher_override"))
+            payload["launcher_override"] = safe_relative_path(payload.get("launcher_override"), game["library_id"])
     except ValueError as error:
         return jsonify(error=str(error)), 400
     if "cover_position_y" in payload:
@@ -1018,7 +1089,7 @@ def launch_ticket(game_id: str):
     else:
         return jsonify(error="Für diesen Eintrag ist keine automatische Aktion freigegeben"), 409
     try:
-        safe_relative_path(launcher)
+        safe_relative_path(launcher, game["library_id"])
     except ValueError as error:
         return jsonify(error=str(error)), 409
     token = secrets.token_urlsafe(32)
@@ -1090,7 +1161,7 @@ def agent_ticket(token: str):
     else:
         return jsonify(error="Aktion nicht freigegeben"), 409
     try:
-        launcher = safe_relative_path(launcher_value)
+        launcher = safe_relative_path(launcher_value, game["library_id"])
     except ValueError as error:
         return jsonify(error=str(error)), 409
     return jsonify(
@@ -1099,6 +1170,9 @@ def agent_ticket(token: str):
         action=requested_action,
         relative_path=game["relative_path"],
         launcher=launcher,
+        library_id=game["library_id"],
+        library_name=library_by_id(game["library_id"])["name"],
+        windows_path_hint=library_by_id(game["library_id"])["windows_path"],
         ui_language=settings_store.load().get("ui_language", "auto"),
     )
 

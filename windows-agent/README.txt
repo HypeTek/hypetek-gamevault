@@ -1,5 +1,14 @@
 HYPETEK MISSION CONTROL – WINDOWS-AGENT
-Version 0.4.2
+Version 0.5.0
+
+Mehrere Bibliotheken
+--------------------
+Der Installer richtet die primäre Bibliothek ein. Wird später in Mission
+Control eine weitere Bibliothek geöffnet, fragt der Agent einmalig nach der
+Bestätigung des vorgeschlagenen Windows-/SMB-Pfads. Erst nach deiner
+Bestätigung wird diese Zuordnung ausschließlich lokal gespeichert. Stimmen
+Serverpfad und Windows-Laufwerk nicht überein, verbinde zuerst das passende
+SMB-Netzlaufwerk und versuche die Aktion danach erneut.
 
 © 2026 Michael Härtwig · HypeTek
 

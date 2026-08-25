@@ -1,5 +1,5 @@
 #define MyAppName "HypeTek Mission Control Agent"
-#define MyAppVersion "0.4.2"
+#define MyAppVersion "0.5.0"
 #define MyAppPublisher "HypeTek"
 #define MyAppExeName "GameVaultAgent.ps1"
 
@@ -20,7 +20,7 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=mission-control.ico
 UninstallDisplayIcon={app}\mission-control.ico
-VersionInfoVersion=0.4.2.0
+VersionInfoVersion=0.5.0.0
 VersionInfoDescription=HypeTek Mission Control Windows Agent Setup
 
 [Languages]
@@ -297,7 +297,7 @@ begin
     Request.SetRequestHeader('Authorization', 'Bearer ' + Trim(TokenPage.Values[0]));
     Request.SetRequestHeader('Cache-Control', 'no-cache, no-store');
     Request.SetRequestHeader('Pragma', 'no-cache');
-    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.4.2');
+    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.5.0');
     Request.Send('');
     StatusCode := Request.Status;
 
@@ -412,13 +412,16 @@ begin
     Exit;
 
   ConfigPath := ExpandConstant('{app}\agent.json');
-  SetArrayLength(ConfigLines, 6);
+  SetArrayLength(ConfigLines, 9);
   ConfigLines[0] := '{';
   ConfigLines[1] := '  "server_url": "' + JsonEscape(RemoveBackslashUnlessRoot(Trim(ServerPage.Values[0]))) + '",';
   ConfigLines[2] := '  "agent_token": "' + JsonEscape(Trim(TokenPage.Values[0])) + '",';
   ConfigLines[3] := '  "game_root": "' + JsonEscape(Trim(PathPage.Values[0])) + '",';
-  ConfigLines[4] := '  "installer_language": "' + JsonEscape(ActiveLanguage) + '"';
-  ConfigLines[5] := '}';
+  ConfigLines[4] := '  "libraries": {';
+  ConfigLines[5] := '    "primary": "' + JsonEscape(Trim(PathPage.Values[0])) + '"';
+  ConfigLines[6] := '  },';
+  ConfigLines[7] := '  "installer_language": "' + JsonEscape(ActiveLanguage) + '"';
+  ConfigLines[8] := '}';
   if not SaveStringsToUTF8File(ConfigPath, ConfigLines, False) then
     RaiseException(CustomMessage('ConfigWriteFailed'));
 

@@ -3,6 +3,7 @@ const state = {
   games: [],
   query: "",
   filter: "all",
+  libraryFilter: "all",
   settings: null,
   page: 1,
   pageSize: [12, 24, 48, 96].includes(savedPageSize) ? savedPageSize : 24,
@@ -80,6 +81,12 @@ function applySettings(settings) {
   document.body.style.setProperty("--background-opacity", profile.background_opacity ?? settings.background_opacity);
   document.body.style.setProperty("--background-blur", `${profile.background_blur ?? settings.background_blur}px`);
   document.querySelector("#libraryName").textContent = settings.library_name;
+  const libraryFilter = document.querySelector("#libraryFilter");
+  const previousLibrary = state.libraryFilter;
+  libraryFilter.innerHTML = `<option value="all">${escapeHtml(tr("library.all"))}</option>` +
+    (settings.libraries || []).map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("");
+  state.libraryFilter = (settings.libraries || []).some((item) => item.id === previousLibrary) ? previousLibrary : "all";
+  libraryFilter.value = state.libraryFilter;
   document.querySelector("#appVersion").textContent = `v${settings.version || "development"}`;
   document.title = `HypeTek Mission Control · ${settings.server_name}`;
   const agentValidated = localStorage.getItem("missionControlAgentValidatedFor") === window.location.origin;
@@ -147,6 +154,7 @@ function coverPosition(game) {
 function render() {
   const query = state.query.toLocaleLowerCase("de");
   const filteredGames = state.games.filter((game) =>
+    (state.libraryFilter === "all" || game.library_id === state.libraryFilter) &&
     (state.filter === "all" || (state.filter === "favorites" ? game.favorite : game.action === state.filter)) &&
     `${game.title} ${game.platform} ${game.relative_path}`.toLocaleLowerCase("de").includes(query));
   const pageCount = Math.max(1, Math.ceil(filteredGames.length / state.pageSize));
@@ -174,7 +182,7 @@ function render() {
     const sourceName = sourceNames[game.metadata_provider];
     const attribution = sourceName && game.metadata_source_url
       ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">${tr("game.coverSource", {source: sourceName})}</a>` : "";
-    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="${escapeHtml(tr("game.info", {title: game.title}))}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${typeLabel(game.action)}</span><span class="badge">${escapeHtml(game.platform || tr("game.unknown"))}</span><span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button class="secondary edit-action" onclick="editGame('${game.id}')">${tr("game.edit")}</button></div></div></article>`;
+    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="${escapeHtml(tr("game.info", {title: game.title}))}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${typeLabel(game.action)}</span><span class="badge">${escapeHtml(game.platform || tr("game.unknown"))}</span>${(state.settings?.libraries || []).length > 1 ? `<span class="badge library-badge">${escapeHtml(game.library_name || game.library_id)}</span>` : ""}<span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button class="secondary edit-action" onclick="editGame('${game.id}')">${tr("game.edit")}</button></div></div></article>`;
   }).join("") || `<p>${tr("game.empty")}</p>`;
   renderPagination(filteredGames.length, pageCount, firstIndex, games.length);
 }
@@ -498,12 +506,36 @@ function openSettings() {
   document.querySelector("#settingMotionPreference").value = settings.motion_preference || "auto";
   document.querySelector("#settingTranslatorUrl").value = settings.translator_url || "";
   document.querySelector("#settingTranslatorApiKey").value = "";
+  renderLibrarySettings(settings.libraries || []);
   document.querySelector("#translatorStatus").textContent = settings.translator_managed
     ? tr("settings.translatorManaged")
     : (settings.translator_configured ? tr("settings.translatorReady") : tr("settings.translatorMissing"));
   document.querySelector("#removeTranslatorButton").disabled = Boolean(settings.translator_managed);
   syncTranslatorTestAvailability();
   settingsDialog.showModal();
+}
+
+function renderLibrarySettings(items) {
+  const rows = document.querySelector("#librarySettingsRows");
+  rows.innerHTML = items.map((item, index) => `<div class="library-settings-row" data-library-row>
+    <input data-library-field="id" value="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr("library.id"))}" ${index === 0 ? "readonly" : ""}>
+    <input data-library-field="name" value="${escapeHtml(item.name)}" aria-label="${escapeHtml(tr("library.name"))}" placeholder="${escapeHtml(tr("library.name"))}">
+    <input data-library-field="container_path" value="${escapeHtml(item.container_path)}" aria-label="${escapeHtml(tr("library.containerPath"))}" placeholder="/libraries/archive2">
+    <input data-library-field="windows_path" value="${escapeHtml(item.windows_path)}" aria-label="${escapeHtml(tr("library.windowsPath"))}" placeholder="Y:\\Games">
+    <label class="library-enabled"><input data-library-field="enabled" type="checkbox" ${item.enabled !== false ? "checked" : ""}> ${escapeHtml(tr("library.enabled"))}</label>
+    <button class="ghost remove-library" type="button" ${index === 0 ? "disabled" : ""}>×</button>
+  </div>`).join("");
+  rows.querySelectorAll(".remove-library").forEach((button) => button.addEventListener("click", () => button.closest("[data-library-row]").remove()));
+}
+
+function collectLibrarySettings() {
+  return [...document.querySelectorAll("[data-library-row]")].map((row) => ({
+    id: row.querySelector('[data-library-field="id"]').value.trim(),
+    name: row.querySelector('[data-library-field="name"]').value.trim(),
+    container_path: row.querySelector('[data-library-field="container_path"]').value.trim(),
+    windows_path: row.querySelector('[data-library-field="windows_path"]').value.trim(),
+    enabled: row.querySelector('[data-library-field="enabled"]').checked,
+  }));
 }
 
 function syncTranslatorTestAvailability() {
@@ -682,6 +714,7 @@ document.querySelector("#settingsForm").addEventListener("submit", async (event)
   const payload = {
     server_name: document.querySelector("#settingServerName").value.trim(),
     library_name: document.querySelector("#settingLibraryName").value.trim(),
+    libraries: collectLibrarySettings(),
     crosshair_cursor: document.querySelector("#settingCrosshair").checked,
     scan_exclusions: document.querySelector("#settingExclusions").value.split(/[,\n]/).map((value) => value.trim()).filter(Boolean),
     ui_language: document.querySelector("#settingUiLanguage").value,
@@ -928,12 +961,20 @@ document.querySelector("#metadataQuery").addEventListener("keydown", (event) => 
 document.querySelector("#scanButton").addEventListener("click", async () => {
   statusEl.textContent = tr("scan.running");
   try {
-    const result = await api("/api/scan", {method: "POST"});
+    const result = await api("/api/scan", {method: "POST", body: JSON.stringify(state.libraryFilter === "all" ? {} : {library_id: state.libraryFilter})});
     statusEl.textContent = tr("scan.done", {count: result.scanned});
     await load();
   } catch (error) { statusEl.textContent = error.message; }
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
+document.querySelector("#addLibraryButton").addEventListener("click", () => {
+  const existing = collectLibrarySettings();
+  let number = existing.length + 1;
+  let id = `library-${number}`;
+  while (existing.some((item) => item.id === id)) { number += 1; id = `library-${number}`; }
+  existing.push({id, name: `Bibliothek ${number}`, container_path: `/libraries/${id}`, windows_path: "", enabled: true});
+  renderLibrarySettings(existing);
+});
 document.querySelector("#testTranslatorButton").addEventListener("click", testTranslatorConnection);
 document.querySelector("#settingTranslatorUrl").addEventListener("input", syncTranslatorTestAvailability);
 document.querySelector("#designProfilesButton").addEventListener("click", openDesignProfiles);
@@ -1027,6 +1068,7 @@ document.querySelector("#pageSize").addEventListener("change", (event) => {
 });
 document.querySelector("#search").addEventListener("input", (event) => { state.query = event.target.value; state.page = 1; render(); });
 document.querySelector("#filter").addEventListener("change", (event) => { state.filter = event.target.value; state.page = 1; render(); });
+document.querySelector("#libraryFilter").addEventListener("change", (event) => { state.libraryFilter = event.target.value; state.page = 1; render(); });
 document.addEventListener("keydown", (event) => {
   const target = event.target;
   const isEditing = target instanceof HTMLElement && (target.matches("input, select, textarea") || target.isContentEditable);

@@ -5,6 +5,7 @@
 | Inhalt | Host | Container | Zugriff |
 | --- | --- | --- | --- |
 | Spiele | `/mnt/Titan/Game` | `/games` | nur lesen |
+| Weitere Bibliothek (Beispiel) | `/mnt/Titan/Archive2` | `/libraries/archive2` | nur lesen |
 | Datenbank, Cover, Designs | `/mnt/Application/gamevault` | `/config` | lesen/schreiben |
 | Translator-Sprachmodelle | `/mnt/Application/mission-control-translator` | `/home/libretranslate/.local` | lesen/schreiben |
 
@@ -24,7 +25,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.4.2"
+      com.hypetek.mission-control.deployment: "0.5.0"
 
     ports:
       - "9998:8080"
@@ -34,6 +35,8 @@ services:
       GAMEVAULT_AGENT_TOKEN: "HIER_AGENT_TOKEN"
       GAMEVAULT_CONFIG_DIR: "/config"
       GAMEVAULT_GAME_ROOT: "/games"
+      GAMEVAULT_ALLOWED_LIBRARY_ROOTS: "/games,/libraries"
+      GAMEVAULT_WINDOWS_ROOT: "Z:\\Game"
       GAMEVAULT_SECRET_KEY: "HIER_SECRET_KEY"
       MISSION_CONTROL_SERVER_NAME: "TrueTitan"
       MISSION_CONTROL_LIBRARY_NAME: "TrueTitan Game Archive"
@@ -44,6 +47,13 @@ services:
         source: /mnt/Titan/Game
         target: /games
         read_only: true
+
+      # Optionales Beispiel für ein weiteres Archiv. Erst einkommentieren und
+      # den Hostpfad anpassen, wenn das Dataset wirklich existiert:
+      # - type: bind
+      #   source: /mnt/Titan/Archive2
+      #   target: /libraries/archive2
+      #   read_only: true
 
       - type: bind
         source: /mnt/Application/gamevault
@@ -96,12 +106,25 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.4.2 muss die Antwort unter anderem `"version":"0.4.2"`,
+Für Version 0.5.0 muss die Antwort unter anderem `"version":"0.5.0"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
 Weder Agent-Token noch Admin-Passwort müssen beim Upgrade geändert werden. Ein geänderter
 Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
+
+## Mehrere Spielebibliotheken
+
+Unter **Einstellungen → Spielebibliotheken** erhält jedes Archiv eine dauerhafte ID,
+einen Namen, den Containerpfad und den passenden Windows-/SMB-Pfad. Die primäre
+Bibliothek bleibt automatisch mit `/games` kompatibel. Zusätzliche Bibliotheken
+werden unter `/libraries/<id>` nur-lesbar eingebunden. Nach dem Speichern kann jede
+Bibliothek einzeln oder gemeinsam gescannt und im Dashboard gefiltert werden.
+
+Beim ersten Start eines Spiels aus einer zusätzlichen Bibliothek zeigt der Windows-
+Agent den in Mission Control hinterlegten, erreichbaren SMB-Pfad an. Erst nach der
+Bestätigung des Benutzers wird diese Zuordnung ausschließlich lokal im Agent gespeichert.
+Ein Serverpfad wird daher niemals stillschweigend als Windows-Pfad übernommen.
 
 ## Integrierter lokaler Translator
 
@@ -114,7 +137,7 @@ per QR-Code auf einem zweiten Gerät geöffnet werden.
 
 Beim ersten Start lädt LibreTranslate das verwaltete Paket für Deutsch,
 Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch,
-Niederländisch, Türkisch und Ukrainisch. Die Erkennung gemischter Inhalte ist nicht
+Niederländisch und Türkisch. Die Erkennung gemischter Inhalte ist nicht
 auf diese Ausgangssprachen festgelegt; verarbeitet werden alle im Translator
 installierten Sprachen. Der erste Modell-Download kann mehrere Minuten dauern.
 Der Zustand lässt sich danach unter

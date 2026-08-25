@@ -5,11 +5,13 @@ services:
     container_name: hypetek-gamevault
     restart: unless-stopped
     labels:
-      com.hypetek.mission-control.deployment: "0.4.2"
+      com.hypetek.mission-control.deployment: "0.5.0"
     ports:
       - "9998:8080"
     environment:
       GAMEVAULT_GAME_ROOT: /games
+      GAMEVAULT_ALLOWED_LIBRARY_ROOTS: /games,/libraries
+      GAMEVAULT_WINDOWS_ROOT: ${GAMEVAULT_WINDOWS_ROOT:-Z:\\Game}
       GAMEVAULT_CONFIG_DIR: /config
       GAMEVAULT_ADMIN_PASSWORD: ${GAMEVAULT_ADMIN_PASSWORD}
       GAMEVAULT_AGENT_TOKEN: ${GAMEVAULT_AGENT_TOKEN}
@@ -19,6 +21,8 @@ services:
       MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000
     volumes:
       - /mnt/Titan/Game:/games:ro
+      # Weitere Archive werden unter /libraries/<id> nur-lesbar eingehängt:
+      # - /mnt/Titan/Archive2:/libraries/archive2:ro
       - /mnt/Application/gamevault:/config
     security_opt:
       - no-new-privileges:true

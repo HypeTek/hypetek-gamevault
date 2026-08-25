@@ -21,6 +21,7 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 - echtes Mehrbibliotheken-Modell für zusätzliche Server-/Container-Pfade mit eigener
   sicherer Windows-Pfadzuordnung je Bibliothek; keine unüberprüften Browserpfade
+  (vollständig seit 0.5.0)
 - kontrollierte Stapelzuordnung von Covers mit Trefferprüfung
 - weitere Metadatenfelder, ohne vorhandene Ordnernamen zu verändern
 - Designprofile mit eigenen Farben, Hintergründen und regelbaren Effekten (Basis seit 0.3.0)

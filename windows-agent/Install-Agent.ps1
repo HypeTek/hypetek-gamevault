@@ -22,6 +22,7 @@ $config = [ordered]@{
     server_url = $ServerUrl.TrimEnd('/')
     agent_token = $AgentToken
     game_root = [IO.Path]::GetFullPath($GameRoot)
+    libraries = [ordered]@{ primary = [IO.Path]::GetFullPath($GameRoot) }
 }
 $config | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $ConfigDir "agent.json") -Encoding UTF8
 

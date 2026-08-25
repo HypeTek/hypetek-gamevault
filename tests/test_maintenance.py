@@ -28,7 +28,7 @@ class MaintenanceTests(unittest.TestCase):
                 "translator_api_key": "translator-secret",
             }
             (config / "mission-control-settings.json").write_text(json.dumps(settings), encoding="utf-8")
-            backup = create_backup(config, "0.4.2", root / "backup.zip")
+            backup = create_backup(config, "0.5.0", root / "backup.zip")
             with zipfile.ZipFile(backup) as archive:
                 archived = json.loads(archive.read("mission-control-settings.json"))
                 self.assertNotIn("thegamesdb_api_key", archived)
@@ -67,7 +67,7 @@ class MaintenanceTests(unittest.TestCase):
             )
             (config / "covers").mkdir()
             (config / "covers" / "example.webp").write_bytes(b"restored-cover")
-            backup = create_backup(config, "0.4.2", root / "backup.zip")
+            backup = create_backup(config, "0.5.0", root / "backup.zip")
             (config / "covers" / "example.webp").write_bytes(b"changed-cover")
             real_replace = os.replace
 
@@ -94,9 +94,9 @@ class MaintenanceTests(unittest.TestCase):
             (config / "mission-control-settings.json").write_text("{}", encoding="utf-8")
             (config / "covers" / "one.webp").write_bytes(b"cover")
             (config / "backgrounds" / "one.webp").write_bytes(b"background")
-            backup = create_backup(config, "0.4.2", root / "backup.zip")
+            backup = create_backup(config, "0.5.0", root / "backup.zip")
             summary = inspect_backup(backup)
-            self.assertEqual(summary["application_version"], "0.4.2")
+            self.assertEqual(summary["application_version"], "0.5.0")
             self.assertEqual(summary["cover_count"], 1)
             self.assertEqual(summary["background_count"], 1)
             self.assertGreaterEqual(summary["file_count"], 3)

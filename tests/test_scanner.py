@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import hashlib
 from pathlib import Path
 import sys
 
@@ -56,6 +57,22 @@ class ScannerTests(unittest.TestCase):
             (included / "setup.exe").write_bytes(b"MZ")
             result = scan_library(root, {"HADMIN"})
             self.assertEqual([item.relative_path for item in result], ["Game"])
+
+    def test_ids_are_scoped_to_library(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            game = root / "Same Game"
+            game.mkdir()
+            (game / "setup.exe").write_bytes(b"MZ")
+            primary = scan_library(root, library_id="primary")[0]
+            archive = scan_library(root, library_id="archive")[0]
+            self.assertEqual(primary.relative_path, archive.relative_path)
+            self.assertNotEqual(primary.game_id, archive.game_id)
+            self.assertEqual(
+                primary.game_id,
+                hashlib.sha256(b"Same Game").hexdigest()[:20],
+                "the primary library must keep pre-0.5 game IDs",
+            )
 
 
 if __name__ == "__main__":
