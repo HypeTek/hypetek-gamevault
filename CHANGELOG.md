@@ -2,6 +2,7 @@
 
 ## 0.6.4
 
+- Quellpakete und Container-Build-Kontext schließen lokale Testumgebungen, temporäre Dateien, Python-Caches und Coverage-Ausgaben jetzt ausdrücklich aus.
 - Lokale Windows-Bibliotheken melden dem Browser nun ausdrücklich, sobald der installierte Agent einen Scan-Auftrag übernommen hat.
 - Ein veralteter oder nicht gestarteter Agent beendet die sichtbare Scan-Anzeige nach kurzer Wartezeit mit einer verständlichen Update-Meldung, statt dauerhaft „Bibliothek wird gescannt“ anzuzeigen.
 - Scheitert ein übernommener lokaler Scan etwa an einem nicht erreichbaren Pfad, meldet der Agent den konkreten Fehler sofort an die Oberfläche zurück.

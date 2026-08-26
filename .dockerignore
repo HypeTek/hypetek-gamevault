@@ -1,5 +1,7 @@
 .git
 .env
+.test-venv
+tmp
 __pycache__
 *.pyc
 tests
