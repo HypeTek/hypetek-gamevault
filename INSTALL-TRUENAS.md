@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.6.1"
+      com.hypetek.mission-control.deployment: "0.6.3"
 
     ports:
       - "9998:8080"
@@ -106,7 +106,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.6.1 muss die Antwort unter anderem `"version":"0.6.1"`,
+Für Version 0.6.3 muss die Antwort unter anderem `"version":"0.6.3"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 

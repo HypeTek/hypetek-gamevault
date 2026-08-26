@@ -28,6 +28,7 @@ def _profile(name: str, style: str, font: str, colors: dict[str, str]) -> dict:
         "builtin": True,
         "style": style,
         "font": font,
+        "auto_contrast": True,
         "colors": colors,
         "background_name": None,
         "background_opacity": 0.28,
@@ -165,7 +166,14 @@ class DesignProfileStore:
             background_name = Path(str(background_name)).name
             if not re.fullmatch(r"(?:background-[a-f0-9]{24}|custom-background)\.(?:jpg|jpeg|png|webp)", background_name):
                 raise ValueError("Ungültige Hintergrundreferenz.")
-        return {"name": name, "builtin": builtin, "style": style, "font": font, "colors": colors, "background_name": background_name, "background_opacity": opacity, "background_blur": blur}
+        auto_contrast = profile.get("auto_contrast")
+        if auto_contrast is None:
+            # Integrated and older profiles did not distinguish manually chosen
+            # text colors from their defaults. Keep them readable by default.
+            auto_contrast = True
+        if not isinstance(auto_contrast, bool):
+            raise ValueError("Ungültige Einstellung für den Schriftkontrast.")
+        return {"name": name, "builtin": builtin, "style": style, "font": font, "auto_contrast": auto_contrast, "colors": colors, "background_name": background_name, "background_opacity": opacity, "background_blur": blur}
 
     def save(self, store: dict) -> None:
         custom = {key: value for key, value in store["profiles"].items() if not value.get("builtin")}

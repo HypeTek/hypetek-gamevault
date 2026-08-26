@@ -1,5 +1,5 @@
 HYPETEK MISSION CONTROL – WINDOWS-AGENT
-Version 0.6.1
+Version 0.6.3
 
 Mehrere Bibliotheken
 --------------------

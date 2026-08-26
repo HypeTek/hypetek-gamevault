@@ -19,6 +19,7 @@ class DesignProfileStoreTests(unittest.TestCase):
             self.assertEqual(list(rendered["profiles"]), [custom["id"]])
             self.assertNotIn("mission", rendered["profiles"])
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertTrue(custom["auto_contrast"])
 
     def test_legacy_and_profile_background_names_are_validated(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -49,6 +50,15 @@ class DesignProfileStoreTests(unittest.TestCase):
             })
             self.assertEqual(normalized["colors"]["energy_start"], "#123456")
             self.assertEqual(normalized["colors"]["energy_end"], "#abcdef")
+
+    def test_automatic_contrast_is_validated_and_can_be_disabled(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = DesignProfileStore(Path(temporary) / "designs.json")
+            mission = store.load()["profiles"]["mission"]
+            manual = store.create({**mission, "name": "Manual Text", "auto_contrast": False})
+            self.assertFalse(manual["auto_contrast"])
+            with self.assertRaises(ValueError):
+                store.create({**mission, "name": "Invalid Contrast", "auto_contrast": "yes"})
 
 
 if __name__ == "__main__":

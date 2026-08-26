@@ -61,6 +61,78 @@ async function api(url, options = {}) {
   return data;
 }
 
+function colorRgb(value) {
+  const match = /^#([0-9a-f]{6})$/i.exec(value || "");
+  if (!match) return null;
+  return [0, 2, 4].map((offset) => parseInt(match[1].slice(offset, offset + 2), 16));
+}
+
+function colorHex(rgb) {
+  return `#${rgb.map((value) => Math.round(value).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function relativeLuminance(rgb) {
+  const channels = rgb.map((value) => {
+    const channel = value / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(first, second) {
+  const a = relativeLuminance(first);
+  const b = relativeLuminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+function readableSurfaceColors(background, manualText, manualMuted, automatic = true) {
+  const surface = colorRgb(background) || [13, 29, 37];
+  if (!automatic) return {text: manualText, muted: manualMuted};
+  const dark = [5, 14, 18];
+  const light = [247, 251, 252];
+  const foreground = contrastRatio(surface, dark) >= contrastRatio(surface, light) ? dark : light;
+  let muted = foreground;
+  // Blend toward the surface only as far as WCAG AA body-text contrast allows.
+  for (let foregroundShare = 0.76; foregroundShare <= 1; foregroundShare += 0.04) {
+    const candidate = foreground.map((value, index) => value * foregroundShare + surface[index] * (1 - foregroundShare));
+    if (contrastRatio(surface, candidate) >= 4.5) { muted = candidate; break; }
+  }
+  return {text: colorHex(foreground), muted: colorHex(muted)};
+}
+
+function readableAccentColor(background, accent, automatic = true) {
+  const surface = colorRgb(background) || [13, 29, 37];
+  const requested = colorRgb(accent) || [0, 209, 199];
+  if (!automatic || contrastRatio(surface, requested) >= 4.5) return colorHex(requested);
+  const dark = [5, 14, 18];
+  const light = [247, 251, 252];
+  const destination = contrastRatio(surface, dark) >= contrastRatio(surface, light) ? dark : light;
+  // Retain as much of the selected accent hue as possible while reaching WCAG AA.
+  for (let destinationShare = 0.04; destinationShare <= 1; destinationShare += 0.04) {
+    const candidate = requested.map((value, index) => value * (1 - destinationShare) + destination[index] * destinationShare);
+    if (contrastRatio(surface, candidate) >= 4.5) return colorHex(candidate);
+  }
+  return colorHex(destination);
+}
+
+function applySurfaceContrast(target, colors, automatic, prefix = "") {
+  const surfaces = {
+    bg: colors.background,
+    panel: colors.panel,
+    panel2: colors.panel_alt,
+    primary: colors.primary,
+    secondary: colors.secondary,
+  };
+  Object.entries(surfaces).forEach(([name, background]) => {
+    const readable = readableSurfaceColors(background, colors.text, colors.muted, automatic);
+    target.style.setProperty(`--${prefix}on-${name}`, readable.text);
+    target.style.setProperty(`--${prefix}on-${name}-muted`, readable.muted);
+    target.style.setProperty(`--${prefix}primary-on-${name}`, readableAccentColor(background, colors.primary, automatic));
+    target.style.setProperty(`--${prefix}secondary-on-${name}`, readableAccentColor(background, colors.secondary, automatic));
+  });
+  target.dataset.autoContrast = automatic ? "true" : "false";
+}
+
 function applySettings(settings) {
   state.settings = settings;
   applyUiLanguage(settings.ui_language || "auto");
@@ -76,6 +148,11 @@ function applySettings(settings) {
   Object.entries(colorVariables).forEach(([key, variable]) => {
     if (colors[key]) document.body.style.setProperty(variable, colors[key]);
   });
+  applySurfaceContrast(document.body, colors, profile.auto_contrast !== false);
+  if (profile.auto_contrast !== false) {
+    document.body.style.setProperty("--text", "var(--on-bg)");
+    document.body.style.setProperty("--muted", "var(--on-bg-muted)");
+  }
   document.body.classList.toggle("crosshair", Boolean(settings.crosshair_cursor));
   document.body.style.setProperty("--custom-background", settings.background_url ? `url("${settings.background_url}")` : "none");
   document.body.style.setProperty("--background-opacity", profile.background_opacity ?? settings.background_opacity);
@@ -635,6 +712,7 @@ function profilePayloadFromForm() {
     name: document.querySelector("#designProfileName").value.trim(),
     style: document.querySelector('input[name="profileStyle"]:checked').value,
     font: document.querySelector("#designProfileFont").value,
+    auto_contrast: document.querySelector("#designProfileAutoContrast").checked,
     colors,
     background_name: document.querySelector("#designProfileBackgroundName").value || null,
     background_opacity: Number(document.querySelector("#designProfileOpacity").value),
@@ -649,6 +727,9 @@ function renderDesignProfilePreview() {
   preview.dataset.font = profile.font;
   const variables = {background: "--preview-bg", panel: "--preview-panel", panel_alt: "--preview-panel2", text: "--preview-text", muted: "--preview-muted", primary: "--preview-primary", secondary: "--preview-secondary", line: "--preview-line", energy_start: "--preview-energy-start", energy_end: "--preview-energy-end"};
   Object.entries(variables).forEach(([key, variable]) => preview.style.setProperty(variable, profile.colors[key]));
+  applySurfaceContrast(preview, profile.colors, profile.auto_contrast, "preview-");
+  preview.style.setProperty("--preview-text", profile.auto_contrast ? "var(--preview-on-panel)" : profile.colors.text);
+  preview.style.setProperty("--preview-muted", profile.auto_contrast ? "var(--preview-on-panel-muted)" : profile.colors.muted);
   const selectedBackground = document.querySelector("#designProfileBackground").files[0];
   if (preview.dataset.objectUrl) URL.revokeObjectURL(preview.dataset.objectUrl);
   let background = "none";
@@ -674,6 +755,7 @@ function fillDesignProfileForm(profile = state.settings.design_profile, id = "")
   document.querySelector("#designProfileName").value = id ? profile.name : tr("profiles.copySuffix", {name: profile.name});
   document.querySelector(`input[name="profileStyle"][value="${profile.style || "soft"}"]`).checked = true;
   document.querySelector("#designProfileFont").value = profile.font || "system";
+  document.querySelector("#designProfileAutoContrast").checked = profile.auto_contrast !== false;
   document.querySelector("#designProfileBackground").value = "";
   document.querySelector("#designProfileBackgroundName").value = profile.background_name || "";
   document.querySelectorAll("[data-profile-color]").forEach((input) => { input.value = profile.colors[input.dataset.profileColor]; });

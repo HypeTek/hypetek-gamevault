@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.3
+
+- Automatischer Schriftkontrast folgt nun appweit der tatsächlich verwendeten Hintergrund-, Fenster-, Karten-, Primär- oder Sekundärfläche statt einer einzigen globalen Fensterfarbe.
+- Akzenttexte wie Links, Überschriften, Status- und Warnhinweise behalten ihre Profilfarbe so weit wie möglich und werden nur bis zum WCAG-AA-Kontrast aufgehellt oder abgedunkelt.
+- LCARS-Kopfbereich, Systemband, Dialoge, Karten, Formulare, Hilfen und Live-Vorschau verwenden eigene semantische Kontrastfarben.
+- Eine bewusst deaktivierte Kontrastautomatik lässt weiterhin alle manuell gewählten Schriftfarben unverändert.
+
+## 0.6.2
+
+- Neuer automatischer Schriftkontrast wählt pro Hintergrund-, Fenster-, Karten-, Primär- und Sekundärfläche eine gut lesbare helle oder dunkle Vordergrundfarbe.
+- Gedämpfte Hinweise werden nicht mehr blind aus dem Profil übernommen, sondern erfüllen im Automatikmodus mindestens WCAG-AA-Kontrast für normalen Text.
+- Bibliothekstyp-Auswahl und LCARS-Flächen verwenden die jeweils zur tatsächlichen Fläche passende Textfarbe.
+- Designprofile erhalten die Option „Schriftkontrast automatisch“. Wird sie deaktiviert, bleiben bewusst gewählte Text- und Hinweisfarben unverändert.
+- Live-Vorschau zeigt die Kontrastentscheidung bereits vor dem Speichern; ältere und integrierte Profile werden automatisch in den lesbaren Modus migriert.
+
 ## 0.6.1
 
 - Beim Anlegen einer Bibliothek wird jetzt ausdrücklich zwischen **Netzwerk/TrueNAS** und **lokaler Windows-Festplatte** gewählt.
