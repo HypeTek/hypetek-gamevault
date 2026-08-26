@@ -116,6 +116,66 @@ function Complete-FolderPicker([string]$ServerUrl, [string]$AgentToken, [string]
         -TimeoutSec 15 | Out-Null
 }
 
+function Get-ScanManifest([string]$ServerUrl, [string]$AgentToken, [string]$Token) {
+    Invoke-RestMethod -Method Get `
+        -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/scans/$([Uri]::EscapeDataString($Token))" `
+        -Headers @{ Authorization = "Bearer $AgentToken" } `
+        -TimeoutSec 30
+}
+
+function Complete-AgentScan([string]$ServerUrl, [string]$AgentToken, [string]$Token, $Results) {
+    $body = @{ results = @($Results) } | ConvertTo-Json -Depth 8 -Compress
+    Invoke-RestMethod -Method Post `
+        -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/scans/$([Uri]::EscapeDataString($Token))/complete" `
+        -Headers @{ Authorization = "Bearer $AgentToken" } `
+        -ContentType "application/json; charset=utf-8" `
+        -Body $body `
+        -TimeoutSec 900 | Out-Null
+}
+
+function Get-CleanGameTitle([string]$Name) {
+    $title = [IO.Path]::GetFileNameWithoutExtension($Name)
+    $title = $title -replace '(?i)\s*\[(?:fitgirl(?: repack)?|repack)\]\s*', ' '
+    $title = $title -replace '(?i)\s*--[_ ]*fitgirl-repacks(?:\.site)?[_ ]*--\s*', ' '
+    $title = ($title -replace '[._]+', ' ' -replace '\s+', ' ').Trim(' ', '-', '_')
+    if ([string]::IsNullOrWhiteSpace($title)) { return $Name }
+    return $title
+}
+
+function Get-LocalLibraryResults([string]$Root, [string[]]$ExcludedNames) {
+    $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
+    $excluded = @{}
+    foreach ($name in @($ExcludedNames)) { if ($name) { $excluded[[string]$name.ToLowerInvariant()] = $true } }
+    $results = New-Object System.Collections.Generic.List[object]
+    foreach ($entry in Get-ChildItem -LiteralPath $Root -Force -ErrorAction SilentlyContinue | Sort-Object Name) {
+        if ($excluded.ContainsKey($entry.Name.ToLowerInvariant())) { continue }
+        try {
+            $files = if ($entry.PSIsContainer) {
+                @(Get-ChildItem -LiteralPath $entry.FullName -File -Recurse -Force -ErrorAction SilentlyContinue)
+            } else { @($entry) }
+            $installer = $files | Where-Object { $_.Name -match '(?i)^(setup(?:[-_. ].*)?|install(?:er)?(?:[-_. ].*)?|autorun)\.exe$' } | Sort-Object @{Expression={$_.FullName.Split('\').Count}}, FullName | Select-Object -First 1
+            $iso = $files | Where-Object { $_.Extension -ieq '.iso' } | Sort-Object FullName | Select-Object -First 1
+            $type = 'manual'; $launcher = $null; $note = 'Keine sichere Installationsaktion erkannt'
+            if ($installer) { $type = 'direct_setup'; $launcher = $installer; $note = 'Setup-Programm vom Windows-Agent erkannt' }
+            elseif ($iso) { $type = 'iso'; $launcher = $iso; $note = 'ISO-Abbild vom Windows-Agent erkannt' }
+            $relative = $entry.FullName.Substring($rootFull.Length).Replace('\', '/')
+            $launcherRelative = if ($launcher) { $launcher.FullName.Substring($rootFull.Length).Replace('\', '/') } else { $null }
+            $size = [Int64]0
+            foreach ($file in $files) { $size += [Int64]$file.Length }
+            $results.Add([PSCustomObject]@{
+                relative_path = $relative
+                title = Get-CleanGameTitle $entry.Name
+                detected_type = $type
+                launcher_relative_path = $launcherRelative
+                file_count = $files.Count
+                logical_size = $size
+                detection_note = $note
+            })
+        } catch { continue }
+    }
+    return $results
+}
+
 function Find-InstallerOnMountedIso([string]$DriveLetter) {
     $root = "$($DriveLetter):\"
     $autorun = Join-Path $root "autorun.inf"
@@ -151,7 +211,7 @@ try {
     }
     if ([string]::IsNullOrWhiteSpace($ProtocolUrl)) { throw "Kein Mission-Control-Auftrag empfangen." }
     $uri = [Uri]$ProtocolUrl
-    if ($uri.Scheme -ne "hypetek-gamevault" -or $uri.Host -notin @("launch", "probe", "browse")) {
+    if ($uri.Scheme -ne "hypetek-gamevault" -or $uri.Host -notin @("launch", "probe", "browse", "scan")) {
         throw "Ungültiger Mission-Control-Link."
     }
 
@@ -188,6 +248,33 @@ try {
         } else {
             Complete-FolderPicker $config.server_url $config.agent_token $pickerToken "" $true
         }
+        exit 0
+    }
+    if ($uri.Host -eq "scan") {
+        $scanToken = $null
+        foreach ($pair in $uri.Query.TrimStart('?').Split('&')) {
+            if ([string]::IsNullOrWhiteSpace($pair)) { continue }
+            $parts = $pair -split '=', 2
+            if ([Uri]::UnescapeDataString($parts[0]) -eq "token" -and $parts.Count -eq 2) {
+                $scanToken = [Uri]::UnescapeDataString($parts[1]); break
+            }
+        }
+        if ([string]::IsNullOrWhiteSpace($scanToken)) { throw "Scan-Token fehlt im Mission-Control-Link." }
+        $scanManifest = Get-ScanManifest $config.server_url $config.agent_token $scanToken
+        $libraryId = [string]$scanManifest.library_id
+        $scanRoot = $null
+        if ($config.libraries) {
+            $mapping = $config.libraries.PSObject.Properties[$libraryId]
+            if ($mapping) { $scanRoot = [string]$mapping.Value }
+        }
+        if ([string]::IsNullOrWhiteSpace($scanRoot)) {
+            $scanRoot = Confirm-LibraryMapping $config $libraryId ([string]$scanManifest.library_name) ([string]$scanManifest.windows_path_hint)
+        }
+        if ([string]::IsNullOrWhiteSpace($scanRoot) -or -not (Test-Path -LiteralPath $scanRoot -PathType Container)) {
+            throw "Der lokale Bibliothekspfad ist auf diesem Windows-PC nicht erreichbar."
+        }
+        $scanResults = Get-LocalLibraryResults $scanRoot @($scanManifest.scan_exclusions)
+        Complete-AgentScan $config.server_url $config.agent_token $scanToken $scanResults
         exit 0
     }
     $ticket = $null

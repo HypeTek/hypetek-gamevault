@@ -540,15 +540,19 @@ function openSettings() {
 
 function renderLibrarySettings(items) {
   const rows = document.querySelector("#librarySettingsRows");
-  rows.innerHTML = items.map((item, index) => `<div class="library-settings-row" data-library-row>
+  rows.innerHTML = items.map((item, index) => {
+    const sourceType = item.source_type || "server";
+    const local = sourceType === "windows_local";
+    return `<div class="library-settings-row ${local ? "is-windows-local" : ""}" data-library-row>
     <input data-library-field="id" value="${escapeHtml(item.id)}" aria-label="${escapeHtml(tr("library.id"))}" ${index === 0 ? "readonly" : ""}>
     <input data-library-field="name" value="${escapeHtml(item.name)}" aria-label="${escapeHtml(tr("library.name"))}" placeholder="${escapeHtml(tr("library.name"))}">
-    <input data-library-field="container_path" value="${escapeHtml(item.container_path)}" aria-label="${escapeHtml(tr("library.containerPath"))}" placeholder="/libraries/archive2">
+    <input data-library-field="source_type" type="hidden" value="${escapeHtml(sourceType)}">
+    ${local ? `<span class="library-source-badge">${escapeHtml(tr("library.windowsType"))}</span>` : `<input data-library-field="container_path" value="${escapeHtml(item.container_path)}" aria-label="${escapeHtml(tr("library.containerPath"))}" placeholder="/libraries/archive2">`}
     <span class="library-path-field"><input data-library-field="windows_path" value="${escapeHtml(item.windows_path)}" aria-label="${escapeHtml(tr("library.windowsPath"))}" placeholder="Y:\\Games"><button class="secondary browse-library-path" type="button">${escapeHtml(tr("library.browse"))}</button></span>
-    <input data-library-field="linux_path" value="${escapeHtml(item.linux_path || "")}" aria-label="${escapeHtml(tr("library.linuxPath"))}" placeholder="/mnt/games">
+    ${local ? "" : `<input data-library-field="linux_path" value="${escapeHtml(item.linux_path || "")}" aria-label="${escapeHtml(tr("library.linuxPath"))}" placeholder="/mnt/games">`}
     <label class="library-enabled"><input data-library-field="enabled" type="checkbox" ${item.enabled !== false ? "checked" : ""}> ${escapeHtml(tr("library.enabled"))}</label>
     <button class="ghost remove-library" type="button" ${index === 0 ? "disabled" : ""}>×</button>
-  </div>`).join("");
+  </div>`; }).join("");
   rows.querySelectorAll(".remove-library").forEach((button) => button.addEventListener("click", () => button.closest("[data-library-row]").remove()));
   rows.querySelectorAll(".browse-library-path").forEach((button) => button.addEventListener("click", () => browseLibraryPath(button)));
 }
@@ -583,9 +587,10 @@ function collectLibrarySettings() {
   return [...document.querySelectorAll("[data-library-row]")].map((row) => ({
     id: row.querySelector('[data-library-field="id"]').value.trim(),
     name: row.querySelector('[data-library-field="name"]').value.trim(),
-    container_path: row.querySelector('[data-library-field="container_path"]').value.trim(),
+    source_type: row.querySelector('[data-library-field="source_type"]').value,
+    container_path: row.querySelector('[data-library-field="container_path"]')?.value.trim() || "",
     windows_path: row.querySelector('[data-library-field="windows_path"]').value.trim(),
-    linux_path: row.querySelector('[data-library-field="linux_path"]').value.trim(),
+    linux_path: row.querySelector('[data-library-field="linux_path"]')?.value.trim() || "",
     enabled: row.querySelector('[data-library-field="enabled"]').checked,
   }));
 }
@@ -1030,19 +1035,42 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
   statusEl.textContent = tr("scan.running");
   try {
     const result = await api("/api/scan", {method: "POST", body: JSON.stringify(state.libraryFilter === "all" ? {} : {library_id: state.libraryFilter})});
-    statusEl.textContent = tr("scan.done", {count: result.scanned});
+    let scanned = result.scanned || 0;
+    for (const request of (result.agent_scans || [])) {
+      statusEl.textContent = tr("scan.windowsWaiting", {name: request.library_name});
+      window.location.href = request.protocol_url;
+      let completed = false;
+      for (let attempt = 0; attempt < 300; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const progress = await api(`/api/agent/scans/${encodeURIComponent(request.token)}/status`);
+        if (progress.completed) {
+          if (progress.error) throw new Error(progress.error);
+          scanned += progress.scanned || 0;
+          completed = true;
+          break;
+        }
+        if (progress.expired) break;
+      }
+      if (!completed) throw new Error(tr("scan.windowsTimeout", {name: request.library_name}));
+    }
+    statusEl.textContent = tr("scan.done", {count: scanned});
     await load();
   } catch (error) { statusEl.textContent = error.message; }
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
-document.querySelector("#addLibraryButton").addEventListener("click", () => {
+function appendLibrary(sourceType) {
   const existing = collectLibrarySettings();
   let number = existing.length + 1;
   let id = `library-${number}`;
   while (existing.some((item) => item.id === id)) { number += 1; id = `library-${number}`; }
-  existing.push({id, name: `Bibliothek ${number}`, container_path: `/libraries/${id}`, windows_path: "", linux_path: "", enabled: true});
+  existing.push({id, name: `${tr("settings.libraryDefaultName")} ${number}`, source_type: sourceType, container_path: sourceType === "server" ? `/libraries/${id}` : "", windows_path: "", linux_path: "", enabled: true});
   renderLibrarySettings(existing);
-});
+  document.querySelector("#libraryTypeDialog").close();
+}
+document.querySelector("#addLibraryButton").addEventListener("click", () => document.querySelector("#libraryTypeDialog").showModal());
+document.querySelector("#closeLibraryTypeDialog").addEventListener("click", () => document.querySelector("#libraryTypeDialog").close());
+document.querySelector("#addServerLibrary").addEventListener("click", () => appendLibrary("server"));
+document.querySelector("#addWindowsLibrary").addEventListener("click", () => appendLibrary("windows_local"));
 document.querySelector("#testTranslatorButton").addEventListener("click", testTranslatorConnection);
 document.querySelector("#settingTranslatorUrl").addEventListener("input", syncTranslatorTestAvailability);
 document.querySelector("#designProfilesButton").addEventListener("click", openDesignProfiles);

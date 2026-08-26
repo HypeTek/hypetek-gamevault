@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.6.0"
+      com.hypetek.mission-control.deployment: "0.6.1"
 
     ports:
       - "9998:8080"
@@ -106,7 +106,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.6.0 muss die Antwort unter anderem `"version":"0.6.0"`,
+Für Version 0.6.1 muss die Antwort unter anderem `"version":"0.6.1"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -115,11 +115,20 @@ Secret-Key meldet lediglich bestehende Browser-Sitzungen ab.
 
 ## Mehrere Spielebibliotheken
 
-Unter **Einstellungen → Spielebibliotheken** erhält jedes Archiv eine dauerhafte ID,
-einen Namen, den Containerpfad und passende lokale Windows-/SMB- und Linux-Pfade. Die primäre
-Bibliothek bleibt automatisch mit `/games` kompatibel. Zusätzliche Bibliotheken
-werden unter `/libraries/<id>` nur-lesbar eingebunden. Nach dem Speichern kann jede
-Bibliothek einzeln oder gemeinsam gescannt und im Dashboard gefiltert werden.
+Unter **Einstellungen → Spielebibliotheken** wird beim Hinzufügen zuerst der Typ gewählt:
+
+- **Netzwerk/TrueNAS:** dauerhafte ID, Name, eingebundener Containerpfad sowie passende
+  Windows-/SMB- und optionale Linux-Clientpfade. Die primäre Bibliothek bleibt mit
+  `/games` kompatibel. Zusätzliche Serverarchive werden unter `/libraries/<id>`
+  nur-lesbar in der YAML eingebunden.
+- **Lokale Windows-Festplatte:** dauerhafte ID, Name und lokaler Windows-Pfad. Es gibt
+  absichtlich weder Container- noch Linux-Feld. Der TrueNAS-Container kann ein Laufwerk
+  wie `F:\\Games` nicht sehen; der installierte Windows-Agent scannt es stattdessen auf
+  ausdrücklichen Befehl mit einem einmaligen, 15 Minuten gültigen Auftrag.
+
+Nach dem Speichern kann jede Bibliothek einzeln oder gemeinsam gescannt und im Dashboard
+gefiltert werden. Für einen lokalen Windows-Scan müssen PC, Laufwerk und aktueller Agent
+erreichbar sein. Eine rein lokale Bibliothek benötigt keinen zusätzlichen YAML-Mount.
 
 Beim ersten Start eines Spiels aus einer zusätzlichen Bibliothek zeigt der Windows-
 Agent den in Mission Control hinterlegten, erreichbaren SMB-Pfad an. Erst nach der

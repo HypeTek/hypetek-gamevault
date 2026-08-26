@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1
+
+- Beim Anlegen einer Bibliothek wird jetzt ausdrücklich zwischen **Netzwerk/TrueNAS** und **lokaler Windows-Festplatte** gewählt.
+- Netzwerkbibliotheken behalten Containerpfad, Windows-/SMB-Zuordnung und optionalen Linux-Clientpfad; bestehende Definitionen werden unverändert als Netzwerkbibliotheken übernommen.
+- Lokale Windows-Bibliotheken benötigen nur Name und Windows-Pfad. Ein künstlicher Container- oder Linux-Pfad wird weder angezeigt noch gespeichert.
+- Lokale Laufwerke werden über den installierten Windows-Agent mit einem kurzlebigen, authentifizierten Scan-Auftrag erfasst. Ergebnisse werden anschließend der richtigen Mission-Control-Bibliothek zugeordnet.
+- TheGamesDB- und RAWG-API-Key-Felder stehen in den Einstellungen sauber untereinander.
+- Regressionstests für Migration, Validierung, Agent-Authentifizierung, einmalige Scan-Aufträge und lokale Scan-Ergebnisse ergänzt.
+
 ## 0.6.0
 
 - Gemeinsame Metadatensuche in TheGamesDB und RAWG ergänzt. Bei zwei hinterlegten API-Keys stehen TheGamesDB-Treffer zuerst und RAWG-Treffer nahtlos direkt darunter.

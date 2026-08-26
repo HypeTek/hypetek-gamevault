@@ -25,6 +25,7 @@ DEFAULTS = {
     "libraries": [{
         "id": "primary",
         "name": DEFAULT_LIBRARY_NAME,
+        "source_type": "server",
         "container_path": DEFAULT_GAME_ROOT,
         "windows_path": DEFAULT_WINDOWS_ROOT,
         "linux_path": "",
@@ -71,6 +72,7 @@ class SettingsStore:
             values["libraries"] = [{
                 "id": "primary",
                 "name": str(values.get("library_name") or DEFAULT_LIBRARY_NAME),
+                "source_type": "server",
                 "container_path": DEFAULT_GAME_ROOT,
                 "windows_path": DEFAULT_WINDOWS_ROOT,
                 "linux_path": "",
@@ -148,11 +150,18 @@ class SettingsStore:
             library_id = re.sub(r"[^a-z0-9_-]+", "-", raw_id).strip("-")[:40]
             if not library_id or library_id in seen_ids:
                 continue
+            source_type = str(item.get("source_type") or "server").strip().casefold()
+            if source_type not in {"server", "windows_local"}:
+                continue
             container_path = str(item.get("container_path") or "").strip()
             windows_path = str(item.get("windows_path") or "").strip()
             linux_path = str(item.get("linux_path") or "").strip()
-            if not container_path.startswith("/") or ".." in Path(container_path).parts:
-                continue
+            if source_type == "server":
+                if not container_path.startswith("/") or ".." in Path(container_path).parts:
+                    continue
+            else:
+                container_path = ""
+                linux_path = ""
             if windows_path and not (
                 re.fullmatch(r"[A-Za-z]:\\(?:[^<>:\"|?*]+\\?)*", windows_path)
                 or re.fullmatch(r"\\\\[^\\/]+\\[^\\/]+(?:\\[^<>:\"|?*]+)*\\?", windows_path)
@@ -160,13 +169,16 @@ class SettingsStore:
                 continue
             if linux_path and (not linux_path.startswith("/") or ".." in Path(linux_path).parts):
                 continue
-            if not windows_path and not linux_path:
+            if source_type == "windows_local" and not windows_path:
+                continue
+            if source_type == "server" and not windows_path and not linux_path:
                 continue
             seen_ids.add(library_id)
             validated_libraries.append({
                 "id": library_id,
                 "name": str(item.get("name") or library_id).strip()[:120] or library_id,
-                "container_path": str(Path(container_path)),
+                "source_type": source_type,
+                "container_path": str(Path(container_path)) if container_path else "",
                 "windows_path": windows_path.rstrip("\\") or windows_path,
                 "linux_path": str(Path(linux_path)) if linux_path else "",
                 "enabled": bool(item.get("enabled", True)),

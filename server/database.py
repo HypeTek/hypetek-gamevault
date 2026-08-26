@@ -62,6 +62,14 @@ CREATE TABLE IF NOT EXISTS folder_pickers (
     selected_path TEXT,
     confirmed_at INTEGER
 );
+CREATE TABLE IF NOT EXISTS agent_scans (
+    token TEXT PRIMARY KEY,
+    library_id TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    completed_at INTEGER,
+    result_count INTEGER,
+    error TEXT
+);
 """
 
 LAUNCH_TICKETS_SCHEMA = """
@@ -344,6 +352,35 @@ class Database:
                 (token,),
             ).fetchone()
         return dict(row) if row else None
+
+    def create_agent_scan(self, token: str, library_id: str, expires_at: int) -> None:
+        with self.connect() as connection:
+            connection.execute("DELETE FROM agent_scans WHERE expires_at < ?", (int(time.time()),))
+            connection.execute(
+                "INSERT INTO agent_scans(token, library_id, expires_at) VALUES (?, ?, ?)",
+                (token, library_id, expires_at),
+            )
+
+    def get_agent_scan(self, token: str) -> dict | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT token, library_id, expires_at, completed_at, result_count, error "
+                "FROM agent_scans WHERE token = ?",
+                (token,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def complete_agent_scan(self, token: str, result_count: int, error: str | None = None) -> bool:
+        now = int(time.time())
+        with self.connect() as connection:
+            result = connection.execute(
+                """
+                UPDATE agent_scans SET completed_at = ?, result_count = ?, error = ?
+                WHERE token = ? AND expires_at >= ? AND completed_at IS NULL
+                """,
+                (now, result_count, error, token, now),
+            )
+        return result.rowcount == 1
 
     @staticmethod
     def _row_to_game(row: sqlite3.Row) -> dict:

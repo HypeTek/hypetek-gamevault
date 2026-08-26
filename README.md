@@ -5,9 +5,10 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.6.0
+## Funktionen in Version 0.6.1
 
-- mehrere getrennte Spielebibliotheken mit eigener TrueNAS-, Windows-/SMB- und Linux-Zuordnung verwalten
+- mehrere getrennte Netzwerkbibliotheken mit eigener TrueNAS-, Windows-/SMB- und Linux-Zuordnung verwalten
+- rein lokale Windows-Bibliotheken ohne erfundenen Containerpfad über den Windows-Agent scannen
 - Bibliotheken einzeln oder gemeinsam scannen und im Dashboard filtern
 - kompakte Seitennummerierung mit direktem Sprung zur ersten und letzten Seite
 - vorhandene 0.4.x-Datenbank automatisch und ohne Verlust als primäre Bibliothek übernehmen
@@ -66,7 +67,8 @@ Bestätigung wird Explorer, Setup oder ISO-Installer geöffnet.
 
 ## Architektur
 
-1. Der Server scannt ausschließlich die oberste Ebene von `/games`.
+1. Der Server scannt bei Netzwerkbibliotheken ausschließlich die oberste Ebene des jeweiligen eingebundenen Containerpfads.
+   Rein lokale Windows-Bibliotheken werden auf ausdrücklichen Wunsch vom authentifizierten Windows-Agent gescannt.
 2. SQLite-Datenbank, Cover, Hintergrund und Einstellungen liegen unter `/config`.
 3. Der Browser fordert für eine Aktion ein einmal verwendbares Ticket an.
 4. Das Windows-Protokoll `hypetek-gamevault://` startet den lokalen Agenten verborgen.
@@ -114,11 +116,21 @@ Offizielle API-Dokumentation: <https://api.thegamesdb.net/>
 Auch mit nur einem der beiden Keys bleibt die Suche verwendbar. Ohne API-Key bleiben
 Bibliothek, manuelle Cover-Uploads und alle Startfunktionen unverändert nutzbar.
 
-Die Bibliothekseinstellungen unterscheiden zwischen dem im Container eingebundenen
-Pfad und lokalen Zuordnungen auf Clients. Windows verwendet Laufwerks- oder UNC-Pfade;
-für künftige Linux-Clients kann zusätzlich ein absoluter Linux-Pfad gespeichert werden.
-Der Linux-Pfad wird bereits sicher validiert und in Starttickets bereitgestellt; ein
-vollständiger nativer Linux-Agent gehört weiterhin zur Roadmap.
+Beim Anlegen einer Bibliothek wird zuerst ihr Typ gewählt:
+
+- **Netzwerk/TrueNAS:** Mission Control scannt den eingebundenen Containerpfad. Derselbe
+  Bestand erhält eine Windows-Laufwerks-/UNC-Zuordnung und optional eine absolute
+  Linux-Clientzuordnung. Beispiel: `/games`, `Z:\\Game` und `/mnt/games` zeigen auf
+  denselben Inhalt, nur aus Sicht der jeweiligen Plattform.
+- **Lokale Windows-Festplatte:** Nur Name und Windows-Pfad werden benötigt, etwa
+  `F:\\Games`. Der installierte Windows-Agent scannt den lokalen Bestand über einen
+  kurzlebigen authentifizierten Auftrag. TrueNAS muss und kann dieses Laufwerk nicht
+  als Containerpfad erreichen.
+
+Der Linux-Pfad einer Netzwerkbibliothek wird bereits sicher validiert und in
+Starttickets bereitgestellt; ein vollständiger nativer Linux-Agent gehört weiterhin
+zur Roadmap. Eine lokale Windows-Bibliothek ist nur scan- und startfähig, während der
+zugehörige Windows-PC und sein Agent erreichbar sind.
 
 ## Tests
 

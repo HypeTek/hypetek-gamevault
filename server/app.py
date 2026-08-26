@@ -33,7 +33,7 @@ from werkzeug.utils import secure_filename
 
 from database import Database
 from design_profiles import DesignProfileStore
-from scanner import scan_library
+from scanner import ScanResult, scan_library, stable_id
 from settings import DEFAULT_TRANSLATOR_URL, SettingsStore, THEMES
 from translation import (
     TranslationError,
@@ -176,6 +176,8 @@ def validate_library_definitions(libraries: object) -> list[dict]:
         raise ValueError("Mindestens eine Bibliothek enthält eine ungültige ID oder einen ungültigen Pfad")
     resolved_paths: list[Path] = []
     for library in candidate:
+        if library.get("source_type") == "windows_local":
+            continue
         root = Path(library["container_path"]).resolve()
         if not root.is_dir():
             raise ValueError(f"Bibliothek '{library['name']}' ist im Container nicht erreichbar: {root}")
@@ -195,7 +197,10 @@ def safe_relative_path(value: str | None, library_id: str = "primary") -> str | 
     path = PurePosixPath(value.replace("\\", "/"))
     if path.is_absolute() or ".." in path.parts:
         raise ValueError("Ungültiger relativer Pfad")
-    root = Path(library_by_id(library_id)["container_path"]).resolve()
+    library = library_by_id(library_id)
+    if library.get("source_type") == "windows_local":
+        return path.as_posix()
+    root = Path(library["container_path"]).resolve()
     resolved = (root / Path(*path.parts)).resolve()
     if resolved != root and root not in resolved.parents:
         raise ValueError("Pfad verlässt das Games-Verzeichnis")
@@ -755,12 +760,24 @@ def scan():
     except ValueError as error:
         return jsonify(error=str(error)), 400
     counts = {}
+    agent_scans = []
     for library in libraries:
+        if library.get("source_type") == "windows_local":
+            token = secrets.token_urlsafe(32)
+            database.create_agent_scan(token, library["id"], int(time.time()) + 900)
+            agent_scans.append({
+                "token": token,
+                "library_id": library["id"],
+                "library_name": library["name"],
+                "protocol_url": f"hypetek-gamevault://scan?token={token}",
+                "expires_in": 900,
+            })
+            continue
         root = Path(library["container_path"]).resolve()
         results = scan_library(root, exclusions, library["id"])
         database.apply_scan(results, library["id"])
         counts[library["id"]] = len(results)
-    return jsonify(scanned=sum(counts.values()), libraries=counts)
+    return jsonify(scanned=sum(counts.values()), libraries=counts, agent_scans=agent_scans)
 
 
 def automatic_backup(force: bool = False) -> Path:
@@ -1215,6 +1232,99 @@ def complete_folder_picker(token: str):
     response = app.response_class(status=204)
     response.headers["Cache-Control"] = "no-store"
     return response
+
+
+def _agent_scan_results(payload: object, library_id: str) -> list[ScanResult]:
+    if not isinstance(payload, list) or len(payload) > 10000:
+        raise ValueError("Ungültige Scan-Ergebnisse")
+    allowed_types = {"direct_setup", "iso", "manual"}
+    results: list[ScanResult] = []
+    seen_paths: set[str] = set()
+    for item in payload:
+        if not isinstance(item, dict):
+            raise ValueError("Ungültiger Bibliothekseintrag")
+        relative_path = safe_relative_path(str(item.get("relative_path") or ""), library_id)
+        if not relative_path or relative_path.casefold() in seen_paths:
+            raise ValueError("Doppelter oder leerer relativer Pfad")
+        seen_paths.add(relative_path.casefold())
+        launcher = item.get("launcher_relative_path")
+        launcher_path = safe_relative_path(str(launcher), library_id) if launcher else None
+        detected_type = str(item.get("detected_type") or "manual")
+        if detected_type not in allowed_types:
+            raise ValueError("Unbekannter Eintragstyp")
+        try:
+            file_count = min(10_000_000, max(0, int(item.get("file_count") or 0)))
+            logical_size = min(2**63 - 1, max(0, int(item.get("logical_size") or 0)))
+        except (TypeError, ValueError):
+            raise ValueError("Ungültige Dateistatistik") from None
+        title = str(item.get("title") or Path(relative_path).name).strip()[:300]
+        if not title:
+            raise ValueError("Leerer Titel")
+        results.append(ScanResult(
+            game_id=stable_id(relative_path, library_id),
+            relative_path=relative_path,
+            title=title,
+            detected_type=detected_type,
+            launcher_relative_path=launcher_path,
+            file_count=file_count,
+            logical_size=logical_size,
+            detection_note=str(item.get("detection_note") or "Vom Windows-Agent erkannt")[:500],
+        ))
+    return results
+
+
+@app.get("/api/agent/scans/<token>")
+def agent_scan_manifest(token: str):
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    scan_request = database.get_agent_scan(token)
+    if not scan_request or scan_request.get("completed_at") or int(scan_request["expires_at"]) < int(time.time()):
+        return jsonify(error="Scan-Auftrag ungültig, abgelaufen oder bereits verwendet"), 404
+    try:
+        library = library_by_id(scan_request["library_id"])
+    except ValueError as error:
+        return jsonify(error=str(error)), 409
+    if library.get("source_type") != "windows_local":
+        return jsonify(error="Bibliothek ist keine lokale Windows-Bibliothek"), 409
+    return jsonify(
+        library_id=library["id"],
+        library_name=library["name"],
+        windows_path_hint=library["windows_path"],
+        scan_exclusions=settings_store.load().get("scan_exclusions", []),
+    )
+
+
+@app.post("/api/agent/scans/<token>/complete")
+def complete_agent_scan(token: str):
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    scan_request = database.get_agent_scan(token)
+    if not scan_request or scan_request.get("completed_at") or int(scan_request["expires_at"]) < int(time.time()):
+        return jsonify(error="Scan-Auftrag ungültig, abgelaufen oder bereits verwendet"), 404
+    try:
+        results = _agent_scan_results((request.get_json(silent=True) or {}).get("results"), scan_request["library_id"])
+        database.apply_scan(results, scan_request["library_id"])
+        database.complete_agent_scan(token, len(results))
+    except ValueError as error:
+        database.complete_agent_scan(token, 0, str(error))
+        return jsonify(error=str(error)), 400
+    return jsonify(ok=True, scanned=len(results))
+
+
+@app.get("/api/agent/scans/<token>/status")
+@login_required
+def agent_scan_status(token: str):
+    scan_request = database.get_agent_scan(token)
+    if not scan_request:
+        abort(404)
+    return jsonify(
+        completed=bool(scan_request.get("completed_at")),
+        expired=int(scan_request["expires_at"]) < int(time.time()),
+        scanned=scan_request.get("result_count") or 0,
+        error=scan_request.get("error"),
+    )
 
 
 @app.post("/api/agent/validate")

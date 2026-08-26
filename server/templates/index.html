@@ -198,14 +198,16 @@
         <label>Scanner-Ausschlüsse
           <textarea id="settingExclusions" rows="3" placeholder="hadmin, System Volume Information"></textarea>
         </label>
-        <label><span data-i18n="settings.gamesDbKey">TheGamesDB-API-Key (optional)</span>
-          <input id="settingTheGamesDbApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
-          <span id="theGamesDbKeyStatus" class="field-hint"></span>
-        </label>
-        <label><span data-i18n="settings.rawgKey">RAWG-API-Key (optional)</span>
-          <input id="settingRawgApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
-          <span id="rawgKeyStatus" class="field-hint"></span>
-        </label>
+        <div class="metadata-api-keys">
+          <label><span data-i18n="settings.gamesDbKey">TheGamesDB-API-Key (optional)</span>
+            <input id="settingTheGamesDbApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
+            <span id="theGamesDbKeyStatus" class="field-hint"></span>
+          </label>
+          <label><span data-i18n="settings.rawgKey">RAWG-API-Key (optional)</span>
+            <input id="settingRawgApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
+            <span id="rawgKeyStatus" class="field-hint"></span>
+          </label>
+        </div>
         <label>Sprache der Oberfläche
           <select id="settingUiLanguage">
             <option value="auto" data-i18n="settings.auto">Automatisch (Browser)</option><option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option><option value="it">Italiano</option><option value="fr">Français</option><option value="es">Español</option><option value="pt">Português</option><option value="pl">Polski</option><option value="nl">Nederlands</option><option value="tr">Türkçe</option>
@@ -252,6 +254,17 @@
         <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeRawgKeyButton" type="button" class="ghost" data-i18n="settings.removeRawg">RAWG-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button type="button" data-close-settings class="secondary">Abbrechen</button><button id="saveSettingsButton" type="submit" value="default">Speichern</button></div>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="libraryTypeDialog" class="help-dialog library-type-dialog">
+    <div class="help-dialog-content">
+      <div class="dialog-head"><h2 data-i18n="library.chooseType">Bibliothekstyp wählen</h2><button id="closeLibraryTypeDialog" type="button" class="ghost">×</button></div>
+      <p data-i18n="library.chooseTypeHint">Wo befinden sich die Spiele dieser Bibliothek?</p>
+      <div class="library-type-options">
+        <button id="addServerLibrary" type="button"><strong data-i18n="library.serverType">Netzwerkressource / TrueNAS</strong><span data-i18n="library.serverTypeHint">TrueNAS scannt den eingebundenen Ordner; Clients erhalten passende Pfadzuordnungen.</span></button>
+        <button id="addWindowsLibrary" type="button" class="secondary"><strong data-i18n="library.windowsType">Lokale Windows-Festplatte</strong><span data-i18n="library.windowsTypeHint">Der Windows-Agent scannt einen lokalen Ordner, zum Beispiel F:\Games.</span></button>
+      </div>
+    </div>
   </dialog>
 
   <dialog id="restoreBackupDialog" class="restore-backup-dialog">
