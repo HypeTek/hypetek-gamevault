@@ -61,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.6.3")
+        self.assertEqual(status.get_json()["current"], "0.6.4")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -71,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.6.3")
+        self.assertEqual(summary["application_version"], "0.6.4")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -173,6 +173,16 @@ class AppTests(unittest.TestCase):
         self.assertEqual(manifest.status_code, 200)
         self.assertEqual(manifest.get_json()["windows_path_hint"], "F:\\Games")
 
+        waiting = self.client.get(f"/api/agent/scans/{token}/status").get_json()
+        self.assertFalse(waiting["started"])
+        self.assertEqual(self.client.post(f"/api/agent/scans/{token}/start").status_code, 401)
+        self.assertEqual(
+            self.client.post(f"/api/agent/scans/{token}/start", headers=headers).status_code,
+            200,
+        )
+        started = self.client.get(f"/api/agent/scans/{token}/status").get_json()
+        self.assertTrue(started["started"])
+
         completion = self.client.post(
             f"/api/agent/scans/{token}/complete",
             headers=headers,
@@ -198,6 +208,27 @@ class AppTests(unittest.TestCase):
             self.client.post(f"/api/agent/scans/{token}/complete", headers=headers, json={"results": []}).status_code,
             404,
         )
+
+    def test_windows_agent_can_report_scan_failure(self):
+        self.login()
+        current = self.module.settings_store.load()
+        current["libraries"] = [{
+            "id": "local-error", "name": "Defekte lokale Bibliothek",
+            "source_type": "windows_local", "container_path": "",
+            "windows_path": "F:\\Missing", "linux_path": "", "enabled": True,
+        }]
+        self.module.settings_store.save(self.module.settings_store.validate(current))
+        token = self.post("/api/scan", json={"library_id": "local-error"}).get_json()["agent_scans"][0]["token"]
+        headers = {"Authorization": "Bearer agent-test"}
+        self.assertEqual(self.client.post(f"/api/agent/scans/{token}/start", headers=headers).status_code, 200)
+        failure = self.client.post(
+            f"/api/agent/scans/{token}/fail", headers=headers,
+            json={"error": "Der lokale Pfad ist nicht erreichbar."},
+        )
+        self.assertEqual(failure.status_code, 200)
+        status = self.client.get(f"/api/agent/scans/{token}/status").get_json()
+        self.assertTrue(status["completed"])
+        self.assertEqual(status["error"], "Der lokale Pfad ist nicht erreichbar.")
 
     def test_agent_token_validation_is_unambiguous(self):
         get_is_not_a_validation = self.client.get("/api/agent/validate")
@@ -227,7 +258,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.6.3")
+        self.assertEqual(health["version"], "0.6.4")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -279,7 +310,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.6.3/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.6.4/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -289,9 +320,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.6.3", html)
-        self.assertIn("/static/i18n.js?v=0.6.3", html)
-        self.assertIn("/static/app.css?v=0.6.3", html)
+        self.assertIn("/static/app.js?v=0.6.4", html)
+        self.assertIn("/static/i18n.js?v=0.6.4", html)
+        self.assertIn("/static/app.css?v=0.6.4", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -300,7 +331,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.6.3")
+        self.assertEqual(settings["version"], "0.6.4")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])

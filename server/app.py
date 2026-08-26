@@ -1295,6 +1295,16 @@ def agent_scan_manifest(token: str):
     )
 
 
+@app.post("/api/agent/scans/<token>/start")
+def start_agent_scan(token: str):
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    if not database.start_agent_scan(token):
+        return jsonify(error="Scan-Auftrag ungültig, abgelaufen oder bereits verwendet"), 404
+    return jsonify(ok=True)
+
+
 @app.post("/api/agent/scans/<token>/complete")
 def complete_agent_scan(token: str):
     authorization = request.headers.get("Authorization", "")
@@ -1313,6 +1323,19 @@ def complete_agent_scan(token: str):
     return jsonify(ok=True, scanned=len(results))
 
 
+@app.post("/api/agent/scans/<token>/fail")
+def fail_agent_scan(token: str):
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    scan_request = database.get_agent_scan(token)
+    if not scan_request or scan_request.get("completed_at") or int(scan_request["expires_at"]) < int(time.time()):
+        return jsonify(error="Scan-Auftrag ungültig, abgelaufen oder bereits verwendet"), 404
+    message = str((request.get_json(silent=True) or {}).get("error") or "Windows-Agent hat den Scan abgebrochen")[:500]
+    database.complete_agent_scan(token, 0, message)
+    return jsonify(ok=True)
+
+
 @app.get("/api/agent/scans/<token>/status")
 @login_required
 def agent_scan_status(token: str):
@@ -1320,6 +1343,7 @@ def agent_scan_status(token: str):
     if not scan_request:
         abort(404)
     return jsonify(
+        started=bool(scan_request.get("started_at")),
         completed=bool(scan_request.get("completed_at")),
         expired=int(scan_request["expires_at"]) < int(time.time()),
         scanned=scan_request.get("result_count") or 0,

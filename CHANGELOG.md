@@ -1,7 +1,12 @@
 # Changelog
 
-## 0.6.3
+## 0.6.4
 
+- Lokale Windows-Bibliotheken melden dem Browser nun ausdrücklich, sobald der installierte Agent einen Scan-Auftrag übernommen hat.
+- Ein veralteter oder nicht gestarteter Agent beendet die sichtbare Scan-Anzeige nach kurzer Wartezeit mit einer verständlichen Update-Meldung, statt dauerhaft „Bibliothek wird gescannt“ anzuzeigen.
+- Scheitert ein übernommener lokaler Scan etwa an einem nicht erreichbaren Pfad, meldet der Agent den konkreten Fehler sofort an die Oberfläche zurück.
+- Die Einstellungen sind in die Bereiche Allgemein, Bibliotheken, Metadaten & Übersetzer, Design & Bewegung sowie Wartung gegliedert; jeweils nur ein Bereich ist geöffnet.
+- Bewegung und Animation befinden sich nun direkt beim Design, während API-Schlüssel und Translator getrennt von den allgemeinen Einstellungen verwaltet werden.
 - Automatischer Schriftkontrast folgt nun appweit der tatsächlich verwendeten Hintergrund-, Fenster-, Karten-, Primär- oder Sekundärfläche statt einer einzigen globalen Fensterfarbe.
 - Akzenttexte wie Links, Überschriften, Status- und Warnhinweise behalten ihre Profilfarbe so weit wie möglich und werden nur bis zum WCAG-AA-Kontrast aufgehellt oder abgedunkelt.
 - LCARS-Kopfbereich, Systemband, Dialoge, Karten, Formulare, Hilfen und Live-Vorschau verwenden eigene semantische Kontrastfarben.

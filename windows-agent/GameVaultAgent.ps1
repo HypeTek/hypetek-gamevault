@@ -4,6 +4,8 @@
 )
 
 $ErrorActionPreference = "Stop"
+$ActiveScanToken = $null
+$ActiveScanConfig = $null
 $ConfigPath = Join-Path $env:LOCALAPPDATA "HypeTek\MissionControl\agent.json"
 $LegacyConfigPath = Join-Path $env:LOCALAPPDATA "HypeTek\GameVault\agent.json"
 if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf) -and (Test-Path -LiteralPath $LegacyConfigPath -PathType Leaf)) {
@@ -123,6 +125,13 @@ function Get-ScanManifest([string]$ServerUrl, [string]$AgentToken, [string]$Toke
         -TimeoutSec 30
 }
 
+function Start-AgentScan([string]$ServerUrl, [string]$AgentToken, [string]$Token) {
+    Invoke-RestMethod -Method Post `
+        -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/scans/$([Uri]::EscapeDataString($Token))/start" `
+        -Headers @{ Authorization = "Bearer $AgentToken" } `
+        -TimeoutSec 15 | Out-Null
+}
+
 function Complete-AgentScan([string]$ServerUrl, [string]$AgentToken, [string]$Token, $Results) {
     $body = @{ results = @($Results) } | ConvertTo-Json -Depth 8 -Compress
     Invoke-RestMethod -Method Post `
@@ -131,6 +140,16 @@ function Complete-AgentScan([string]$ServerUrl, [string]$AgentToken, [string]$To
         -ContentType "application/json; charset=utf-8" `
         -Body $body `
         -TimeoutSec 900 | Out-Null
+}
+
+function Fail-AgentScan([string]$ServerUrl, [string]$AgentToken, [string]$Token, [string]$Message) {
+    $body = @{ error = $Message } | ConvertTo-Json -Compress
+    Invoke-RestMethod -Method Post `
+        -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/scans/$([Uri]::EscapeDataString($Token))/fail" `
+        -Headers @{ Authorization = "Bearer $AgentToken" } `
+        -ContentType "application/json; charset=utf-8" `
+        -Body $body `
+        -TimeoutSec 15 | Out-Null
 }
 
 function Get-CleanGameTitle([string]$Name) {
@@ -260,6 +279,9 @@ try {
             }
         }
         if ([string]::IsNullOrWhiteSpace($scanToken)) { throw "Scan-Token fehlt im Mission-Control-Link." }
+        $ActiveScanToken = $scanToken
+        $ActiveScanConfig = $config
+        Start-AgentScan $config.server_url $config.agent_token $scanToken
         $scanManifest = Get-ScanManifest $config.server_url $config.agent_token $scanToken
         $libraryId = [string]$scanManifest.library_id
         $scanRoot = $null
@@ -275,6 +297,7 @@ try {
         }
         $scanResults = Get-LocalLibraryResults $scanRoot @($scanManifest.scan_exclusions)
         Complete-AgentScan $config.server_url $config.agent_token $scanToken $scanResults
+        $ActiveScanToken = $null
         exit 0
     }
     $ticket = $null
@@ -382,6 +405,10 @@ try {
     }
 }
 catch {
-    Show-Error $_.Exception.Message
+    $failureMessage = $_.Exception.Message
+    if ($ActiveScanToken -and $ActiveScanConfig) {
+        try { Fail-AgentScan $ActiveScanConfig.server_url $ActiveScanConfig.agent_token $ActiveScanToken $failureMessage } catch { }
+    }
+    Show-Error $failureMessage
     exit 1
 }

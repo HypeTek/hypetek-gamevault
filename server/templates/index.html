@@ -179,26 +179,38 @@
   <dialog id="settingsDialog" class="settings-dialog">
     <form id="settingsForm" method="dialog">
       <div class="dialog-head"><h2>Mission Control konfigurieren</h2><button type="button" data-close-settings class="ghost">×</button></div>
-      <div class="settings-grid">
-        <label>Servername<input id="settingServerName" type="text" maxlength="80"></label>
-        <label>Archivname<input id="settingLibraryName" type="text" maxlength="120"></label>
-        <section class="settings-wide design-profile-launcher">
-          <div><strong>Designprofile</strong><span id="settingsProfileDescription" class="field-hint">Farben, Stil, Schrift und Hintergrundeffekte als eigenes Profil speichern.</span></div>
-          <button id="designProfilesButton" class="secondary" type="button">Profile verwalten</button>
-        </section>
-        <section class="settings-wide library-settings">
+      <div class="settings-sections">
+        <details class="settings-section" open>
+          <summary data-i18n="settings.sectionGeneral">Allgemein</summary>
+          <div class="settings-section-grid">
+            <label>Servername<input id="settingServerName" type="text" maxlength="80"></label>
+            <label>Archivname<input id="settingLibraryName" type="text" maxlength="120"></label>
+            <label>Sprache der Oberfläche
+              <select id="settingUiLanguage">
+                <option value="auto" data-i18n="settings.auto">Automatisch (Browser)</option><option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option><option value="it">Italiano</option><option value="fr">Français</option><option value="es">Español</option><option value="pt">Português</option><option value="pl">Polski</option><option value="nl">Nederlands</option><option value="tr">Türkçe</option>
+              </select>
+              <span id="settingsUiLanguageHint" class="field-hint">Integrierte Sprachpakete; unabhängig von der Übersetzung der Spielinhalte.</span>
+            </label>
+            <label class="checkbox-label"><input id="settingCrosshair" type="checkbox"> Fadenkreuz als Mauszeiger</label>
+            <label class="settings-wide">Scanner-Ausschlüsse
+              <textarea id="settingExclusions" rows="3" placeholder="hadmin, System Volume Information"></textarea>
+            </label>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary data-i18n="settings.sectionLibraries">Bibliotheken</summary>
+          <section class="library-settings">
           <div class="library-settings-head">
             <div><strong data-i18n="settings.libraries">Bibliotheken</strong><span class="field-hint" data-i18n="settings.librariesHint">Containerpfad und sichere Windows-Zuordnung je Bibliothek.</span></div>
             <button id="addLibraryButton" class="secondary" type="button" data-i18n="settings.addLibrary">+ Bibliothek</button>
           </div>
           <div id="librarySettingsRows" class="library-settings-rows"></div>
           <span class="field-hint"><span data-i18n="settings.libraryMountHint">Zusätzliche Containerpfade müssen in der TrueNAS-YAML bereits als Volume unter</span> <code>/libraries/…</code> <span data-i18n="settings.libraryMountHintEnd">eingebunden sein. Der Windows-Pfad ist nur die Zuordnung auf diesem PC.</span></span>
-        </section>
-        <label class="checkbox-label"><input id="settingCrosshair" type="checkbox"> Fadenkreuz als Mauszeiger</label>
-        <label>Scanner-Ausschlüsse
-          <textarea id="settingExclusions" rows="3" placeholder="hadmin, System Volume Information"></textarea>
-        </label>
-        <div class="metadata-api-keys">
+          </section>
+        </details>
+        <details class="settings-section">
+          <summary data-i18n="settings.sectionMetadata">Metadaten &amp; Übersetzer</summary>
+          <div class="settings-section-grid">
           <label><span data-i18n="settings.gamesDbKey">TheGamesDB-API-Key (optional)</span>
             <input id="settingTheGamesDbApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
             <span id="theGamesDbKeyStatus" class="field-hint"></span>
@@ -207,48 +219,41 @@
             <input id="settingRawgApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
             <span id="rawgKeyStatus" class="field-hint"></span>
           </label>
-        </div>
-        <label>Sprache der Oberfläche
-          <select id="settingUiLanguage">
-            <option value="auto" data-i18n="settings.auto">Automatisch (Browser)</option><option value="de">Deutsch</option><option value="en">English</option><option value="ru">Русский</option><option value="it">Italiano</option><option value="fr">Français</option><option value="es">Español</option><option value="pt">Português</option><option value="pl">Polski</option><option value="nl">Nederlands</option><option value="tr">Türkçe</option>
-          </select>
-          <span id="settingsUiLanguageHint" class="field-hint">Integrierte Sprachpakete; unabhängig von der Übersetzung der Spielinhalte.</span>
-        </label>
-        <label><span data-i18n="settings.motion">Bewegung und Animation</span>
-          <select id="settingMotionPreference">
-            <option value="auto" data-i18n="settings.motionAuto">Automatisch (System)</option>
-            <option value="reduce" data-i18n="settings.motionReduce">Reduziert</option>
-            <option value="full" data-i18n="settings.motionFull">Voll</option>
-          </select>
-          <span class="field-hint" data-i18n="settings.motionHint">Reduziert Bewegungen, Glüheffekte und weiches Scrollen.</span>
-        </label>
-        <label>Mission Control Translator (optional)
+          <label>Mission Control Translator (optional)
           <input id="settingTranslatorUrl" type="url" placeholder="http://translator:5000">
           <span class="translator-status-row"><span id="translatorStatus" class="field-hint"></span><button id="testTranslatorButton" type="button" class="secondary" data-i18n="translator.test" disabled>Verbindung testen</button></span>
           <span id="settingsTranslatorHint" class="field-hint">Die sichtbare Adresse ist nur ein Beispiel. Ohne eingerichteten Translator bleiben übernommene Originaltexte unverändert.</span>
         </label>
-        <label>Translator-API-Key (nur falls erforderlich)
+          <label>Translator-API-Key (nur falls erforderlich)
           <input id="settingTranslatorApiKey" type="password" autocomplete="off" placeholder="Leer lassen, um vorhandenen Key zu behalten">
-        </label>
+          </label>
+          <p id="settingsKeysNote" class="note settings-wide">API-Keys werden ausschließlich in deiner lokalen Mission-Control-Konfiguration gespeichert. <button id="settingsIntegrationHelpButton" class="inline-help" type="button">Einrichtung für TheGamesDB und Translator anzeigen</button></p>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary data-i18n="settings.sectionDesign">Design &amp; Bewegung</summary>
+          <div class="settings-section-grid">
+            <section class="settings-wide design-profile-launcher">
+              <div><strong>Designprofile</strong><span id="settingsProfileDescription" class="field-hint">Farben, Stil, Schrift und Hintergrundeffekte als eigenes Profil speichern.</span></div>
+              <button id="designProfilesButton" class="secondary" type="button">Profile verwalten</button>
+            </section>
+            <label><span data-i18n="settings.motion">Bewegung und Animation</span>
+              <select id="settingMotionPreference"><option value="auto" data-i18n="settings.motionAuto">Automatisch (System)</option><option value="reduce" data-i18n="settings.motionReduce">Reduziert</option><option value="full" data-i18n="settings.motionFull">Voll</option></select>
+              <span class="field-hint" data-i18n="settings.motionHint">Reduziert Bewegungen, Glüheffekte und weiches Scrollen.</span>
+            </label>
+          </div>
+        </details>
+        <details class="settings-section">
+          <summary data-i18n="maintenance.title">Wartung, Sicherung und Updates</summary>
+          <div class="maintenance-panel">
+            <p data-i18n="maintenance.hint">Sicherungen enthalten Konfiguration, Datenbank, Cover und Hintergründe – niemals Kennwörter, Tokens oder API-Keys.</p>
+            <div class="maintenance-overview"><span><strong data-i18n="maintenance.installedVersion">Installierte Version</strong><span id="maintenanceCurrentVersion">–</span></span><span><strong data-i18n="maintenance.lastBackup">Letzte automatische Sicherung</strong><span id="maintenanceLastBackup">–</span></span></div>
+            <div class="maintenance-actions"><a class="button-link secondary" href="/api/maintenance/backup" data-i18n="maintenance.backup">Sicherung herunterladen</a><button id="restoreBackupButton" type="button" class="secondary" data-i18n="maintenance.restore">Sicherung wiederherstellen</button><input id="restoreBackupFile" type="file" accept="application/zip,.zip" hidden><a class="button-link secondary" href="/api/maintenance/diagnostics" data-i18n="maintenance.diagnostics">Diagnosepaket herunterladen</a><button id="checkUpdateButton" type="button" class="secondary" data-i18n="maintenance.update">Auf Updates prüfen</button></div>
+            <span id="maintenanceStatus" class="field-hint" role="status" aria-live="polite"></span>
+          </div>
+        </details>
       </div>
-      <p id="settingsKeysNote" class="note">API-Keys werden ausschließlich in deiner lokalen Mission-Control-Konfiguration gespeichert. <button id="settingsIntegrationHelpButton" class="inline-help" type="button">Einrichtung für TheGamesDB und Translator anzeigen</button></p>
       <p id="settingsExclusionNote" class="note">Ausschlüsse gelten für Namen auf der obersten Ebene des Games-Ordners. Bestehende Cover und Metadaten bleiben erhalten.</p>
-      <details class="maintenance-panel settings-wide">
-        <summary data-i18n="maintenance.title">Wartung, Sicherung und Updates</summary>
-        <p data-i18n="maintenance.hint">Sicherungen enthalten Konfiguration, Datenbank, Cover und Hintergründe – niemals Kennwörter, Tokens oder API-Keys.</p>
-        <div class="maintenance-overview">
-          <span><strong data-i18n="maintenance.installedVersion">Installierte Version</strong><span id="maintenanceCurrentVersion">–</span></span>
-          <span><strong data-i18n="maintenance.lastBackup">Letzte automatische Sicherung</strong><span id="maintenanceLastBackup">–</span></span>
-        </div>
-        <div class="maintenance-actions">
-          <a class="button-link secondary" href="/api/maintenance/backup" data-i18n="maintenance.backup">Sicherung herunterladen</a>
-          <button id="restoreBackupButton" type="button" class="secondary" data-i18n="maintenance.restore">Sicherung wiederherstellen</button>
-          <input id="restoreBackupFile" type="file" accept="application/zip,.zip" hidden>
-          <a class="button-link secondary" href="/api/maintenance/diagnostics" data-i18n="maintenance.diagnostics">Diagnosepaket herunterladen</a>
-          <button id="checkUpdateButton" type="button" class="secondary" data-i18n="maintenance.update">Auf Updates prüfen</button>
-        </div>
-        <span id="maintenanceStatus" class="field-hint" role="status" aria-live="polite"></span>
-      </details>
       <div class="settings-footer">
         <div class="version-mark"><strong>HypeTek Mission Control <span id="appVersion">–</span></strong><span>© 2026 Michael Härtwig · HypeTek</span></div>
         <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeRawgKeyButton" type="button" class="ghost" data-i18n="settings.removeRawg">RAWG-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button type="button" data-close-settings class="secondary">Abbrechen</button><button id="saveSettingsButton" type="submit" value="default">Speichern</button></div>

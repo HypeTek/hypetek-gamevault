@@ -1122,9 +1122,11 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
       statusEl.textContent = tr("scan.windowsWaiting", {name: request.library_name});
       window.location.href = request.protocol_url;
       let completed = false;
+      let started = false;
       for (let attempt = 0; attempt < 300; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         const progress = await api(`/api/agent/scans/${encodeURIComponent(request.token)}/status`);
+        started = started || Boolean(progress.started);
         if (progress.completed) {
           if (progress.error) throw new Error(progress.error);
           scanned += progress.scanned || 0;
@@ -1132,6 +1134,9 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
           break;
         }
         if (progress.expired) break;
+        if (!started && attempt >= 7) {
+          throw new Error(tr("scan.agentUpdateRequired", {name: request.library_name}));
+        }
       }
       if (!completed) throw new Error(tr("scan.windowsTimeout", {name: request.library_name}));
     }
@@ -1140,6 +1145,10 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
   } catch (error) { statusEl.textContent = error.message; }
 });
 document.querySelector("#settingsButton").addEventListener("click", openSettings);
+document.querySelectorAll("#settingsDialog .settings-section").forEach((section) => section.addEventListener("toggle", () => {
+  if (!section.open) return;
+  document.querySelectorAll("#settingsDialog .settings-section").forEach((other) => { if (other !== section) other.open = false; });
+}));
 function appendLibrary(sourceType) {
   const existing = collectLibrarySettings();
   let number = existing.length + 1;

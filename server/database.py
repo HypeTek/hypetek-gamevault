@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS agent_scans (
     token TEXT PRIMARY KEY,
     library_id TEXT NOT NULL,
     expires_at INTEGER NOT NULL,
+    started_at INTEGER,
     completed_at INTEGER,
     result_count INTEGER,
     error TEXT
@@ -122,6 +123,11 @@ class Database:
                 connection.execute(
                     "ALTER TABLE games ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0"
                 )
+            agent_scan_columns = {
+                row["name"] for row in connection.execute("PRAGMA table_info(agent_scans)").fetchall()
+            }
+            if "started_at" not in agent_scan_columns:
+                connection.execute("ALTER TABLE agent_scans ADD COLUMN started_at INTEGER")
             for name in (
                 "metadata_provider",
                 "metadata_provider_id",
@@ -364,11 +370,23 @@ class Database:
     def get_agent_scan(self, token: str) -> dict | None:
         with self.connect() as connection:
             row = connection.execute(
-                "SELECT token, library_id, expires_at, completed_at, result_count, error "
+                "SELECT token, library_id, expires_at, started_at, completed_at, result_count, error "
                 "FROM agent_scans WHERE token = ?",
                 (token,),
             ).fetchone()
         return dict(row) if row else None
+
+    def start_agent_scan(self, token: str) -> bool:
+        now = int(time.time())
+        with self.connect() as connection:
+            result = connection.execute(
+                """
+                UPDATE agent_scans SET started_at = COALESCE(started_at, ?)
+                WHERE token = ? AND expires_at >= ? AND completed_at IS NULL
+                """,
+                (now, token, now),
+            )
+        return result.rowcount == 1
 
     def complete_agent_scan(self, token: str, result_count: int, error: str | None = None) -> bool:
         now = int(time.time())
