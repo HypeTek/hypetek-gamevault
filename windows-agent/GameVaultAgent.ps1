@@ -15,6 +15,45 @@ if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf) -and (Test-Path -Li
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
 
+$AgentLanguage = "auto"
+
+function Resolve-AgentLanguage([string]$Language) {
+    if ([string]::IsNullOrWhiteSpace($Language) -or $Language -eq "auto") {
+        $Language = [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
+    }
+    if ($Language -eq "zh-CN" -or $Language -eq "zh-Hans") { $Language = "zh" }
+    if ($Language -notin @("de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr", "ar", "zh", "tlh", "sjn")) { return "en" }
+    return $Language
+}
+
+function Set-AgentLanguage([string]$Language) {
+    $script:AgentLanguage = Resolve-AgentLanguage $Language
+}
+
+function Get-AgentCopy([string]$Key, [object[]]$Values = @()) {
+    $copy = @{
+        en = @{ picker="Select a Windows or SMB folder for the Mission Control library"; mappingCaption="Map library"; mapping="Mission Control wants to map the library '{0}' on this PC:`n`n{1}`n`nUse this reachable path and save it locally?"; missingPath="The local library path for '{0}' is not reachable on this Windows PC: {1}"; noMapping="No confirmed path is configured for library '{0}' on this Windows PC. Check the drive and try again."; sourceMissing="The path is not reachable:`n{0}"; sourceInvalid="The expected source is not a regular disk image or installer:`n{0}"; isoDrive="The ISO was mounted, but no drive letter was detected."; isoInstaller="The ISO was mounted, but no unambiguous installer was found. The drive was opened."; unsupported="Unsupported action: {0}" }
+        de = @{ picker="Windows- oder SMB-Ordner für die Mission-Control-Bibliothek auswählen"; mappingCaption="Bibliothek zuordnen"; mapping="Mission Control möchte die Bibliothek '{0}' auf diesem PC zuordnen:`n`n{1}`n`nDiesen erreichbaren Pfad verwenden und lokal speichern?"; missingPath="Der lokale Bibliothekspfad für '{0}' ist auf diesem Windows-PC nicht erreichbar: {1}"; noMapping="Für die Bibliothek '{0}' ist auf diesem Windows-PC kein bestätigter Pfad eingerichtet. Laufwerk prüfen und erneut versuchen."; sourceMissing="Der Pfad ist nicht erreichbar:`n{0}"; sourceInvalid="Die erwartete Quelldatei ist kein regulärer Datenträger bzw. Installer:`n{0}"; isoDrive="Das ISO wurde eingebunden, aber kein Laufwerksbuchstabe erkannt."; isoInstaller="ISO eingebunden, aber kein eindeutiger Installer erkannt. Das Laufwerk wurde geöffnet."; unsupported="Nicht unterstützte Aktion: {0}" }
+        ru = @{ picker="Выберите папку Windows или SMB для библиотеки Mission Control"; mappingCaption="Подключение библиотеки"; mapping="Mission Control хочет подключить библиотеку '{0}' на этом ПК:`n`n{1}`n`nИспользовать этот доступный путь и сохранить его?"; missingPath="Локальный путь библиотеки '{0}' недоступен на этом ПК: {1}"; noMapping="Для библиотеки '{0}' нет подтверждённого пути. Проверьте диск и повторите попытку."; sourceMissing="Путь недоступен:`n{0}"; sourceInvalid="Источник не является допустимым образом диска или установщиком:`n{0}"; isoDrive="ISO подключён, но буква диска не обнаружена."; isoInstaller="ISO подключён, но установщик не найден. Диск открыт."; unsupported="Неподдерживаемое действие: {0}" }
+        it = @{ picker="Seleziona una cartella Windows o SMB per la libreria Mission Control"; mappingCaption="Associa libreria"; mapping="Mission Control vuole associare la libreria '{0}' a questo PC:`n`n{1}`n`nUsare questo percorso raggiungibile e salvarlo?"; missingPath="Il percorso locale della libreria '{0}' non è raggiungibile: {1}"; noMapping="Nessun percorso confermato per la libreria '{0}'. Controlla l'unità e riprova."; sourceMissing="Il percorso non è raggiungibile:`n{0}"; sourceInvalid="La sorgente non è un'immagine disco o un installer valido:`n{0}"; isoDrive="ISO montata, ma nessuna lettera di unità rilevata."; isoInstaller="ISO montata, ma nessun installer univoco trovato. L'unità è stata aperta."; unsupported="Azione non supportata: {0}" }
+        fr = @{ picker="Sélectionnez un dossier Windows ou SMB pour la bibliothèque Mission Control"; mappingCaption="Associer la bibliothèque"; mapping="Mission Control veut associer la bibliothèque '{0}' à ce PC :`n`n{1}`n`nUtiliser ce chemin accessible et l'enregistrer ?"; missingPath="Le chemin local de la bibliothèque '{0}' est inaccessible : {1}"; noMapping="Aucun chemin confirmé pour la bibliothèque '{0}'. Vérifiez le lecteur et réessayez."; sourceMissing="Le chemin est inaccessible :`n{0}"; sourceInvalid="La source n'est pas une image disque ou un installateur valide :`n{0}"; isoDrive="L’ISO est montée, mais aucune lettre de lecteur n’a été détectée."; isoInstaller="L’ISO est montée, mais aucun installateur unique n’a été trouvé. Le lecteur a été ouvert."; unsupported="Action non prise en charge : {0}" }
+        es = @{ picker="Selecciona una carpeta Windows o SMB para la biblioteca de Mission Control"; mappingCaption="Asignar biblioteca"; mapping="Mission Control quiere asignar la biblioteca '{0}' a este PC:`n`n{1}`n`n¿Usar esta ruta accesible y guardarla?"; missingPath="La ruta local de la biblioteca '{0}' no está accesible: {1}"; noMapping="No hay una ruta confirmada para la biblioteca '{0}'. Comprueba la unidad e inténtalo de nuevo."; sourceMissing="La ruta no está accesible:`n{0}"; sourceInvalid="El origen no es una imagen de disco ni un instalador válido:`n{0}"; isoDrive="La ISO se montó, pero no se detectó una letra de unidad."; isoInstaller="La ISO se montó, pero no se encontró un instalador inequívoco. Se abrió la unidad."; unsupported="Acción no compatible: {0}" }
+        pt = @{ picker="Selecione uma pasta Windows ou SMB para a biblioteca Mission Control"; mappingCaption="Associar biblioteca"; mapping="O Mission Control pretende associar a biblioteca '{0}' a este PC:`n`n{1}`n`nUsar este caminho acessível e guardá-lo?"; missingPath="O caminho local da biblioteca '{0}' não está acessível: {1}"; noMapping="Não existe caminho confirmado para a biblioteca '{0}'. Verifique a unidade e tente novamente."; sourceMissing="O caminho não está acessível:`n{0}"; sourceInvalid="A origem não é uma imagem de disco nem um instalador válido:`n{0}"; isoDrive="A ISO foi montada, mas não foi detetada uma letra de unidade."; isoInstaller="A ISO foi montada, mas não foi encontrado um instalador inequívoco. A unidade foi aberta."; unsupported="Ação não suportada: {0}" }
+        pl = @{ picker="Wybierz folder Windows lub SMB dla biblioteki Mission Control"; mappingCaption="Mapowanie biblioteki"; mapping="Mission Control chce zmapować bibliotekę '{0}' na tym komputerze:`n`n{1}`n`nUżyć tej dostępnej ścieżki i zapisać ją?"; missingPath="Lokalna ścieżka biblioteki '{0}' jest niedostępna: {1}"; noMapping="Brak potwierdzonej ścieżki dla biblioteki '{0}'. Sprawdź dysk i spróbuj ponownie."; sourceMissing="Ścieżka jest niedostępna:`n{0}"; sourceInvalid="Źródło nie jest prawidłowym obrazem dysku ani instalatorem:`n{0}"; isoDrive="ISO zamontowano, ale nie wykryto litery dysku."; isoInstaller="ISO zamontowano, ale nie znaleziono jednoznacznego instalatora. Dysk został otwarty."; unsupported="Nieobsługiwana akcja: {0}" }
+        nl = @{ picker="Selecteer een Windows- of SMB-map voor de Mission Control-bibliotheek"; mappingCaption="Bibliotheek koppelen"; mapping="Mission Control wil bibliotheek '{0}' aan deze pc koppelen:`n`n{1}`n`nDit bereikbare pad gebruiken en lokaal opslaan?"; missingPath="Het lokale pad van bibliotheek '{0}' is niet bereikbaar: {1}"; noMapping="Er is geen bevestigd pad voor bibliotheek '{0}'. Controleer het station en probeer opnieuw."; sourceMissing="Het pad is niet bereikbaar:`n{0}"; sourceInvalid="De bron is geen geldige schijfkopie of installer:`n{0}"; isoDrive="De ISO is gekoppeld, maar er is geen stationsletter gevonden."; isoInstaller="De ISO is gekoppeld, maar er is geen eenduidige installer gevonden. Het station is geopend."; unsupported="Niet-ondersteunde actie: {0}" }
+        tr = @{ picker="Mission Control kitaplığı için Windows veya SMB klasörü seçin"; mappingCaption="Kitaplığı eşle"; mapping="Mission Control '{0}' kitaplığını bu bilgisayara eşlemek istiyor:`n`n{1}`n`nBu erişilebilir yol kullanılıp kaydedilsin mi?"; missingPath="'{0}' kitaplığının yerel yolu erişilebilir değil: {1}"; noMapping="'{0}' kitaplığı için onaylanmış yol yok. Sürücüyü kontrol edip yeniden deneyin."; sourceMissing="Yola erişilemiyor:`n{0}"; sourceInvalid="Kaynak geçerli bir disk kalıbı veya kurucu değil:`n{0}"; isoDrive="ISO bağlandı ancak sürücü harfi algılanmadı."; isoInstaller="ISO bağlandı ancak belirgin bir kurucu bulunamadı. Sürücü açıldı."; unsupported="Desteklenmeyen eylem: {0}" }
+        ar = @{ picker="حدد مجلد Windows أو SMB لمكتبة Mission Control"; mappingCaption="ربط المكتبة"; mapping="يريد Mission Control ربط المكتبة '{0}' بهذا الكمبيوتر:`n`n{1}`n`nهل تريد استخدام هذا المسار المتاح وحفظه محليًا؟"; missingPath="مسار المكتبة المحلية '{0}' غير متاح على جهاز Windows هذا: {1}"; noMapping="لا يوجد مسار مؤكد للمكتبة '{0}' على هذا الكمبيوتر. تحقق من محرك الأقراص وحاول مجددًا."; sourceMissing="المسار غير متاح:`n{0}"; sourceInvalid="المصدر المتوقع ليس صورة قرص أو برنامج تثبيت صالحًا:`n{0}"; isoDrive="تم تركيب ISO ولكن لم يتم العثور على حرف محرك أقراص."; isoInstaller="تم تركيب ISO، لكن لم يتم العثور على برنامج تثبيت واضح. تم فتح محرك الأقراص."; unsupported="إجراء غير مدعوم: {0}" }
+        zh = @{ picker="为 Mission Control 游戏库选择 Windows 或 SMB 文件夹"; mappingCaption="映射游戏库"; mapping="Mission Control 希望将游戏库“{0}”映射到此电脑：`n`n{1}`n`n是否使用此可访问路径并保存到本机？"; missingPath="本地游戏库“{0}”的路径在此 Windows 电脑上不可访问：{1}"; noMapping="此电脑尚未为游戏库“{0}”配置确认路径。请检查驱动器后重试。"; sourceMissing="路径不可访问：`n{0}"; sourceInvalid="预期的源文件不是有效的磁盘映像或安装程序：`n{0}"; isoDrive="ISO 已挂载，但未检测到驱动器号。"; isoInstaller="ISO 已挂载，但未找到明确的安装程序。驱动器已打开。"; unsupported="不支持的操作：{0}" }
+        tlh = @{ picker="Mission Control tameyvaD Windows pagh SMB ngaSwi' yIwIv"; mappingCaption="tamey rar"; mapping="Mission Control tamey '{0}' De'wI'vamDaq rar neH:`n`n{1}`n`nHe'vam lo'lu' 'ej polmeH DaneH'a'?"; missingPath="tamey '{0}' He' De'wI'vamDaq pawbe': {1}"; noMapping="tamey '{0}'vaD He' 'ollu'be'. QuQ yInuD 'ej yInIDqa'."; sourceMissing="He' pawlu'be':`n{0}"; sourceInvalid="Doch pIHlu'bogh disk image installer ghap 'oHbe':`n{0}"; isoDrive="ISO rar, 'ach QuQ Degh tu'be'."; isoInstaller="ISO rar, 'ach installer leghlu'be'. QuQ poSmoHlu'."; unsupported="vangmeH mIw Qutlhbe': {0}" }
+        sjn = @{ picker="Cilio han Windows egor SMB an i cherdir Mission Control"; mappingCaption="Nautha cherdir"; mapping="Mission Control aníra nautha i cherdir '{0}' na i venn hen:`n`n{1}`n`nMaetha i râd hen a hebin hain?"; missingPath="I râd an i cherdir '{0}' ú-dhanna na i Windows hen: {1}"; noMapping="Ú-chebin râd thand an i cherdir '{0}'. Tirio i rant a caro ad."; sourceMissing="I râd ú-dhanna:`n{0}"; sourceInvalid="I ôn ú-chenir ant dîn disk egor installer:`n{0}"; isoDrive="I ISO nauthant, ach ú-chennir tengw i rant."; isoInstaller="I ISO nauthant, ach ú-chennir installer. I rant edrochant."; unsupported="Carad ú-vrestannen: {0}" }
+    }
+    $languageCopy = $copy[(Resolve-AgentLanguage $script:AgentLanguage)]
+    if (-not $languageCopy -or -not $languageCopy.ContainsKey($Key)) { $languageCopy = $copy.en }
+    $value = [string]$languageCopy[$Key]
+    if ($Values.Count -gt 0) { return [string]::Format($value, $Values) }
+    return $value
+}
+
 function Show-Error([string]$Message) {
     [System.Windows.MessageBox]::Show(
         $Message,
@@ -34,10 +73,10 @@ function Confirm-LibraryMapping($Config, [string]$LibraryId, [string]$LibraryNam
     if ([string]::IsNullOrWhiteSpace($SuggestedPath) -or -not (Test-Path -LiteralPath $SuggestedPath -PathType Container)) {
         return $null
     }
-    $message = "Mission Control möchte die Bibliothek '$LibraryName' auf diesem PC zuordnen:`n`n$SuggestedPath`n`nDiesen erreichbaren Pfad verwenden und lokal speichern?"
+    $message = Get-AgentCopy "mapping" @($LibraryName, $SuggestedPath)
     $answer = [System.Windows.MessageBox]::Show(
         $message,
-        "HypeTek Mission Control – Bibliothek zuordnen",
+        "HypeTek Mission Control – $(Get-AgentCopy 'mappingCaption')",
         [System.Windows.MessageBoxButton]::YesNo,
         [System.Windows.MessageBoxImage]::Question
     )
@@ -116,6 +155,13 @@ function Complete-FolderPicker([string]$ServerUrl, [string]$AgentToken, [string]
         -ContentType "application/json; charset=utf-8" `
         -Body $body `
         -TimeoutSec 15 | Out-Null
+}
+
+function Get-FolderPickerManifest([string]$ServerUrl, [string]$AgentToken, [string]$Token) {
+    Invoke-RestMethod -Method Get `
+        -Uri "$($ServerUrl.TrimEnd('/'))/api/agent/folder-pickers/$([Uri]::EscapeDataString($Token))/manifest" `
+        -Headers @{ Authorization = "Bearer $AgentToken" } `
+        -TimeoutSec 15
 }
 
 function Get-ScanManifest([string]$ServerUrl, [string]$AgentToken, [string]$Token) {
@@ -255,6 +301,7 @@ try {
         throw "Agent-Konfiguration fehlt: $ConfigPath"
     }
     $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
+    Set-AgentLanguage ([string]$config.installer_language)
     foreach ($required in @("server_url", "agent_token")) {
         if ([string]::IsNullOrWhiteSpace($config.$required)) { throw "Konfigurationswert fehlt: $required" }
     }
@@ -292,8 +339,10 @@ try {
             }
         }
         if ([string]::IsNullOrWhiteSpace($pickerToken)) { throw "Auswahltoken fehlt im Mission-Control-Link." }
+        $pickerManifest = Get-FolderPickerManifest $config.server_url $config.agent_token $pickerToken
+        Set-AgentLanguage ([string]$pickerManifest.ui_language)
         $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-        $dialog.Description = "Windows- oder SMB-Ordner für die Mission-Control-Bibliothek auswählen"
+        $dialog.Description = Get-AgentCopy "picker"
         $dialog.ShowNewFolderButton = $false
         if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             Complete-FolderPicker $config.server_url $config.agent_token $pickerToken $dialog.SelectedPath $false
@@ -322,13 +371,14 @@ try {
             try {
                 Start-AgentScan $config.server_url $config.agent_token $scanToken
                 $scanManifest = Get-ScanManifest $config.server_url $config.agent_token $scanToken
+                Set-AgentLanguage ([string]$scanManifest.ui_language)
                 $libraryId = [string]$scanManifest.library_id
                 # The path stored with the current server library is authoritative for
                 # scans. This prevents an older agent mapping from silently scanning the
                 # previous folder after the user edits the library path in Settings.
                 $scanRoot = [string]$scanManifest.windows_path_hint
                 if ([string]::IsNullOrWhiteSpace($scanRoot) -or -not (Test-Path -LiteralPath $scanRoot -PathType Container)) {
-                    throw "Der lokale Bibliothekspfad für '$($scanManifest.library_name)' ist auf diesem Windows-PC nicht erreichbar: $scanRoot"
+                    throw (Get-AgentCopy "missingPath" @([string]$scanManifest.library_name, $scanRoot))
                 }
                 if (-not $config.libraries) {
                     $config | Add-Member -NotePropertyName libraries -NotePropertyValue ([PSCustomObject]@{}) -Force
@@ -366,6 +416,7 @@ try {
     if ([string]::IsNullOrWhiteSpace($ticket)) { throw "Ticket fehlt im Mission-Control-Link." }
 
     $manifest = Get-Ticket $config.server_url $config.agent_token $ticket
+    Set-AgentLanguage ([string]$manifest.ui_language)
     $libraryId = if ([string]::IsNullOrWhiteSpace([string]$manifest.library_id)) { "primary" } else { [string]$manifest.library_id }
     $gameRoot = $null
     if ($config.libraries) {
@@ -379,21 +430,17 @@ try {
         $gameRoot = Confirm-LibraryMapping $config $libraryId ([string]$manifest.library_name) ([string]$manifest.windows_path_hint)
     }
     if ([string]::IsNullOrWhiteSpace($gameRoot)) {
-        throw "Für die Bibliothek '$libraryId' ist auf diesem Windows-PC kein bestätigter Pfad eingerichtet. Prüfe das SMB-Laufwerk und starte die Aktion erneut."
+        throw (Get-AgentCopy "noMapping" @($libraryId))
     }
     $source = Assert-PathInsideRoot $gameRoot $manifest.launcher
     if (-not (Test-Path -LiteralPath $source)) {
-        throw "Der Pfad ist über SMB nicht erreichbar:`n$source"
+        throw (Get-AgentCopy "sourceMissing" @($source))
     }
     if ($manifest.action -ne "open_folder" -and -not (Test-Path -LiteralPath $source -PathType Leaf)) {
-        throw "Die erwartete Quelldatei ist kein regulärer Datenträger bzw. Installer:`n$source"
+        throw (Get-AgentCopy "sourceInvalid" @($source))
     }
 
-    $language = [string]$manifest.ui_language
-    if ($language -eq "auto") {
-        $language = [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
-    }
-    if ($language -notin @("de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr")) { $language = "en" }
+    $language = Resolve-AgentLanguage ([string]$manifest.ui_language)
     $actionLabels = @{
         de = @{ direct_setup = "Direktes Setup"; iso = "ISO einbinden und installieren"; open_folder = "Ordner öffnen" }
         en = @{ direct_setup = "Direct setup"; iso = "Mount ISO and install"; open_folder = "Open folder" }
@@ -405,6 +452,10 @@ try {
         pl = @{ direct_setup = "Instalacja bezpośrednia"; iso = "Zamontuj ISO i zainstaluj"; open_folder = "Otwórz folder" }
         nl = @{ direct_setup = "Directe installatie"; iso = "ISO koppelen en installeren"; open_folder = "Map openen" }
         tr = @{ direct_setup = "Doğrudan kurulum"; iso = "ISO bağla ve kur"; open_folder = "Klasörü aç" }
+        ar = @{ direct_setup = "تثبيت مباشر"; iso = "تركيب ISO والتثبيت"; open_folder = "فتح المجلد" }
+        zh = @{ direct_setup = "直接安装"; iso = "挂载 ISO 并安装"; open_folder = "打开文件夹" }
+        tlh = @{ direct_setup = "installer yIchu'"; iso = "ISO yIrar 'ej yIjom"; open_folder = "ngaSwi' yIpoSmoH" }
+        sjn = @{ direct_setup = "Pada ben"; iso = "Nautha ISO a bado"; open_folder = "Edro i cherdir" }
     }
     $actionLabel = $actionLabels[$language][$manifest.action]
     if ([string]::IsNullOrWhiteSpace($actionLabel)) { $actionLabel = $manifest.action }
@@ -419,6 +470,10 @@ try {
         pl = @{ title = "Tytuł"; action = "Akcja"; source = "Źródło"; question = "Kontynuować?"; caption = "Potwierdzenie" }
         nl = @{ title = "Titel"; action = "Actie"; source = "Bron"; question = "Doorgaan?"; caption = "Bevestiging" }
         tr = @{ title = "Başlık"; action = "Eylem"; source = "Kaynak"; question = "Devam edilsin mi?"; caption = "Onay" }
+        ar = @{ title = "العنوان"; action = "الإجراء"; source = "المصدر"; question = "هل تريد المتابعة؟"; caption = "تأكيد" }
+        zh = @{ title = "标题"; action = "操作"; source = "来源"; question = "是否继续？"; caption = "确认" }
+        tlh = @{ title = "pong"; action = "vangmeH mIw"; source = "Doch"; question = "taH'a'?"; caption = "'ol" }
+        sjn = @{ title = "Eneth"; action = "Carad"; source = "Ôn"; question = "Maetho?"; caption = "Tanc" }
     }
     $copy = $dialogText[$language]
     $message = "$($copy.title): $($manifest.title)`n`n$($copy.action): $actionLabel`n$($copy.source): $source`n`n$($copy.question)"
@@ -446,15 +501,15 @@ try {
         "iso" {
             $image = Mount-DiskImage -ImagePath $source -PassThru
             $volume = $image | Get-Volume | Where-Object DriveLetter | Select-Object -First 1
-            if (-not $volume) { throw "Das ISO wurde eingebunden, aber kein Laufwerksbuchstabe erkannt." }
+            if (-not $volume) { throw (Get-AgentCopy "isoDrive") }
             $installer = Find-InstallerOnMountedIso $volume.DriveLetter
             if (-not $installer) {
                 Start-Process explorer.exe "$($volume.DriveLetter):\"
-                throw "ISO eingebunden, aber kein eindeutiger Installer erkannt. Das Laufwerk wurde geöffnet."
+                throw (Get-AgentCopy "isoInstaller")
             }
             Start-Process -FilePath $installer -WorkingDirectory ([IO.Path]::GetDirectoryName($installer))
         }
-        default { throw "Nicht unterstützte Aktion: $($manifest.action)" }
+        default { throw (Get-AgentCopy "unsupported" @([string]$manifest.action)) }
     }
 }
 catch {

@@ -46,6 +46,10 @@ Copyright © 2026 Michael Härtwig · HypeTek
 - TrueNAS-Catalog-App mit gepflegten Metadaten und Upgrade-Pfad
 - erweiterte Migrations-, Sicherheits- und Oberflächentests
 - mehrsprachige SMB-, Tailscale- und Installationsanleitungen
+- Community-Catalog-Paket für `truenas/apps` mit `app.yaml`, `questions.yaml`,
+  Compose-Template, Icon/Screenshots, Testwerten und dokumentierter Migration
+- reproduzierbarer Release-Kandidat mit unveränderlichen Image-Digests,
+  Sicherheitsprüfung, Neuinstallationstest und Upgrade-/Rollback-Test auf TrueNAS
 
 ### Windows-Client und Standalone-App
 

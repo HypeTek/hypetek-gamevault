@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.1
+
+- Windows-Agent übernimmt die in Mission Control gewählte Oberflächensprache nun auch für Ordnerauswahl, lokale Scans, Pfadzuordnung, Startbestätigung und die wichtigsten Laufzeitfehler.
+- Arabische, chinesische, klingonische und sindarinische Bestätigungsdialoge im PowerShell-Agent ergänzt; die zehn bisherigen Agent-Sprachen bleiben vollständig erhalten.
+- Scan- und Ordnerauswahl-Manifeste übertragen die Oberflächensprache authentifiziert an den Agent, statt von dessen zuletzt gespeicherter Sprache abhängig zu sein.
+- Klingonische GUI-Überschriften und Aktionen erhalten eine kantige Display-Schrift; Sindarin verwendet eine kalligrafische Serifendarstellung. Eingaben, Pfade und technische Werte bleiben bewusst neutral lesbar.
+- Spielinhaltsübersetzung bleibt dynamisch an die tatsächlich vom Translator gemeldeten Modelle gekoppelt. Das verwaltete Basispaket deckt Deutsch, Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch, Türkisch, Arabisch und Chinesisch ab.
+- Klingonisch und Sindarin bleiben reine experimentelle Oberflächensprachen, da LibreTranslate dafür keine Modelle bereitstellt; eine nicht vorhandene Inhaltsübersetzung wird nicht vorgetäuscht.
+
 ## 0.8.0
 
 - Vereinfachtes Chinesisch als vollständiges integriertes UI-Paket mit 299 übersetzten Oberflächenschlüsseln ergänzt.

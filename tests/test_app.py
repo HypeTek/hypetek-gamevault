@@ -61,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.8.0")
+        self.assertEqual(status.get_json()["current"], "0.8.1")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -71,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.8.0")
+        self.assertEqual(summary["application_version"], "0.8.1")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -173,6 +173,7 @@ class AppTests(unittest.TestCase):
         manifest = self.client.get(f"/api/agent/scans/{token}", headers=headers)
         self.assertEqual(manifest.status_code, 200)
         self.assertEqual(manifest.get_json()["windows_path_hint"], "F:\\Games")
+        self.assertEqual(manifest.get_json()["ui_language"], "auto")
 
         waiting = self.client.get(f"/api/agent/scans/{token}/status").get_json()
         self.assertFalse(waiting["started"])
@@ -281,7 +282,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.8.0")
+        self.assertEqual(health["version"], "0.8.1")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -333,7 +334,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.8.0/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.8.1/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -343,9 +344,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.8.0", html)
-        self.assertIn("/static/i18n.js?v=0.8.0", html)
-        self.assertIn("/static/app.css?v=0.8.0", html)
+        self.assertIn("/static/app.js?v=0.8.1", html)
+        self.assertIn("/static/i18n.js?v=0.8.1", html)
+        self.assertIn("/static/app.css?v=0.8.1", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -354,7 +355,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.8.0")
+        self.assertEqual(settings["version"], "0.8.1")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -866,6 +867,12 @@ class AppTests(unittest.TestCase):
         self.assertEqual(created.status_code, 200)
         picker = created.get_json()
         self.assertIn("hypetek-gamevault://browse?token=", picker["protocol_url"])
+        picker_manifest = self.client.get(
+            f"/api/agent/folder-pickers/{picker['token']}/manifest",
+            headers={"Authorization": "Bearer agent-test"},
+        )
+        self.assertEqual(picker_manifest.status_code, 200)
+        self.assertEqual(picker_manifest.get_json()["ui_language"], "auto")
 
         unauthorized = self.client.post(
             f"/api/agent/folder-pickers/{picker['token']}/complete",

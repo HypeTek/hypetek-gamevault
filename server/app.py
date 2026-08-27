@@ -1250,6 +1250,17 @@ def folder_picker_status(token: str):
     )
 
 
+@app.get("/api/agent/folder-pickers/<token>/manifest")
+def folder_picker_manifest(token: str):
+    authorization = request.headers.get("Authorization", "")
+    if not secrets.compare_digest(authorization, f"Bearer {AGENT_TOKEN}"):
+        return jsonify(error="Nicht autorisiert"), 401
+    picker = database.get_folder_picker(token)
+    if not picker or picker.get("confirmed_at") or int(picker["expires_at"]) < int(time.time()):
+        return jsonify(error="Ordnerauswahl ungültig, abgelaufen oder bereits bestätigt"), 404
+    return jsonify(ui_language=settings_store.load().get("ui_language", "auto"))
+
+
 @app.post("/api/agent/folder-pickers/<token>/complete")
 def complete_folder_picker(token: str):
     authorization = request.headers.get("Authorization", "")
@@ -1325,6 +1336,7 @@ def agent_scan_manifest(token: str):
         library_name=library["name"],
         windows_path_hint=library["windows_path"],
         scan_exclusions=settings_store.load().get("scan_exclusions", []),
+        ui_language=settings_store.load().get("ui_language", "auto"),
     )
 
 
