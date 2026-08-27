@@ -1118,9 +1118,11 @@ document.querySelector("#scanButton").addEventListener("click", async () => {
   try {
     const result = await api("/api/scan", {method: "POST", body: JSON.stringify(state.libraryFilter === "all" ? {} : {library_id: state.libraryFilter})});
     let scanned = result.scanned || 0;
+    if ((result.agent_scans || []).length) {
+      window.location.href = result.agent_protocol_url || result.agent_scans[0].protocol_url;
+    }
     for (const request of (result.agent_scans || [])) {
       statusEl.textContent = tr("scan.windowsWaiting", {name: request.library_name});
-      window.location.href = request.protocol_url;
       let completed = false;
       let started = false;
       for (let attempt = 0; attempt < 300; attempt += 1) {

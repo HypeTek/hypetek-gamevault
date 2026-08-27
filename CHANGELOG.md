@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.5
+
+- Der Windows-Agent verwendet die gleiche automatische Titelauswahl wie serverseitige Bibliotheken und bevorzugt lesbare ISO-/Installernamen gegenüber kryptischen Ordnercodes.
+- Änderungen am Pfad einer lokalen Windows-Bibliothek gelten beim nächsten Scan sofort; eine veraltete lokale Agent-Zuordnung kann nicht mehr unbemerkt den alten Ordner scannen.
+- Mehrere lokale Windows-Bibliotheken werden über einen einzigen Protokollaufruf nacheinander gescannt, damit Browser weitere Agent-Aufrufe nicht als unerwünschte Weiterleitungen blockieren.
+- Beim Löschen einer Bibliothek werden deren indexierte Spiele, offene Starttickets und ausstehende Scanaufträge vollständig aus Mission Control entfernt.
+- Bereits unter einer älteren Version gelöschte Bibliotheken werden beim nächsten Gesamtscan als verwaist erkannt und aus dem Index bereinigt.
+
 ## 0.6.4
 
 - Quellpakete und Container-Build-Kontext schließen lokale Testumgebungen, temporäre Dateien, Python-Caches und Coverage-Ausgaben jetzt ausdrücklich aus.

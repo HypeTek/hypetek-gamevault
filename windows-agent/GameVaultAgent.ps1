@@ -161,6 +161,39 @@ function Get-CleanGameTitle([string]$Name) {
     return $title
 }
 
+function Get-GameTitleQuality([string]$Title, [bool]$IsFolder) {
+    $normalized = ($Title.ToLowerInvariant() -replace '[^a-z0-9]+', '')
+    if ([string]::IsNullOrWhiteSpace($normalized)) { return -1000 }
+    if ($normalized -in @('game', 'setup', 'install', 'installer', 'autorun', 'disc', 'disk', 'dvd', 'image')) { return -120 }
+    if ($normalized -match '^(?:cd|disc|disk|dvd)\d+$') { return -120 }
+    $words = @([regex]::Matches($Title, '[\p{L}\p{N}_]+'))
+    $score = [Math]::Min($Title.Length, 40)
+    if ($words.Count -ge 2) { $score += 42 + [Math]::Min($words.Count, 5) * 3 }
+    if ($Title -cmatch '[a-z]' -and $Title -cmatch '[A-Z]') { $score += 12 }
+    if ($Title -match "[-'’:]" ) { $score += 5 }
+    if ($IsFolder) { $score += 5 }
+    if ($words.Count -eq 1 -and $Title -cmatch '^[^a-z]*$' -and $normalized.Length -ge 5) { $score -= 38 }
+    return $score
+}
+
+function Get-BestGameTitle($Entry, [object[]]$Files) {
+    $folderTitle = Get-CleanGameTitle $Entry.Name
+    $bestTitle = $folderTitle
+    $bestScore = Get-GameTitleQuality $folderTitle $true
+    foreach ($file in @($Files)) {
+        if ($file.Extension -notin @('.iso', '.exe', '.msi')) { continue }
+        $title = Get-CleanGameTitle $file.Name
+        $relative = $file.FullName.Substring($Entry.FullName.Length).TrimStart('\')
+        $depth = [Math]::Max(0, @($relative.Split('\')).Count - 1)
+        $score = (Get-GameTitleQuality $title $false) - [Math]::Min($depth, 8) * 3
+        if ($score -gt $bestScore -or ($score -eq $bestScore -and $title.Length -gt $bestTitle.Length)) {
+            $bestTitle = $title
+            $bestScore = $score
+        }
+    }
+    return $bestTitle
+}
+
 function Get-LocalLibraryResults([string]$Root, [string[]]$ExcludedNames) {
     $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
     $excluded = @{}
@@ -183,7 +216,7 @@ function Get-LocalLibraryResults([string]$Root, [string[]]$ExcludedNames) {
             foreach ($file in $files) { $size += [Int64]$file.Length }
             $results.Add([PSCustomObject]@{
                 relative_path = $relative
-                title = Get-CleanGameTitle $entry.Name
+                title = Get-BestGameTitle $entry $files
                 detected_type = $type
                 launcher_relative_path = $launcherRelative
                 file_count = $files.Count
@@ -270,34 +303,54 @@ try {
         exit 0
     }
     if ($uri.Host -eq "scan") {
-        $scanToken = $null
+        $scanTokens = New-Object System.Collections.Generic.List[string]
         foreach ($pair in $uri.Query.TrimStart('?').Split('&')) {
             if ([string]::IsNullOrWhiteSpace($pair)) { continue }
             $parts = $pair -split '=', 2
-            if ([Uri]::UnescapeDataString($parts[0]) -eq "token" -and $parts.Count -eq 2) {
-                $scanToken = [Uri]::UnescapeDataString($parts[1]); break
+            $parameterName = [Uri]::UnescapeDataString($parts[0])
+            if ($parameterName -in @("token", "tokens") -and $parts.Count -eq 2) {
+                foreach ($tokenValue in ([Uri]::UnescapeDataString($parts[1]) -split ',')) {
+                    if (-not [string]::IsNullOrWhiteSpace($tokenValue)) { $scanTokens.Add($tokenValue) }
+                }
             }
         }
-        if ([string]::IsNullOrWhiteSpace($scanToken)) { throw "Scan-Token fehlt im Mission-Control-Link." }
-        $ActiveScanToken = $scanToken
-        $ActiveScanConfig = $config
-        Start-AgentScan $config.server_url $config.agent_token $scanToken
-        $scanManifest = Get-ScanManifest $config.server_url $config.agent_token $scanToken
-        $libraryId = [string]$scanManifest.library_id
-        $scanRoot = $null
-        if ($config.libraries) {
-            $mapping = $config.libraries.PSObject.Properties[$libraryId]
-            if ($mapping) { $scanRoot = [string]$mapping.Value }
+        if ($scanTokens.Count -eq 0) { throw "Scan-Token fehlt im Mission-Control-Link." }
+        $scanErrors = New-Object System.Collections.Generic.List[string]
+        foreach ($scanToken in $scanTokens) {
+            $ActiveScanToken = $scanToken
+            $ActiveScanConfig = $config
+            try {
+                Start-AgentScan $config.server_url $config.agent_token $scanToken
+                $scanManifest = Get-ScanManifest $config.server_url $config.agent_token $scanToken
+                $libraryId = [string]$scanManifest.library_id
+                # The path stored with the current server library is authoritative for
+                # scans. This prevents an older agent mapping from silently scanning the
+                # previous folder after the user edits the library path in Settings.
+                $scanRoot = [string]$scanManifest.windows_path_hint
+                if ([string]::IsNullOrWhiteSpace($scanRoot) -or -not (Test-Path -LiteralPath $scanRoot -PathType Container)) {
+                    throw "Der lokale Bibliothekspfad für '$($scanManifest.library_name)' ist auf diesem Windows-PC nicht erreichbar: $scanRoot"
+                }
+                if (-not $config.libraries) {
+                    $config | Add-Member -NotePropertyName libraries -NotePropertyValue ([PSCustomObject]@{}) -Force
+                }
+                $config.libraries | Add-Member -NotePropertyName $libraryId -NotePropertyValue $scanRoot -Force
+                Save-AgentConfig $config
+                $scanResults = Get-LocalLibraryResults $scanRoot @($scanManifest.scan_exclusions)
+                Complete-AgentScan $config.server_url $config.agent_token $scanToken $scanResults
+                $ActiveScanToken = $null
+            }
+            catch {
+                $scanMessage = $_.Exception.Message
+                try { Fail-AgentScan $config.server_url $config.agent_token $scanToken $scanMessage } catch { }
+                $scanErrors.Add($scanMessage)
+                $ActiveScanToken = $null
+            }
         }
-        if ([string]::IsNullOrWhiteSpace($scanRoot)) {
-            $scanRoot = Confirm-LibraryMapping $config $libraryId ([string]$scanManifest.library_name) ([string]$scanManifest.windows_path_hint)
-        }
-        if ([string]::IsNullOrWhiteSpace($scanRoot) -or -not (Test-Path -LiteralPath $scanRoot -PathType Container)) {
-            throw "Der lokale Bibliothekspfad ist auf diesem Windows-PC nicht erreichbar."
-        }
-        $scanResults = Get-LocalLibraryResults $scanRoot @($scanManifest.scan_exclusions)
-        Complete-AgentScan $config.server_url $config.agent_token $scanToken $scanResults
         $ActiveScanToken = $null
+        if ($scanErrors.Count -gt 0) {
+            Show-Error ($scanErrors -join "`n`n")
+            exit 1
+        }
         exit 0
     }
     $ticket = $null

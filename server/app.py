@@ -400,7 +400,14 @@ def update_settings():
                 validate_translator(candidate_url, candidate_key or "")
             except TranslationError as error:
                 return jsonify(error=f"Translator wurde nicht gespeichert: {error}"), 502
+    removed_library_ids: set[str] = set()
+    if "libraries" in changes:
+        old_library_ids = {item["id"] for item in configured_libraries()}
+        new_library_ids = {item["id"] for item in changes["libraries"]}
+        removed_library_ids = old_library_ids - new_library_ids
     settings_store.update(changes)
+    for library_id in removed_library_ids:
+        database.remove_library(library_id)
     return jsonify(public_settings())
 
 
@@ -752,6 +759,7 @@ def games():
 @csrf_required
 def scan():
     automatic_backup()
+    database.remove_unconfigured_libraries({item["id"] for item in configured_libraries()})
     exclusions = set(settings_store.load().get("scan_exclusions", []))
     payload = request.get_json(silent=True) or {}
     requested = payload.get("library_id")
@@ -777,7 +785,14 @@ def scan():
         results = scan_library(root, exclusions, library["id"])
         database.apply_scan(results, library["id"])
         counts[library["id"]] = len(results)
-    return jsonify(scanned=sum(counts.values()), libraries=counts, agent_scans=agent_scans)
+    agent_protocol_url = None
+    if agent_scans:
+        tokens = ",".join(item["token"] for item in agent_scans)
+        agent_protocol_url = f"hypetek-gamevault://scan?tokens={tokens}"
+    return jsonify(
+        scanned=sum(counts.values()), libraries=counts,
+        agent_scans=agent_scans, agent_protocol_url=agent_protocol_url,
+    )
 
 
 def automatic_backup(force: bool = False) -> Path:

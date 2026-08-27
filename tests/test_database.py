@@ -41,6 +41,23 @@ class DatabaseLibraryTests(unittest.TestCase):
             database.apply_scan([result("two", "Same")], "archive")
             self.assertEqual(len(database.list_games()), 2)
 
+    def test_removing_library_deletes_its_indexed_games(self):
+        with tempfile.TemporaryDirectory() as temp:
+            database = Database(Path(temp) / "games.sqlite3")
+            database.apply_scan([result("primary-id", "Primary")], "primary")
+            database.apply_scan([result("removed-id", "Removed")], "library-3")
+            database.remove_library("library-3")
+            self.assertEqual([item["id"] for item in database.list_games()], ["primary-id"])
+
+    def test_rescan_cleanup_removes_preexisting_orphan_library(self):
+        with tempfile.TemporaryDirectory() as temp:
+            database = Database(Path(temp) / "games.sqlite3")
+            database.apply_scan([result("primary-id", "Primary")], "primary")
+            database.apply_scan([result("orphan-id", "SKATSTOR")], "library-3")
+            removed = database.remove_unconfigured_libraries({"primary"})
+            self.assertEqual(removed, ["library-3"])
+            self.assertEqual([item["id"] for item in database.list_games()], ["primary-id"])
+
 
 if __name__ == "__main__":
     unittest.main()

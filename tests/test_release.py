@@ -47,6 +47,8 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('source_type: row.querySelector', javascript)
         self.assertIn('appendLibrary("windows_local")', javascript)
         self.assertIn('result.agent_scans || []', javascript)
+        self.assertIn('result.agent_protocol_url || result.agent_scans[0].protocol_url', javascript)
+        self.assertEqual(javascript.count('window.location.href = request.protocol_url'), 0)
         self.assertIn('.metadata-api-keys{display:grid;gap:12px}', stylesheet)
         self.assertIn('function readableAccentColor', javascript)
         self.assertIn('`--${prefix}primary-on-${name}`', javascript)

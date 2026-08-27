@@ -215,6 +215,28 @@ class Database:
                     ),
                 )
 
+    def remove_library(self, library_id: str) -> None:
+        """Remove indexed state that belongs to a deleted library definition."""
+        with self.connect() as connection:
+            connection.execute(
+                "DELETE FROM launch_tickets WHERE game_id IN (SELECT id FROM games WHERE library_id = ?)",
+                (library_id,),
+            )
+            connection.execute("DELETE FROM games WHERE library_id = ?", (library_id,))
+            connection.execute("DELETE FROM agent_scans WHERE library_id = ?", (library_id,))
+
+    def remove_unconfigured_libraries(self, configured_ids: set[str]) -> list[str]:
+        """Purge legacy orphan rows left by library definitions removed before 0.6.5."""
+        with self.connect() as connection:
+            stored_ids = {
+                row["library_id"]
+                for row in connection.execute("SELECT DISTINCT library_id FROM games").fetchall()
+            }
+        removed = sorted(stored_ids - configured_ids)
+        for library_id in removed:
+            self.remove_library(library_id)
+        return removed
+
     def list_games(self, include_hidden: bool = False, library_id: str | None = None) -> list[dict]:
         where = "present = 1" if include_hidden else "present = 1 AND hidden = 0"
         parameters: tuple = ()
