@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0
+
+- Arabisch als vollständiges integriertes Oberflächenpaket mit derselben Abdeckung von 299 Textschlüsseln wie das englische Referenzpaket ergänzt.
+- Die Dokumentrichtung wechselt für Arabisch automatisch auf Rechts-nach-links; Navigation, Dialoge, Wartung, Einstellungen, Designs und LCARS werden passend gespiegelt.
+- Technische Inhalte wie Windows-/Linux-Pfade, URLs, API-Keys, Code und IDs bleiben als isolierte Links-nach-rechts-Bereiche eindeutig lesbar.
+- Seitennavigation und Richtungssymbole passen sich an RTL an, während die Tastaturkürzel ihre funktionale Bedeutung behalten.
+- Anmeldeseite unterstützt Arabisch einschließlich automatischer Erkennung über die Browsersprache.
+- Das verwaltete LibreTranslate-Basispaket lädt Arabisch standardmäßig für die Übersetzung von Spielbeschreibungen.
+
 ## 0.6.5
 
 - Der Windows-Agent verwendet die gleiche automatische Titelauswahl wie serverseitige Bibliotheken und bevorzugt lesbare ISO-/Installernamen gegenüber kryptischen Ordnercodes.

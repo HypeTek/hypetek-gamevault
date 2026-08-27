@@ -102,6 +102,12 @@ class ReleaseMetadataTests(unittest.TestCase):
         for language in ("it", "fr", "es", "pt", "pl", "nl", "tr"):
             self.assertIn(f"  {language}: {{", translations)
             self.assertIn(f'<option value="{language}">', template)
+        self.assertIn('UI_PACKS.ar = {', translations)
+        self.assertIn('<option value="ar">العربية</option>', template)
+        self.assertIn('currentUiLanguage === "ar" ? "rtl" : "ltr"', translations)
+        self.assertIn('html[dir="rtl"]', stylesheet)
+        self.assertIn('unicode-bidi:isolate', stylesheet)
+        self.assertIn('const rtl = document.documentElement.dir === "rtl"', javascript)
         self.assertIn('const ADDITIONAL_UI_PACKS = {', translations)
         self.assertIn('UI_PACKS[language] = Object.assign({}, UI_PACKS.en', translations)
         additional_packs = translations.split("const ADDITIONAL_UI_PACKS = {", 1)[1].split(
@@ -203,7 +209,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
         self.assertIn("libretranslate/libretranslate:v1.9.6", compose)
         self.assertIn("MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000", compose)
-        self.assertIn("LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr", compose)
+        self.assertIn("LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr,ar", compose)
         self.assertIn(f'com.hypetek.mission-control.deployment: "{version}"', compose)
         self.assertNotIn('"5000:5000"', compose)
 

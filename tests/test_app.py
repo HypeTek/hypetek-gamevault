@@ -61,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.6.5")
+        self.assertEqual(status.get_json()["current"], "0.7.0")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -71,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.6.5")
+        self.assertEqual(summary["application_version"], "0.7.0")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -281,7 +281,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.6.5")
+        self.assertEqual(health["version"], "0.7.0")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -333,7 +333,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(installer.status_code, 302)
         self.assertEqual(
             installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.6.5/HypeTek-Mission-Control-Agent-Setup.exe",
+            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.7.0/HypeTek-Mission-Control-Agent-Setup.exe",
         )
 
     def test_appearance_settings_and_scan_exclusions(self):
@@ -343,9 +343,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.6.5", html)
-        self.assertIn("/static/i18n.js?v=0.6.5", html)
-        self.assertIn("/static/app.css?v=0.6.5", html)
+        self.assertIn("/static/app.js?v=0.7.0", html)
+        self.assertIn("/static/i18n.js?v=0.7.0", html)
+        self.assertIn("/static/app.css?v=0.7.0", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -354,7 +354,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.6.5")
+        self.assertEqual(settings["version"], "0.7.0")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -379,6 +379,15 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.get_json()["motion_preference"], "reduce")
         scan = self.post("/api/scan")
         self.assertEqual(scan.get_json()["scanned"], 0)
+
+    def test_arabic_login_and_interface_setting_use_rtl(self):
+        self.module.settings_store.update({"ui_language": "ar"})
+        page = self.client.get("/login").get_data(as_text=True)
+        self.assertIn('lang="ar" dir="rtl"', page)
+        self.assertIn("كلمة مرور المسؤول", page)
+        self.login()
+        settings = self.client.get("/api/settings").get_json()
+        self.assertEqual(settings["ui_language"], "ar")
 
     def test_multiple_libraries_scan_filter_and_agent_hint(self):
         self.login()

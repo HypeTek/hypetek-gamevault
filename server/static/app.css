@@ -255,7 +255,7 @@ body[data-auto-contrast="true"] :is(button.secondary,.button-link.secondary,.hel
   --accessible-primary:var(--primary-on-panel2);--accessible-secondary:var(--secondary-on-panel2)
 }
 
-/* 0.6.5: settings are grouped by task instead of one long field wall. */
+/* 0.7.0: settings are grouped by task instead of one long field wall. */
 .settings-sections{display:grid;gap:10px}.settings-section{border:1px solid var(--line);border-radius:13px;background:color-mix(in srgb,var(--panel2) 48%,transparent);overflow:clip}.settings-section>summary{cursor:pointer;list-style:none;padding:13px 16px;font-weight:900;color:var(--text);display:flex;align-items:center;justify-content:space-between}.settings-section>summary::-webkit-details-marker{display:none}.settings-section>summary::after{content:"＋";color:var(--accessible-primary);font-size:1.2rem}.settings-section[open]>summary::after{content:"−"}.settings-section[open]>summary{border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}.settings-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:15px}.settings-section-grid>label{display:grid;gap:7px;color:var(--muted)}.settings-section-grid .settings-wide{grid-column:1/-1}.settings-section .library-settings{border:0;border-radius:0;padding:15px}.settings-section .maintenance-panel{border:0;border-radius:0;padding:15px}.settings-section .note{margin:0}.settings-dialog .settings-footer{margin-top:0}
 @media(min-width:1000px){#settingsDialog{width:min(980px,calc(100vw - 32px))}#settingsForm{gap:10px}.settings-sections{grid-template-columns:1fr 1fr}.settings-section:nth-child(2),.settings-section:nth-child(5){grid-column:1/-1}.settings-section[open]{grid-column:1/-1}.settings-section-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.settings-section-grid{grid-template-columns:1fr}.settings-section-grid .settings-wide{grid-column:auto}}
@@ -280,3 +280,15 @@ body[data-auto-contrast="true"][data-style="lcars"] .stat strong{color:inherit}
   color:var(--preview-on-panel)
 }
 .profile-live-preview[data-auto-contrast="true"] article>div:last-child button{color:var(--preview-on-panel2)}
+
+/* Arabic / RTL layout. Technical identifiers, paths and code remain LTR. */
+html[dir="rtl"] body{direction:rtl;font-family:"Segoe UI",Tahoma,Arial,sans-serif}
+html[dir="rtl"] .login-panel form{text-align:right}
+html[dir="rtl"] .floating-brand-home{left:auto;right:3vw}
+html[dir="rtl"] .app-update-notice{right:auto;left:18px}
+html[dir="rtl"] .restore-warning{border-left:0;border-right:4px solid var(--orange)}
+html[dir="rtl"] .is-loading{padding-left:16px!important;padding-right:34px!important}
+html[dir="rtl"] .is-loading::before{left:auto;right:13px}
+html[dir="rtl"] body[data-style="lcars"] .lcars-system-rail{left:auto;right:max(3vw,calc((100vw - 1500px)/2));border-radius:52px 0 0 0;box-shadow:inset 7px 0 color-mix(in srgb,var(--teal),black 8%)}
+html[dir="rtl"] input[data-library-field="id"],html[dir="rtl"] input[data-library-field="container_path"],html[dir="rtl"] input[data-library-field="windows_path"],html[dir="rtl"] input[data-library-field="linux_path"],html[dir="rtl"] #settingTheGamesDbApiKey,html[dir="rtl"] #settingRawgApiKey,html[dir="rtl"] #settingTranslatorUrl,html[dir="rtl"] #settingTranslatorApiKey,html[dir="rtl"] #editLauncher,html[dir="rtl"] code,html[dir="rtl"] pre,html[dir="rtl"] .technical-value{direction:ltr;text-align:left;unicode-bidi:isolate}
+@media(max-width:720px){html[dir="rtl"] .floating-brand-home{right:14px}}

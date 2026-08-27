@@ -1,22 +1,22 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ login_language }}" dir="{{ 'rtl' if login_language == 'ar' else 'ltr' }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HypeTek Mission Control – Anmeldung</title>
+  <title>HypeTek Mission Control – {{ 'تسجيل الدخول' if login_language == 'ar' else 'Anmeldung' }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body class="login-page" data-theme="{{ appearance.active_design_profile }}" data-style="{{ appearance.design_profile.style }}" data-font="{{ appearance.design_profile.font }}" style="--bg:{{ appearance.design_profile.colors.background }};--panel:{{ appearance.design_profile.colors.panel }};--panel2:{{ appearance.design_profile.colors.panel_alt }};--text:{{ appearance.design_profile.colors.text }};--muted:{{ appearance.design_profile.colors.muted }};--teal:{{ appearance.design_profile.colors.primary }};--orange:{{ appearance.design_profile.colors.secondary }};--line:{{ appearance.design_profile.colors.line }}">
   <main class="login-panel">
     <img class="login-logo" src="{{ url_for('static', filename='hypetek-gaming.jpg') }}" alt="HypeTek Gaming">
     <h1>HypeTek Mission Control</h1>
-    <p>{{ appearance.server_name }} · Private Spielebibliothek</p>
+    <p>{{ appearance.server_name }} · {{ 'مكتبة ألعاب خاصة' if login_language == 'ar' else 'Private Spielebibliothek' }}</p>
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label for="password">Administratorkennwort</label>
+      <label for="password">{{ 'كلمة مرور المسؤول' if login_language == 'ar' else 'Administratorkennwort' }}</label>
       <input id="password" name="password" type="password" autofocus required>
-      {% if error %}<p class="error">{{ error }}</p>{% endif %}
-      <button type="submit">Anmelden</button>
+      {% if error %}<p class="error">{{ 'فشل تسجيل الدخول' if login_language == 'ar' else error }}</p>{% endif %}
+      <button type="submit">{{ 'تسجيل الدخول' if login_language == 'ar' else 'Anmelden' }}</button>
     </form>
   </main>
 </body>

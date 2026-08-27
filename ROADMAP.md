@@ -8,10 +8,11 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 - Übersetzungskern mit sprachneutralen Schlüsseln statt fest eingebauter UI-Texte (Basis seit 0.3.2)
 - automatische Browsererkennung plus frei wählbare Sprache (vollständig seit 0.3.9)
-- vollständig integriert seit 0.3.9: Deutsch, Englisch und Russisch; anschließend Französisch, Spanisch, Italienisch,
-  Portugiesisch (Brasilien), Polnisch, Russisch, Türkisch, vereinfachtes Chinesisch,
-  Japanisch, Koreanisch und Arabisch
-- vollständige Rechts-nach-links-Unterstützung für Arabisch
+- vollständig integriert: Deutsch, Englisch, Russisch, Französisch, Spanisch, Italienisch,
+  Portugiesisch, Polnisch, Niederländisch, Türkisch und Arabisch (Arabisch seit 0.7.0)
+- vollständige Rechts-nach-links-Unterstützung für Arabisch einschließlich technischer
+  LTR-Inseln für Pfade, URLs, IDs und API-Keys (vollständig seit 0.7.0)
+- künftig: vereinfachtes Chinesisch, Japanisch und Koreanisch
 - weitere Sprachen als nachladbare, versionierte JSON-Pakete
 - keine unnötige Aufteilung: reine Textübersetzungen sind klein; separate Downloads
   sind vor allem für zusätzliche Schriftarten, Sprachmedien oder Community-Pakete sinnvoll

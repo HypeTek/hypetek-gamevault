@@ -249,7 +249,17 @@ def login():
             csrf_token()
             return redirect(request.args.get("next") or url_for("index"))
         error = "Anmeldung fehlgeschlagen"
-    return render_template("login.html", error=error, appearance=public_settings())
+    appearance = public_settings()
+    login_language = appearance.get("ui_language", "auto")
+    if login_language == "auto":
+        login_language = request.accept_languages.best_match(
+            ["ar", "de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr"],
+            default="de",
+        )
+    return render_template(
+        "login.html", error=error, appearance=appearance,
+        login_language=login_language,
+    )
 
 
 @app.post("/logout")
