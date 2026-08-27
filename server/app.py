@@ -253,12 +253,20 @@ def login():
     login_language = appearance.get("ui_language", "auto")
     if login_language == "auto":
         login_language = request.accept_languages.best_match(
-            ["ar", "de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr"],
+            ["ar", "zh", "tlh", "sjn", "de", "en", "ru", "it", "fr", "es", "pt", "pl", "nl", "tr"],
             default="de",
         )
+    login_copies = {
+        "ar": {"title": "تسجيل الدخول", "library": "مكتبة ألعاب خاصة", "password": "كلمة مرور المسؤول", "failed": "فشل تسجيل الدخول", "submit": "تسجيل الدخول"},
+        "zh": {"title": "登录", "library": "私人游戏库", "password": "管理员密码", "failed": "登录失败", "submit": "登录"},
+        "tlh": {"title": "'el", "library": "Quj boSwI'", "password": "loHwI' pegh mu'", "failed": "'elHa'", "submit": "'el"},
+        "sjn": {"title": "Minno", "library": "Gasg chîr dínen", "password": "Tharan i hervenn", "failed": "Ú-bedin minno", "submit": "Minno"},
+        "de": {"title": "Anmeldung", "library": "Private Spielebibliothek", "password": "Administratorkennwort", "failed": "Anmeldung fehlgeschlagen", "submit": "Anmelden"},
+    }
+    login_copy = login_copies.get(login_language, login_copies["de"])
     return render_template(
         "login.html", error=error, appearance=appearance,
-        login_language=login_language,
+        login_language=login_language, login_copy=login_copy,
     )
 
 

@@ -5,7 +5,7 @@ services:
     container_name: hypetek-gamevault
     restart: unless-stopped
     labels:
-      com.hypetek.mission-control.deployment: "0.7.0"
+      com.hypetek.mission-control.deployment: "0.8.0"
     ports:
       - "9998:8080"
     environment:
@@ -37,7 +37,7 @@ services:
     environment:
       LT_DISABLE_WEB_UI: "true"
       LT_UPDATE_MODELS: "true"
-      LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr,ar
+      LT_LOAD_ONLY: en,de,ru,it,fr,es,pt,pl,nl,tr,ar,zh
     volumes:
       - /mnt/Application/mission-control-translator:/home/libretranslate/.local
     healthcheck:

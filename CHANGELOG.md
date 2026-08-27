@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0
+
+- Vereinfachtes Chinesisch als vollständiges integriertes UI-Paket mit 299 übersetzten Oberflächenschlüsseln ergänzt.
+- Klingonisch und Sindarin als ausdrücklich experimentelle Spaß-Sprachpakete ergänzt; Kernnavigation und häufige Aktionen sind lokalisiert, moderne technische Hilfetexte verwenden einen eindeutigen englischen Fallback.
+- Chinesische, klingonische und sindarinische Anmeldeseiten sowie automatische Erkennung chinesischer Browsersprachen ergänzt.
+- Arabische Kopfzeile korrigiert: Der Markenname reserviert jetzt den Platz des rechts schwebenden Logos und die Navigation bricht bei Platzmangel sauber um.
+- Das lokale LibreTranslate-Basispaket lädt vereinfachtes Chinesisch standardmäßig; für Klingonisch und Sindarin werden keine nicht vorhandenen Übersetzermodelle vorgetäuscht.
+
 ## 0.7.0
 
 - Arabisch als vollständiges integriertes Oberflächenpaket mit derselben Abdeckung von 299 Textschlüsseln wie das englische Referenzpaket ergänzt.
