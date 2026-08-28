@@ -52,7 +52,7 @@ def game_title_search_queries(value: str) -> list[str]:
 
 
 def _get_json(url: str, timeout: int = 12) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.1"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.2"})
     try:
         with urlopen(request, timeout=timeout) as response:
             return json.load(response)
@@ -147,7 +147,7 @@ def validate_rawg_key(api_key: str) -> None:
 
 
 def _get_thegamesdb_json(url: str, timeout: int = 15) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.1"})
+    request = Request(url, headers={"Accept": "application/json", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.2"})
     try:
         with urlopen(request, timeout=timeout) as response:
             payload = json.load(response)
@@ -246,7 +246,7 @@ def fetch_thegamesdb_image(image_url: str) -> tuple[bytes, str]:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != THEGAMESDB_MEDIA_HOST:
         raise MetadataError("Ungültige TheGamesDB-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.1"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.2"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()
@@ -279,7 +279,7 @@ def download_rawg_image(image_url: str, destination: Path) -> str:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != RAWG_MEDIA_HOST:
         raise MetadataError("Ungültige RAWG-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.1"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.2"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()
@@ -307,7 +307,7 @@ def fetch_rawg_image(image_url: str) -> tuple[bytes, str]:
     parsed = urlparse(str(image_url or ""))
     if parsed.scheme != "https" or parsed.hostname != RAWG_MEDIA_HOST:
         raise MetadataError("Ungültige RAWG-Bildadresse")
-    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.1"})
+    request = Request(image_url, headers={"Accept": "image/*", "User-Agent": "HypeTek-Mission-Control/0.9.0-rc.2"})
     try:
         with urlopen(request, timeout=20) as response:
             content_type = (response.headers.get_content_type() or "").lower()

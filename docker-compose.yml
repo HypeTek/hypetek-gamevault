@@ -1,11 +1,11 @@
 services:
   gamevault:
-    image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.1
+    image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.2
     pull_policy: always
     container_name: hypetek-gamevault
     restart: unless-stopped
     labels:
-      com.hypetek.mission-control.deployment: "0.9.0-rc.1"
+      com.hypetek.mission-control.deployment: "0.9.0-rc.2"
     ports:
       - "9998:8080"
     environment:

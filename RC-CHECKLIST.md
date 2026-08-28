@@ -1,10 +1,10 @@
-# 0.9.0-rc.1 Release Candidate checklist
+# 0.9.0-rc.2 Release Candidate checklist
 
 ## Completed in this RC source package
 
 - [x] Windows PowerShell 5.1 smart-quote parser regression fixed in the Chinese agent copy.
 - [x] CI parses every `windows-agent/*.ps1` file with Windows PowerShell 5.1 and PowerShell 7.
-- [x] CI rejects typographic smart double quotes in executable PowerShell source.
+- [x] CI checks typographic smart double quotes by Unicode codepoint without embedding those delimiters in the PowerShell command itself.
 - [x] Prerelease-aware GitHub release creation (`--prerelease`).
 - [x] RC container versions do not overwrite the stable `latest` tag.
 - [x] Release manifest records the GHCR image digest and Windows installer SHA-256.
@@ -20,7 +20,7 @@
 - [x] JavaScript syntax: `app.js`, `i18n.js`, `service-worker.js`.
 - [x] Python compile check for `server/`, `tests/` and `tools/`.
 - [x] 32 non-Flask unit tests passed, including scanner, settings, database, metadata, translation, design profiles, maintenance and release metadata.
-- [x] API/Translator PDF regenerated for 0.9.0-rc.1.
+- [x] API/Translator PDF source updated for 0.9.0-rc.2; PDF regenerated in this package.
 
 ## Must turn green in GitHub before treating this as a usable RC
 

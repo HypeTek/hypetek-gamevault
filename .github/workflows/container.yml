@@ -96,15 +96,25 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v5
 
-      - name: Reject PowerShell smart quote delimiters
+      - name: Reject unsafe PowerShell smart double quotes
         shell: powershell
         run: |
           $failed = $false
+          $unsafeCodePoints = @(0x201C, 0x201D, 0x201E)
           Get-ChildItem -LiteralPath "windows-agent" -Filter "*.ps1" | ForEach-Object {
-            $source = Get-Content -LiteralPath $_.FullName -Raw
-            if ($source -match '[“”„]') {
-              Write-Host "::error file=$($_.FullName)::Typographic smart quotes are unsafe in Windows PowerShell source."
-              $failed = $true
+            $path = $_.FullName
+            $lines = [System.IO.File]::ReadAllLines($path, (New-Object System.Text.UTF8Encoding($false, $true)))
+            for ($lineIndex = 0; $lineIndex -lt $lines.Length; $lineIndex++) {
+              foreach ($codePoint in $unsafeCodePoints) {
+                $column = $lines[$lineIndex].IndexOf([char]$codePoint)
+                if ($column -ge 0) {
+                  $hex = ('U+{0:X4}' -f $codePoint)
+                  $lineNumber = $lineIndex + 1
+                  $columnNumber = $column + 1
+                  Write-Host "::error file=$path,line=$lineNumber,col=$columnNumber::Unsafe typographic double quote $hex in Windows PowerShell source."
+                  $failed = $true
+                }
+              }
             }
           }
           if ($failed) { exit 1 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0-rc.2
+
+- CI-Hotfix für den Windows-Installer: Der Smart-Quote-Check enthält selbst keine typografischen Anführungszeichen mehr, sondern prüft die Unicode-Codepoints U+201C, U+201D und U+201E.
+- Der Check meldet bei einem echten Treffer jetzt Datei, Zeile, Spalte und Unicode-Codepoint.
+- Die nachfolgenden Parser-Tests mit Windows PowerShell 5.1 und PowerShell 7 bleiben unverändert aktiv und sind weiterhin die maßgebliche Syntaxprüfung.
+- TrueNAS-Community-Catalog-Staging auf App-Version 0.9.0-rc.2 und Paketrevision 1.0.1 aktualisiert.
+
 ## 0.9.0-rc.1
 
 - Release-Kandidat für den ersten TrueNAS-Community-Catalog-Eintrag vorbereitet. Das Repo enthält nun ein Submission-Staging-Paket unter `truenas-catalog/ix-dev/community/hypetek-mission-control`.
@@ -9,7 +16,7 @@
 - Container enthält `curl`, damit der TrueNAS-Catalog den vorhandenen `/health`-Endpunkt zuverlässig als Healthcheck verwenden kann.
 - TrueNAS-Paket nutzt die aktuelle 2.3.11-Rendering-Library, getrennte persistente Speicher für Konfiguration und Translator-Modelle sowie einen nur-lesbaren Spiele-Mount.
 
-## 0.9.0-rc.1
+## 0.8.1
 
 - Windows-Agent übernimmt die in Mission Control gewählte Oberflächensprache nun auch für Ordnerauswahl, lokale Scans, Pfadzuordnung, Startbestätigung und die wichtigsten Laufzeitfehler.
 - Arabische, chinesische, klingonische und sindarinische Bestätigungsdialoge im PowerShell-Agent ergänzt; die zehn bisherigen Agent-Sprachen bleiben vollständig erhalten.

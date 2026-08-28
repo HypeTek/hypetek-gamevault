@@ -272,7 +272,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         catalog_template = (catalog_root / "templates" / "docker-compose.yaml").read_text(encoding="utf-8")
         self.assertIn(f"app_version: {version}", app_yaml)
         self.assertIn("lib_version: 2.3.11", app_yaml)
-        self.assertIn("version: 1.0.0", app_yaml)
+        self.assertIn("version: 1.0.1", app_yaml)
         self.assertIn(f"tag: {version}", ix_values)
         self.assertIn('{"container_port": values.consts.web_port}', catalog_template)
         self.assertIn('healthcheck.set_test("curl"', catalog_template)
