@@ -24,7 +24,8 @@ class ReleaseMetadataTests(unittest.TestCase):
         )
         self.assertIsNotNone(installer_version)
         self.assertEqual(installer_version.group(1), version)
-        self.assertIn(f'VersionInfoVersion={version}.0', installer)
+        numeric_version = version.split('-', 1)[0]
+        self.assertIn(f'VersionInfoVersion={numeric_version}.0', installer)
         self.assertIn(f'org.opencontainers.image.version="{version}"', dockerfile)
         self.assertIn(f"## {version}", changelog)
         self.assertIn(f"Version {version} aktualisieren", translations)
@@ -240,6 +241,41 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn('catch {', workflow)
         self.assertIn('if (-not $releaseExists)', workflow)
         self.assertIn('type=raw,value=${{ steps.version.outputs.version }}', workflow)
+        self.assertIn("!contains(steps.version.outputs.version, '-')", workflow)
+        self.assertIn('Get-ChildItem -LiteralPath "windows-agent" -Filter "*.ps1"', workflow)
+        self.assertIn('--prerelease', workflow)
+        self.assertIn('digest: ${{ steps.build.outputs.digest }}', workflow)
+        self.assertIn('IMAGE_DIGEST: ${{ needs.container.outputs.digest }}', workflow)
+        self.assertIn('release-manifest.txt', workflow)
+        self.assertIn('installer_sha256=', workflow)
+
+        # Windows PowerShell 5.1 treats typographic double quotes as string delimiters.
+        # Keep them out of executable PowerShell source so translated copy cannot
+        # accidentally break the parser again.
+        for powershell_file in (ROOT / "windows-agent").glob("*.ps1"):
+            source = powershell_file.read_text(encoding="utf-8-sig")
+            for quote in ("“", "”", "„"):
+                self.assertNotIn(quote, source, f"Smart quote {quote!r} in {powershell_file.name}")
+
+        catalog_root = ROOT / "truenas-catalog" / "ix-dev" / "community" / "hypetek-mission-control"
+        for relative in (
+            "app.yaml",
+            "ix_values.yaml",
+            "questions.yaml",
+            "README.md",
+            "templates/docker-compose.yaml",
+            "templates/test_values/basic-values.yaml",
+        ):
+            self.assertTrue((catalog_root / relative).is_file(), relative)
+        app_yaml = (catalog_root / "app.yaml").read_text(encoding="utf-8")
+        ix_values = (catalog_root / "ix_values.yaml").read_text(encoding="utf-8")
+        catalog_template = (catalog_root / "templates" / "docker-compose.yaml").read_text(encoding="utf-8")
+        self.assertIn(f"app_version: {version}", app_yaml)
+        self.assertIn("lib_version: 2.3.11", app_yaml)
+        self.assertIn("version: 1.0.0", app_yaml)
+        self.assertIn(f"tag: {version}", ix_values)
+        self.assertIn('{"container_port": values.consts.web_port}', catalog_template)
+        self.assertIn('healthcheck.set_test("curl"', catalog_template)
 
     def test_line_endings_are_declared_for_cross_platform_builds(self):
         attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")

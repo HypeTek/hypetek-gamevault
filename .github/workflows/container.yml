@@ -41,6 +41,8 @@ jobs:
     name: Build and publish GHCR image
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Check out source
         uses: actions/checkout@v5
@@ -66,12 +68,13 @@ jobs:
         with:
           images: ghcr.io/hypetek/hypetek-gamevault
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && !contains(steps.version.outputs.version, '-') }}
             type=raw,value=${{ steps.version.outputs.version }}
             type=ref,event=tag
             type=sha,prefix=sha-
 
       - name: Build and publish image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -85,7 +88,7 @@ jobs:
 
   windows-installer:
     name: Build Windows EXE installer
-    needs: test
+    needs: [test, container]
     runs-on: windows-latest
     permissions:
       contents: write
@@ -93,29 +96,58 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v5
 
+      - name: Reject PowerShell smart quote delimiters
+        shell: powershell
+        run: |
+          $failed = $false
+          Get-ChildItem -LiteralPath "windows-agent" -Filter "*.ps1" | ForEach-Object {
+            $source = Get-Content -LiteralPath $_.FullName -Raw
+            if ($source -match '[“”„]') {
+              Write-Host "::error file=$($_.FullName)::Typographic smart quotes are unsafe in Windows PowerShell source."
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
+
       - name: Parse agent with Windows PowerShell 5.1
         shell: powershell
         run: |
-          $tokens = $null
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path "windows-agent\GameVaultAgent.ps1"),
-            [ref]$tokens,
-            [ref]$errors
-          ) | Out-Null
-          if ($errors.Count) { $errors | Format-List; exit 1 }
+          $failed = $false
+          Get-ChildItem -LiteralPath "windows-agent" -Filter "*.ps1" | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count) {
+              Write-Host "::error file=$($_.FullName)::Windows PowerShell 5.1 parse failed."
+              $errors | Format-List
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
 
       - name: Parse agent with PowerShell 7
         shell: pwsh
         run: |
-          $tokens = $null
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path "windows-agent\GameVaultAgent.ps1"),
-            [ref]$tokens,
-            [ref]$errors
-          ) | Out-Null
-          if ($errors.Count) { $errors | Format-List; exit 1 }
+          $failed = $false
+          Get-ChildItem -LiteralPath "windows-agent" -Filter "*.ps1" | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count) {
+              Write-Host "::error file=$($_.FullName)::PowerShell 7 parse failed."
+              $errors | Format-List
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
 
       - name: Install Inno Setup
         shell: powershell
@@ -125,11 +157,28 @@ jobs:
         shell: powershell
         run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "windows-installer\MissionControlAgent.iss"'
 
+      - name: Write RC release manifest
+        shell: powershell
+        env:
+          IMAGE_DIGEST: ${{ needs.container.outputs.digest }}
+        run: |
+          $version = (Get-Content -LiteralPath "VERSION" -Raw).Trim()
+          $installer = "windows-installer/dist/HypeTek-Mission-Control-Agent-Setup.exe"
+          $installerSha = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          @(
+            "version=$version",
+            "image=ghcr.io/hypetek/hypetek-gamevault:$version",
+            "image_digest=$env:IMAGE_DIGEST",
+            "installer_sha256=$installerSha"
+          ) | Set-Content -LiteralPath "windows-installer/dist/release-manifest.txt" -Encoding ASCII
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v6
         with:
           name: HypeTek-Mission-Control-Agent-Setup
-          path: windows-installer/dist/HypeTek-Mission-Control-Agent-Setup.exe
+          path: |
+            windows-installer/dist/HypeTek-Mission-Control-Agent-Setup.exe
+            windows-installer/dist/release-manifest.txt
           if-no-files-found: error
 
       - name: Publish versioned release and installer
@@ -148,6 +197,19 @@ jobs:
             $releaseExists = $false
           }
           if (-not $releaseExists) {
-            gh release create $tag --target "${{ github.sha }}" --generate-notes --title "HypeTek Mission Control $tag"
+            $releaseArgs = @(
+              "release", "create", $tag,
+              "--target", "${{ github.sha }}",
+              "--generate-notes",
+              "--title", "HypeTek Mission Control $tag"
+            )
+            if ($version -match '-') {
+              $releaseArgs += "--prerelease"
+            }
+            & gh @releaseArgs
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
-          gh release upload $tag "windows-installer/dist/HypeTek-Mission-Control-Agent-Setup.exe" --clobber
+          gh release upload $tag `
+            "windows-installer/dist/HypeTek-Mission-Control-Agent-Setup.exe" `
+            "windows-installer/dist/release-manifest.txt" `
+            --clobber

@@ -1,0 +1,42 @@
+annotations:
+  min_scale_version: 24.10.2.2
+app_version: 0.9.0-rc.1
+capabilities: []
+categories:
+  - media
+changelog_url: https://github.com/HypeTek/hypetek-gamevault/releases
+# Initial community-catalog submission candidate.
+date_added: '2026-08-28'
+description: Self-hosted game archive, metadata manager and secure Windows launcher for TrueNAS.
+home: https://github.com/HypeTek/hypetek-gamevault
+host_mounts: []
+icon: https://raw.githubusercontent.com/HypeTek/hypetek-gamevault/main/server/static/icons/mission-control-512.png
+keywords:
+  - games
+  - game-library
+  - launcher
+  - truenas
+lib_version: 2.3.11
+lib_version_hash: 874636814efb275e5276ea9d709b7cd665fed42bb1d50328e853d9253a2e1229
+maintainers:
+  - email: dev@truenas.com
+    name: truenas
+    url: https://www.truenas.com/
+name: hypetek-mission-control
+run_as_context:
+  - description: Container [mission-control] runs as the TrueNAS apps user/group.
+    gid: 568
+    group_name: Host group is [apps]
+    uid: 568
+    user_name: Host user is [apps]
+  - description: Container [translator] uses the non-root LibreTranslate image user for its model cache.
+    gid: 65534
+    group_name: LibreTranslate image group
+    uid: 1032
+    user_name: LibreTranslate image user
+screenshots: []
+sources:
+  - https://github.com/HypeTek/hypetek-gamevault
+title: HypeTek Mission Control
+train: community
+version: 1.0.0

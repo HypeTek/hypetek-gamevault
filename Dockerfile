@@ -2,10 +2,13 @@ FROM python:3.12-slim
 LABEL org.opencontainers.image.source="https://github.com/HypeTek/hypetek-gamevault"
 LABEL org.opencontainers.image.title="HypeTek Mission Control"
 LABEL org.opencontainers.image.description="Self-hosted game archive and secure Windows launcher for TrueNAS"
-LABEL org.opencontainers.image.version="0.8.1"
+LABEL org.opencontainers.image.version="0.9.0-rc.1"
 WORKDIR /app
 COPY server/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir -r requirements.txt
 COPY server/ ./
 COPY VERSION ./VERSION
 COPY windows-agent/ /app/windows-agent/

@@ -1,0 +1,52 @@
+TZ: Etc/UTC
+
+mission_control:
+  server_name: Mission Control CI
+  library_name: Test Game Archive
+  windows_root: Z:\\Game
+  admin_password: test-admin-password-12345
+  agent_token: test-agent-token-12345678901234567890
+  secret_key: test-secret-key-12345678901234567890
+  enable_translator: true
+  translator_languages: en,de,ru,it,fr,es,pt,pl,nl,tr,ar,zh
+  additional_envs: []
+
+network:
+  web_port:
+    bind_mode: published
+    port_number: 30998
+    host_ips: []
+  networks: []
+  host_network: false
+
+ix_volumes:
+  test_mission_control_config: /opt/tests/mnt/mission-control/config
+  test_mission_control_translator: /opt/tests/mnt/mission-control/translator
+
+storage:
+  config:
+    type: ix_volume
+    ix_volume_config:
+      dataset_name: test_mission_control_config
+      create_host_path: true
+      acl_enable: false
+  games:
+    type: host_path
+    read_only: true
+    host_path_config:
+      acl_enable: false
+      path: /opt/tests/mnt/mission-control/games
+  translator_models:
+    type: ix_volume
+    ix_volume_config:
+      dataset_name: test_mission_control_translator
+      create_host_path: true
+      acl_enable: false
+  additional_storage: []
+
+labels: []
+
+resources:
+  limits:
+    cpus: 2
+    memory: 4096

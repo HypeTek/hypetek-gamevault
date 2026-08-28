@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.8.1
+## Funktionen in Version 0.9.0-rc.1
 
 - vollständige Oberfläche in vereinfachtem Chinesisch sowie experimentelle Spaß-Pakete für Klingonisch und Sindarin
 
@@ -95,11 +95,14 @@ und Benutzeroberfläche heißen bereits HypeTek Mission Control.
 
 ## Container
 
-Das veröffentlichte Image lautet weiterhin:
+Der Release-Kandidat verwendet bewusst einen festen Versions-Tag:
 
 ```text
-ghcr.io/hypetek/hypetek-gamevault:latest
+ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.1
 ```
+
+Das stabile Tag `latest` wird von RC-Builds nicht überschrieben. Nach Freigabe eines
+stabilen Releases kann `latest` wieder auf die freigegebene Version zeigen.
 
 Die alten `GAMEVAULT_*`-Umgebungsvariablen bleiben für Upgrades gültig. Allgemeine
 Darstellungswerte werden in `/config/mission-control-settings.json`, eigene Profile

@@ -1,0 +1,55 @@
+{% set tpl = ix_lib.base.render.Render(values) %}
+
+{% set app = tpl.add_container(values.consts.app_container_name, "image") %}
+{% set perms = tpl.deps.perms(values.consts.perms_container_name) %}
+{% set app_perms = {"uid": values.consts.app_uid, "gid": values.consts.app_gid, "mode": "check"} %}
+{% set translator_perms = {"uid": values.consts.translator_uid, "gid": values.consts.translator_gid, "mode": "check"} %}
+
+{% do app.set_user(values.consts.app_uid, values.consts.app_gid) %}
+{% do app.healthcheck.set_test("curl", {"port": values.consts.web_port, "path": "/health"}) %}
+
+{% do app.environment.add_env("GAMEVAULT_GAME_ROOT", "/games") %}
+{% do app.environment.add_env("GAMEVAULT_ALLOWED_LIBRARY_ROOTS", "/games,/libraries") %}
+{% do app.environment.add_env("GAMEVAULT_WINDOWS_ROOT", values.mission_control.windows_root) %}
+{% do app.environment.add_env("GAMEVAULT_CONFIG_DIR", "/config") %}
+{% do app.environment.add_env("GAMEVAULT_ADMIN_PASSWORD", values.mission_control.admin_password) %}
+{% do app.environment.add_env("GAMEVAULT_AGENT_TOKEN", values.mission_control.agent_token) %}
+{% do app.environment.add_env("GAMEVAULT_SECRET_KEY", values.mission_control.secret_key) %}
+{% do app.environment.add_env("MISSION_CONTROL_SERVER_NAME", values.mission_control.server_name) %}
+{% do app.environment.add_env("MISSION_CONTROL_LIBRARY_NAME", values.mission_control.library_name) %}
+{% do app.environment.add_user_envs(values.mission_control.additional_envs) %}
+
+{% if values.mission_control.enable_translator %}
+  {% do app.environment.add_env("MISSION_CONTROL_TRANSLATOR_URL", "http://translator:5000") %}
+{% endif %}
+
+{% do app.add_port(values.network.web_port, {"container_port": values.consts.web_port}) %}
+{% do app.add_storage("/config", values.storage.config) %}
+{% do app.add_storage("/games", values.storage.games) %}
+{% do perms.add_or_skip_action("config", values.storage.config, app_perms) %}
+
+{% for store in values.storage.additional_storage %}
+  {% do app.add_storage(store.mount_path, store) %}
+{% endfor %}
+
+{% if values.mission_control.enable_translator %}
+  {% set translator = tpl.add_container(values.consts.translator_container_name, "translator_image") %}
+  {% do translator.healthcheck.disable() %}
+  {% do translator.environment.add_env("LT_DISABLE_WEB_UI", true) %}
+  {% do translator.environment.add_env("LT_UPDATE_MODELS", true) %}
+  {% do translator.environment.add_env("LT_LOAD_ONLY", values.mission_control.translator_languages) %}
+  {% do translator.add_storage("/home/libretranslate/.local", values.storage.translator_models) %}
+  {% do perms.add_or_skip_action("translator-models", values.storage.translator_models, translator_perms) %}
+{% endif %}
+
+{% if perms.has_actions() %}
+  {% do perms.activate() %}
+  {% do app.depends.add_dependency(values.consts.perms_container_name, "service_completed_successfully") %}
+  {% if values.mission_control.enable_translator %}
+    {% do translator.depends.add_dependency(values.consts.perms_container_name, "service_completed_successfully") %}
+  {% endif %}
+{% endif %}
+
+{% do tpl.portals.add(values.network.web_port, {"scheme": "http", "path": "/"}) %}
+
+{{ tpl.render() | tojson }}

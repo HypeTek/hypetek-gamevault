@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.8.1
+## 0.9.0-rc.1
+
+- Release-Kandidat für den ersten TrueNAS-Community-Catalog-Eintrag vorbereitet. Das Repo enthält nun ein Submission-Staging-Paket unter `truenas-catalog/ix-dev/community/hypetek-mission-control`.
+- Windows-PowerShell-5.1-Parserfehler im chinesischen Agent-Sprachpaket behoben: typografische Smart Quotes wurden durch PowerShell-sichere chinesische Eckklammern ersetzt.
+- GitHub Actions prüft jetzt **alle** PowerShell-Agent-Skripte sowohl mit Windows PowerShell 5.1 als auch mit PowerShell 7 und blockiert problematische Smart-Quote-Token als Regression.
+- Release-Pipeline behandelt SemVer-Prereleases korrekt: RC-Tags erzeugen GitHub-Prereleases und überschreiben nicht das stabile `latest`-Container-Tag.
+- Container enthält `curl`, damit der TrueNAS-Catalog den vorhandenen `/health`-Endpunkt zuverlässig als Healthcheck verwenden kann.
+- TrueNAS-Paket nutzt die aktuelle 2.3.11-Rendering-Library, getrennte persistente Speicher für Konfiguration und Translator-Modelle sowie einen nur-lesbaren Spiele-Mount.
+
+## 0.9.0-rc.1
 
 - Windows-Agent übernimmt die in Mission Control gewählte Oberflächensprache nun auch für Ordnerauswahl, lokale Scans, Pfadzuordnung, Startbestätigung und die wichtigsten Laufzeitfehler.
 - Arabische, chinesische, klingonische und sindarinische Bestätigungsdialoge im PowerShell-Agent ergänzt; die zehn bisherigen Agent-Sprachen bleiben vollständig erhalten.

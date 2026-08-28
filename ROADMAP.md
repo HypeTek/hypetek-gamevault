@@ -44,12 +44,13 @@ Copyright © 2026 Michael Härtwig · HypeTek
 
 - versionierte Container-Images und reproduzierbare Windows-Installer
 - TrueNAS-Catalog-App mit gepflegten Metadaten und Upgrade-Pfad
+  (Community-Catalog-Staging seit 0.9.0-rc.1; Upstream-CI, CDN-Assets und PR noch offen)
 - erweiterte Migrations-, Sicherheits- und Oberflächentests
 - mehrsprachige SMB-, Tailscale- und Installationsanleitungen
 - Community-Catalog-Paket für `truenas/apps` mit `app.yaml`, `questions.yaml`,
-  Compose-Template, Icon/Screenshots, Testwerten und dokumentierter Migration
-- reproduzierbarer Release-Kandidat mit unveränderlichen Image-Digests,
-  Sicherheitsprüfung, Neuinstallationstest und Upgrade-/Rollback-Test auf TrueNAS
+  Compose-Template und Testwerten (Staging seit 0.9.0-rc.1; finale CDN-Assets und Upstream-Abnahme offen)
+- reproduzierbarer Release-Kandidat mit unveränderlichen Image-Digests
+  (Digest-Manifest seit 0.9.0-rc.1; Sicherheitsprüfung sowie Neuinstallations-, Upgrade- und Rollback-Test auf TrueNAS noch offen)
 
 ### Windows-Client und Standalone-App
 
