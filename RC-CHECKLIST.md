@@ -1,4 +1,4 @@
-# 0.9.0-rc.4 Release Candidate checklist
+# 0.9.0-rc.5 Release Candidate checklist
 
 ## Completed in this RC source package
 
@@ -32,7 +32,7 @@
 - [x] Python compile check for `server/`, `tests/` and `tools/`.
 - [x] 75 Python unit tests passed, including the complete Flask route suite, scanner, settings, database, metadata, translation, design profiles, maintenance and release metadata.
 - [x] PowerShell 7 mapped-drive path regression test passed locally; Windows PowerShell 5.1 is enforced by GitHub Actions.
-- [x] API/Translator PDF source updated for 0.9.0-rc.4; PDF regenerated and visually verified across all four pages.
+- [x] API/Translator PDF source updated for 0.9.0-rc.5; PDF regenerated and visually verified across all four pages.
 
 ## Must turn green in GitHub before treating this as a usable RC
 

@@ -20,12 +20,12 @@ Vor dem Einfügen drei eigene Werte verwenden. Schlüssel niemals in GitHub oder
 ```yaml
 services:
   gamevault:
-    image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.4
+    image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.5
     pull_policy: always
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.9.0-rc.4"
+      com.hypetek.mission-control.deployment: "0.9.0-rc.5"
 
     ports:
       - "9998:8080"
@@ -106,7 +106,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.9.0-rc.4 muss die Antwort unter anderem `"version":"0.9.0-rc.4"`,
+Für Version 0.9.0-rc.5 muss die Antwort unter anderem `"version":"0.9.0-rc.5"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 

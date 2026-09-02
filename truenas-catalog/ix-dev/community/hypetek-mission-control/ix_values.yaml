@@ -1,7 +1,7 @@
 images:
   image:
     repository: ghcr.io/hypetek/hypetek-gamevault
-    tag: 0.9.0-rc.4
+    tag: 0.9.0-rc.5
   translator_image:
     repository: libretranslate/libretranslate
     tag: v1.9.6

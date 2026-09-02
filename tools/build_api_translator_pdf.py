@@ -214,7 +214,7 @@ def build_pdf():
                 "TheGamesDB, integrierter lokaler Translator und sichere TrueNAS-Konfiguration",
                 styles["SubtitleMC"],
             ),
-            Paragraph("Stand der Integration in Version 0.9.0-rc.4", styles["H1MC"]),
+            Paragraph("Stand der Integration in Version 0.9.0-rc.5", styles["H1MC"]),
             Paragraph(
                 "Mission Control kann den lokalen Translator jetzt als zweiten Dienst derselben "
                 "TrueNAS-App betreiben. Die interne Adresse wird automatisch gesetzt. Es ist weder "
@@ -318,10 +318,10 @@ def build_pdf():
             Paragraph("Relevanter YAML-Ausschnitt", styles["H2MC"]),
             Paragraph(
                 "gamevault:<br/>"
-                "  image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.4<br/>"
+                "  image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.5<br/>"
                 "  pull_policy: always<br/>"
                 "  labels:<br/>"
-                "    com.hypetek.mission-control.deployment: \"0.9.0-rc.4\"<br/>"
+                "    com.hypetek.mission-control.deployment: \"0.9.0-rc.5\"<br/>"
                 "  environment:<br/>"
                 "    MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000<br/>"
                 "translator:<br/>"
@@ -356,7 +356,7 @@ def build_pdf():
             Paragraph("Gesundheitsprüfung", styles["H2MC"]),
             Paragraph("http://TRUENAS-IP:9998/health", styles["CodeMC"]),
             Paragraph(
-                "Die Antwort muss unter anderem version 0.9.0-rc.4, agent_api 3 und "
+                "Die Antwort muss unter anderem version 0.9.0-rc.5, agent_api 3 und "
                 "translator_managed true enthalten. Danach in Einstellungen bei Translator auf "
                 "Verbindung testen klicken. Mission Control zeigt die erreichbaren Sprachcodes.",
                 styles["BodyMC"],

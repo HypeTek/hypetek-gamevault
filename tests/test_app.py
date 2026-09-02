@@ -61,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.9.0-rc.4")
+        self.assertEqual(status.get_json()["current"], "0.9.0-rc.5")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -71,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.9.0-rc.4")
+        self.assertEqual(summary["application_version"], "0.9.0-rc.5")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -282,7 +282,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.9.0-rc.4")
+        self.assertEqual(health["version"], "0.9.0-rc.5")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -337,7 +337,7 @@ class AppTests(unittest.TestCase):
             self.assertEqual(installer.status_code, 302)
             self.assertEqual(
                 installer.headers["Location"],
-                "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.9.0-rc.4/HypeTek-Mission-Control-Agent-Setup.exe",
+                "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.9.0-rc.5/HypeTek-Mission-Control-Agent-Setup.exe",
             )
             self.module._remote_agent_installer_available = lambda _url: False
             fallback = self.client.get("/download/windows-agent.exe")
@@ -353,9 +353,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.9.0-rc.4", html)
-        self.assertIn("/static/i18n.js?v=0.9.0-rc.4", html)
-        self.assertIn("/static/app.css?v=0.9.0-rc.4", html)
+        self.assertIn("/static/app.js?v=0.9.0-rc.5", html)
+        self.assertIn("/static/i18n.js?v=0.9.0-rc.5", html)
+        self.assertIn("/static/app.css?v=0.9.0-rc.5", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -364,7 +364,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.9.0-rc.4")
+        self.assertEqual(settings["version"], "0.9.0-rc.5")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])

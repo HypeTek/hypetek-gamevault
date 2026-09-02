@@ -1,5 +1,5 @@
 #define MyAppName "HypeTek Mission Control Agent"
-#define MyAppVersion "0.9.0-rc.4"
+#define MyAppVersion "0.9.0-rc.5"
 #define MyAppPublisher "HypeTek"
 #define MyAppExeName "GameVaultAgent.ps1"
 
@@ -297,7 +297,7 @@ begin
     Request.SetRequestHeader('Authorization', 'Bearer ' + Trim(TokenPage.Values[0]));
     Request.SetRequestHeader('Cache-Control', 'no-cache, no-store');
     Request.SetRequestHeader('Pragma', 'no-cache');
-    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.9.0-rc.4');
+    Request.SetRequestHeader('X-Mission-Control-Validation', 'installer-0.9.0-rc.5');
     Request.Send('');
     StatusCode := Request.Status;
 

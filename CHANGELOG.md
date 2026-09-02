@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0-rc.5
+
+- Die blaue LCARS-SYS-Leiste reserviert bei arabischer RTL-Darstellung ihren Platz jetzt rechts statt weiterhin links; Überschrift, Suche und Spielekarten werden nicht mehr von ihr überdeckt.
+- Auch das orange LCARS-Dialogband und die asymmetrischen Dialogecken werden bei RTL auf die rechte Seite gespiegelt.
+- Release-Tests sichern die RTL-Platzreservierung und den gespiegelten Dialograhmen gegen künftige Rückfälle ab.
+- TrueNAS-Community-Catalog-Staging auf App-Version 0.9.0-rc.5 und Paketrevision 1.0.4 aktualisiert.
+
 ## 0.9.0-rc.4
 
 - Direkte Windows-Setups von gemappten SMB-Laufwerken werden vor dem UAC-Start auf ihren UNC-Pfad aufgelöst. Dadurch bleiben Installer auch im erhöhten Prozesskontext erreichbar.

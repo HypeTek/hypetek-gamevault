@@ -300,8 +300,15 @@ html[dir="rtl"] .restore-warning{border-left:0;border-right:4px solid var(--oran
 html[dir="rtl"] .is-loading{padding-left:16px!important;padding-right:34px!important}
 html[dir="rtl"] .is-loading::before{left:auto;right:13px}
 html[dir="rtl"] body[data-style="lcars"] .lcars-system-rail{left:auto;right:max(3vw,calc((100vw - 1500px)/2));border-radius:52px 0 0 0;box-shadow:inset 7px 0 color-mix(in srgb,var(--teal),black 8%)}
+html[dir="rtl"] body[data-style="lcars"] main{border-left-width:0;border-right:var(--lcars-rail-width) solid transparent;padding-left:0;padding-right:24px}
+html[dir="rtl"] body[data-style="lcars"] .hero{padding-left:0;padding-right:24px}
+html[dir="rtl"] body[data-style="lcars"] .agent-note-content{padding-left:0;padding-right:calc(var(--lcars-rail-width) + 24px)}
+html[dir="rtl"] body[data-style="lcars"] #settingsDialog{left:3vw;right:calc(max(3vw,calc((100vw - 1500px)/2)) + var(--lcars-rail-width) + 18px)}
+html[dir="rtl"] body[data-style="lcars"] dialog{border-left:0;border-right:24px solid var(--orange);border-radius:5px 38px 5px 38px}
 html[dir="rtl"] input[data-library-field="id"],html[dir="rtl"] input[data-library-field="container_path"],html[dir="rtl"] input[data-library-field="windows_path"],html[dir="rtl"] input[data-library-field="linux_path"],html[dir="rtl"] #settingTheGamesDbApiKey,html[dir="rtl"] #settingRawgApiKey,html[dir="rtl"] #settingTranslatorUrl,html[dir="rtl"] #settingTranslatorApiKey,html[dir="rtl"] #editLauncher,html[dir="rtl"] code,html[dir="rtl"] pre,html[dir="rtl"] .technical-value{direction:ltr;text-align:left;unicode-bidi:isolate}
+@media(max-width:900px){html[dir="rtl"] body[data-style="lcars"] main{padding-right:14px}html[dir="rtl"] body[data-style="lcars"] .agent-note-content{padding-right:calc(var(--lcars-rail-width) + 14px)}}
 @media(max-width:720px){html[dir="rtl"] .floating-brand-home{right:14px}html[dir="rtl"] .brand{padding-right:60px}}
+@media(max-width:560px){html[dir="rtl"] body[data-style="lcars"] main{padding-right:8px}html[dir="rtl"] body[data-style="lcars"] .agent-note-content{padding-right:0}}
 
 /* 0.9.0-rc.4: persistent cover fit and zoom controls. */
 .cover-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 50%;transform-origin:center center;pointer-events:none;user-select:none}
