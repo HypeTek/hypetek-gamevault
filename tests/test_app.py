@@ -61,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.9.0-rc.2")
+        self.assertEqual(status.get_json()["current"], "0.9.0-rc.3")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -71,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.9.0-rc.2")
+        self.assertEqual(summary["application_version"], "0.9.0-rc.3")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -282,7 +282,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.9.0-rc.2")
+        self.assertEqual(health["version"], "0.9.0-rc.3")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -330,12 +330,21 @@ class AppTests(unittest.TestCase):
             for name in expected:
                 self.assertTrue(archive.read(name).startswith(b"\xef\xbb\xbf"))
 
-        installer = self.client.get("/download/windows-agent.exe")
-        self.assertEqual(installer.status_code, 302)
-        self.assertEqual(
-            installer.headers["Location"],
-            "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.9.0-rc.2/HypeTek-Mission-Control-Agent-Setup.exe",
-        )
+        original_probe = self.module._remote_agent_installer_available
+        try:
+            self.module._remote_agent_installer_available = lambda _url: True
+            installer = self.client.get("/download/windows-agent.exe")
+            self.assertEqual(installer.status_code, 302)
+            self.assertEqual(
+                installer.headers["Location"],
+                "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.9.0-rc.3/HypeTek-Mission-Control-Agent-Setup.exe",
+            )
+            self.module._remote_agent_installer_available = lambda _url: False
+            fallback = self.client.get("/download/windows-agent.exe")
+            self.assertEqual(fallback.status_code, 302)
+            self.assertIn("/download/windows-agent.zip", fallback.headers["Location"])
+        finally:
+            self.module._remote_agent_installer_available = original_probe
 
     def test_appearance_settings_and_scan_exclusions(self):
         self.login()
@@ -344,9 +353,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.9.0-rc.2", html)
-        self.assertIn("/static/i18n.js?v=0.9.0-rc.2", html)
-        self.assertIn("/static/app.css?v=0.9.0-rc.2", html)
+        self.assertIn("/static/app.js?v=0.9.0-rc.3", html)
+        self.assertIn("/static/i18n.js?v=0.9.0-rc.3", html)
+        self.assertIn("/static/app.css?v=0.9.0-rc.3", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -355,7 +364,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.9.0-rc.2")
+        self.assertEqual(settings["version"], "0.9.0-rc.3")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -958,7 +967,7 @@ class AppTests(unittest.TestCase):
         finally:
             self.module.validate_translator = original_validate
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json(), {"configured": True, "reachable": True, "languages": ["de", "en", "ru"]})
+        self.assertEqual(response.get_json(), {"configured": True, "reachable": True, "languages": ["de", "en", "ru", "tlh", "sjn"], "native_languages": ["de", "en", "ru"]})
         self.assertEqual(calls, [("http://translator:5000", "translator-secret")])
         self.assertEqual(response.headers.get("Cache-Control"), "no-store")
 
@@ -995,7 +1004,7 @@ class AppTests(unittest.TestCase):
         finally:
             self.module.validate_translator = original_validate
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json(), {"configured": True, "reachable": True, "languages": ["de", "en"]})
+        self.assertEqual(response.get_json(), {"configured": True, "reachable": True, "languages": ["de", "en", "tlh", "sjn"], "native_languages": ["de", "en"]})
         self.assertEqual(calls, [("http://translator-preview:5000", "preview-secret")])
         self.assertEqual(response.headers.get("Cache-Control"), "no-store")
         self.assertFalse(self.module.settings_store.load()["translator_url"])

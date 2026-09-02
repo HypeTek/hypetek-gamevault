@@ -20,12 +20,12 @@ Vor dem Einfügen drei eigene Werte verwenden. Schlüssel niemals in GitHub oder
 ```yaml
 services:
   gamevault:
-    image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.2
+    image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.3
     pull_policy: always
     restart: unless-stopped
 
     labels:
-      com.hypetek.mission-control.deployment: "0.9.0-rc.2"
+      com.hypetek.mission-control.deployment: "0.9.0-rc.3"
 
     ports:
       - "9998:8080"
@@ -106,7 +106,7 @@ Die tatsächlich laufende Version lässt sich anschließend ohne Anmeldung prüf
 http://TRUENAS-IP:9998/health
 ```
 
-Für Version 0.9.0-rc.2 muss die Antwort unter anderem `"version":"0.9.0-rc.2"`,
+Für Version 0.9.0-rc.3 muss die Antwort unter anderem `"version":"0.9.0-rc.3"`,
 `"agent_api":3` und `"translator_managed":true` enthalten. So lässt sich ein noch laufendes altes Container-Image
 sofort von einem aktuellen Image unterscheiden.
 
@@ -144,15 +144,24 @@ Control übernimmt diese Adresse automatisch. Die vollständige Anleitung kann
 in Mission Control unter **API-/Translator-Hilfe** als PDF heruntergeladen oder
 per QR-Code auf einem zweiten Gerät geöffnet werden.
 
-Beim ersten Start lädt LibreTranslate das verwaltete Paket für Deutsch,
+Beim ersten Start lädt LibreTranslate die verwalteten nativen Modelle für Deutsch,
 Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch,
-Niederländisch und Türkisch. Die Erkennung gemischter Inhalte ist nicht
-auf diese Ausgangssprachen festgelegt; verarbeitet werden alle im Translator
-installierten Sprachen. Der erste Modell-Download kann mehrere Minuten dauern.
-Der Zustand lässt sich danach unter
-**Einstellungen → Verbindung testen** prüfen; Mission Control zeigt dort auch die
-vom Container gemeldeten Sprachcodes an. Zusätzliche Modelle werden über
-`LT_LOAD_ONLY` kommasepariert ergänzt, etwa `fr,es,it,pl,tr,ar,zh,ja,ko`.
+Niederländisch, Türkisch, Arabisch und vereinfachtes Chinesisch. Die Erkennung
+gemischter Inhalte ist nicht auf diese Ausgangssprachen festgelegt; verarbeitet
+werden alle im Translator installierten Sprachen. Der erste Modell-Download kann
+mehrere Minuten dauern.
+
+`Klingon (Beta)` und `Elvish / Sindarin (Beta)` sind keine zusätzlichen
+LibreTranslate-Modelle. Mission Control erzeugt diese beiden experimentellen Ziele
+lokal aus einer englischen Zwischenübersetzung mit einem konservativen Wortschatz.
+Unbekannte Namen und Fachbegriffe bleiben dabei bewusst erhalten; die Ergebnisse
+sind ausdrücklich keine kanonischen Vollübersetzungen. Das englische Modell muss
+dafür verfügbar bleiben.
+
+Der Zustand lässt sich danach unter **Einstellungen → Verbindung testen** prüfen;
+Mission Control zeigt dort die nativ gemeldeten Sprachcodes und stellt im
+Spieleinhalts-Dropdown zusätzlich die beiden Beta-Ziele bereit. Weitere echte Modelle
+werden über `LT_LOAD_ONLY` kommasepariert ergänzt, etwa `ja,ko`.
 
 Der Translator benötigt keinen externen API-Key. Die vorhandenen Felder bleiben
 für Nutzer kompatibler externer Translator-Dienste erhalten.

@@ -5,7 +5,7 @@ Windows-Launcher für Installationsmedien auf TrueNAS oder einem anderen Docker-
 Die Anwendung katalogisiert einen bestehenden Games-Ordner, ohne dessen Inhalt zu
 verändern oder in ein neues Format zu zwingen.
 
-## Funktionen in Version 0.9.0-rc.2
+## Funktionen in Version 0.9.0-rc.3
 
 - vollständige Oberfläche in vereinfachtem Chinesisch sowie experimentelle Spaß-Pakete für Klingonisch und Sindarin
 
@@ -42,7 +42,7 @@ verändern oder in ein neues Format zu zwingen.
 - Installations- und Ordneraktionen direkt im Spiele-Infofenster
 - integrierter lokaler Mission Control Translator als interner zweiter Container
 - automatisches Translator-Ziel ohne externen Port oder API-Key
-- gemeinsame Sprachauswahl für Oberfläche, Spieleinhalte und Windows-Agent in Deutsch, Englisch, Russisch, Italienisch, Französisch, Spanisch, Portugiesisch, Polnisch, Niederländisch und Türkisch
+- gemeinsame Sprachauswahl für Oberfläche, Spieleinhalte und Windows-Agent; Spieleinhalte unterstützen zusätzlich Arabisch und vereinfachtes Chinesisch sowie `Klingon (Beta)` und `Elvish / Sindarin (Beta)`
 - abschnittsweise Quellsprachenerkennung für gemischte TheGamesDB-Spielinhalte
 - Translator-Verbindungstest mit Anzeige der tatsächlich verfügbaren Sprachcodes
 - sichere Windows-Agent-Erkennung über kurzlebige Prüftickets
@@ -98,7 +98,7 @@ und Benutzeroberfläche heißen bereits HypeTek Mission Control.
 Der Release-Kandidat verwendet bewusst einen festen Versions-Tag:
 
 ```text
-ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.2
+ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.3
 ```
 
 Das stabile Tag `latest` wird von RC-Builds nicht überschrieben. Nach Freigabe eines
@@ -162,22 +162,25 @@ Damit wird auch `.github/workflows/container.yml` zuverlässig übernommen. Beim
 Upload im Browser kann der mit einem Punkt beginnende Ordner leicht übersehen werden;
 ohne diese Datei werden weder Tests noch Container oder Windows-Agent gebaut.
 
-### GitHub-Repository umbenennen
+### GitHub-Repository während des RC
 
-Das Repository kann unter **Settings → General → Repository name** beispielsweise in
-`hypetek-mission-control` umbenannt werden. GitHub leitet bestehende Web-, Clone-,
-Fetch- und Push-Adressen auf den neuen Namen weiter. Der lokale Clone sollte danach
-trotzdem auf die neue Adresse umgestellt werden. GitHub Desktop bietet dies beim
-nächsten Abruf an; alternativ gilt:
+Während der Release-Candidate-Phase bleibt das öffentliche Repository bewusst unter
+`HypeTek/hypetek-gamevault`. Dadurch funktionieren vorhandene Clone-, Workflow-,
+Container- und Release-Verweise konsistent. Eine Umbenennung auf
+`hypetek-mission-control` erfolgt erst als eigener, kontrollierter Migrationsschritt
+nach einem stabilen Release.
+
+Falls ein lokaler Clone versehentlich auf eine andere oder nicht vorhandene Adresse
+zeigt, kann der aktuelle Remote wiederhergestellt werden:
 
 ```bash
-git remote set-url origin https://github.com/HypeTek/hypetek-mission-control.git
+git remote set-url origin https://github.com/HypeTek/hypetek-gamevault.git
 ```
 
 Der technische Protokollname `hypetek-gamevault://` und das bestehende Container-Image
-`ghcr.io/hypetek/hypetek-gamevault` bleiben zunächst absichtlich kompatibel. Eine
-spätere kontrollierte Umbenennung des Images benötigt eine Übergangsphase in der
-TrueNAS-YAML und ist nicht dasselbe wie die gefahrlose Repository-Umbenennung.
+`ghcr.io/hypetek/hypetek-gamevault` bleiben ebenfalls zunächst absichtlich kompatibel.
+Eine spätere Umbenennung bekommt eine Übergangsphase, damit installierte Clients und
+TrueNAS-Deployments nicht durch alte Links auf 404-Seiten laufen.
 
 ## Sicherheitsgrenzen
 

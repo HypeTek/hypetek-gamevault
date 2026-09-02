@@ -468,7 +468,14 @@ async function toggleFavorite(id) {
   } catch (error) { alert(error.message); }
 }
 
+const EXPERIMENTAL_LANGUAGE_LABELS = {
+  tlh: "Klingon (Beta)",
+  sjn: "Elvish / Sindarin (Beta)",
+};
+const TRANSLATION_LANGUAGE_ORDER = ["de", "en", "fr", "it", "nl", "pl", "pt", "ru", "es", "tr", "ar", "zh", "tlh", "sjn"];
+
 function displayLanguageName(code) {
+  if (EXPERIMENTAL_LANGUAGE_LABELS[code]) return EXPERIMENTAL_LANGUAGE_LABELS[code];
   try {
     const display = new Intl.DisplayNames([document.documentElement.lang || "de"], {type: "language"});
     return display.of(code) || code.toUpperCase();
@@ -477,15 +484,27 @@ function displayLanguageName(code) {
   }
 }
 
+function displayTranslationLanguageLabel(code) {
+  return EXPERIMENTAL_LANGUAGE_LABELS[code] || `${displayLanguageName(code)} (${code.toUpperCase()})`;
+}
+
 function renderTranslationLanguages(id, languages) {
   const favorite = state.settings?.favorite_content_language || "de";
-  const ordered = [...new Set(languages)].sort((left, right) => {
+  const unique = [...new Set(languages)];
+  const ordered = unique.sort((left, right) => {
     if (left === favorite) return -1;
     if (right === favorite) return 1;
+    const leftIndex = TRANSLATION_LANGUAGE_ORDER.indexOf(left);
+    const rightIndex = TRANSLATION_LANGUAGE_ORDER.indexOf(right);
+    if (leftIndex >= 0 || rightIndex >= 0) {
+      if (leftIndex < 0) return 1;
+      if (rightIndex < 0) return -1;
+      return leftIndex - rightIndex;
+    }
     return displayLanguageName(left).localeCompare(displayLanguageName(right), document.documentElement.lang);
   });
   const select = document.querySelector("#translationLanguageSelect");
-  select.innerHTML = ordered.map((code) => `<option value="${escapeHtml(code)}">${escapeHtml(displayLanguageName(code))} (${code.toUpperCase()})</option>`).join("");
+  select.innerHTML = ordered.map((code) => `<option value="${escapeHtml(code)}">${escapeHtml(displayTranslationLanguageLabel(code))}</option>`).join("");
   select.value = ordered.includes(favorite) ? favorite : (ordered[0] || "");
   select.disabled = ordered.length === 0;
   document.querySelector("#startTranslationButton").disabled = ordered.length === 0;

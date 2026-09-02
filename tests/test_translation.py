@@ -61,6 +61,46 @@ class TranslationTests(unittest.TestCase):
             translation._json_request = original
         self.assertEqual(codes, ["de", "en", "it", "ru"])
 
+
+    def test_content_targets_include_beta_languages_when_english_is_available(self):
+        self.assertEqual(
+            translation.content_target_languages(["de", "en", "ar", "zh"]),
+            ["de", "en", "ar", "zh", "tlh", "sjn"],
+        )
+        self.assertEqual(translation.content_target_languages(["de", "ar"]), ["de", "ar"])
+
+    def test_beta_klingon_and_sindarin_render_from_english_intermediate(self):
+        original = translation._json_request
+
+        def fake_request(url, payload=None, timeout=25):
+            if url.endswith("/detect"):
+                return [{"language": "en", "confidence": 99}]
+            return {"translatedText": payload["q"]}
+
+        translation._json_request = fake_request
+        try:
+            klingon = translation.translate_text(
+                "http://translator:5000",
+                "A new game and world battle.",
+                "tlh",
+                available_languages=["de", "en", "ar", "zh"],
+            )
+            sindarin = translation.translate_text(
+                "http://translator:5000",
+                "A dark world and forest battle.",
+                "sjn",
+                available_languages=["de", "en", "ar", "zh"],
+            )
+        finally:
+            translation._json_request = original
+
+        self.assertIn("Quj", klingon)
+        self.assertIn("qo'", klingon)
+        self.assertIn("may'", klingon)
+        self.assertIn("amar", sindarin)
+        self.assertIn("taur", sindarin)
+        self.assertIn("dagor", sindarin)
+
     def test_source_languages_are_not_hard_coded(self):
         calls = []
         original = translation._json_request

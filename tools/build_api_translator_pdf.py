@@ -214,14 +214,15 @@ def build_pdf():
                 "TheGamesDB, integrierter lokaler Translator und sichere TrueNAS-Konfiguration",
                 styles["SubtitleMC"],
             ),
-            Paragraph("Stand der Integration in Version 0.9.0-rc.2", styles["H1MC"]),
+            Paragraph("Stand der Integration in Version 0.9.0-rc.3", styles["H1MC"]),
             Paragraph(
                 "Mission Control kann den lokalen Translator jetzt als zweiten Dienst derselben "
                 "TrueNAS-App betreiben. Die interne Adresse wird automatisch gesetzt. Es ist weder "
                 "ein externer Übersetzungsdienst noch ein Translator-API-Key nötig. Gemischte "
                 "TheGamesDB-Texte werden abschnittsweise erkannt. Dabei ist keine Ausgangssprache "
                 "fest vorgegeben: Alle im Translator installierten Sprachen können auch innerhalb "
-                "desselben Spielinhalts dynamisch erkannt und verarbeitet werden.",
+                "desselben Spielinhalts dynamisch erkannt und verarbeitet werden. Als Ziele erscheinen "
+                "zusätzlich Klingon (Beta) und Elvish / Sindarin (Beta), sobald Englisch verfügbar ist.",
                 styles["CalloutMC"],
             ),
         ]
@@ -317,10 +318,10 @@ def build_pdf():
             Paragraph("Relevanter YAML-Ausschnitt", styles["H2MC"]),
             Paragraph(
                 "gamevault:<br/>"
-                "  image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.2<br/>"
+                "  image: ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.3<br/>"
                 "  pull_policy: always<br/>"
                 "  labels:<br/>"
-                "    com.hypetek.mission-control.deployment: \"0.9.0-rc.2\"<br/>"
+                "    com.hypetek.mission-control.deployment: \"0.9.0-rc.3\"<br/>"
                 "  environment:<br/>"
                 "    MISSION_CONTROL_TRANSLATOR_URL: http://translator:5000<br/>"
                 "translator:<br/>"
@@ -355,22 +356,25 @@ def build_pdf():
             Paragraph("Gesundheitsprüfung", styles["H2MC"]),
             Paragraph("http://TRUENAS-IP:9998/health", styles["CodeMC"]),
             Paragraph(
-                "Die Antwort muss unter anderem version 0.9.0-rc.2, agent_api 3 und "
+                "Die Antwort muss unter anderem version 0.9.0-rc.3, agent_api 3 und "
                 "translator_managed true enthalten. Danach in Einstellungen bei Translator auf "
                 "Verbindung testen klicken. Mission Control zeigt die erreichbaren Sprachcodes.",
                 styles["BodyMC"],
             ),
             Paragraph("Übersetzung verwenden", styles["H2MC"]),
-            bullet("Im Spiele-Infofenster auf Spieleinhalt übersetzen klicken, die Zielsprache im Dropdown auswählen und die Übersetzung starten.", styles),
+            bullet("Im Spiele-Infofenster auf Spieleinhalte übersetzen klicken, die Zielsprache im Dropdown auswählen und die Übersetzung starten. Native Ziele umfassen auch Arabisch und vereinfachtes Chinesisch.", styles),
             bullet("Der Stern markiert eine bevorzugte Zielsprache und sortiert sie beim nächsten Öffnen nach oben.", styles),
             bullet("Original anzeigen und Übersetzung anzeigen wechseln zwischen beiden Fassungen.", styles),
             Paragraph("Sprachen schlank erweitern", styles["H2MC"]),
             Paragraph(
-                "Standardmäßig werden en,de,ru,it,fr,es,pt,pl,nl,tr,ar,zh als verwaltetes Sprachpaket geladen. Die Erkennung "
-                "selbst ist nicht darauf beschränkt. Weitere Codes werden in LT_LOAD_ONLY "
-                "kommasepariert ergänzt, zum Beispiel ar,zh,ja,ko. Nur tatsächlich "
-                "benötigte Sprachen laden, weil Modelle Speicherplatz, Startzeit und Arbeitsspeicher "
-                "benötigen.",
+                "Standardmäßig werden en,de,ru,it,fr,es,pt,pl,nl,tr,ar,zh als native LibreTranslate-Modelle "
+                "geladen. Die Erkennung selbst ist nicht darauf beschränkt. Weitere echte Modelle werden "
+                "in LT_LOAD_ONLY kommasepariert ergänzt, zum Beispiel ja,ko. Klingon (Beta) und "
+                "Elvish / Sindarin (Beta) sind dagegen keine LibreTranslate-Modelle: Mission Control "
+                "übersetzt zunächst nach Englisch und wendet anschließend lokal einen konservativen "
+                "experimentellen Wortschatz an. Unbekannte Namen und Fachbegriffe bleiben erhalten; diese "
+                "beiden Ziele sind ausdrücklich keine kanonischen Vollübersetzungen. Nur tatsächlich "
+                "benötigte native Modelle laden, weil sie Speicherplatz, Startzeit und Arbeitsspeicher benötigen.",
                 styles["BodyMC"],
             ),
             Paragraph("Fehlerdiagnose", styles["H2MC"]),
@@ -380,7 +384,7 @@ def build_pdf():
         [Paragraph("Meldung", styles["TableMC"]), Paragraph("Prüfung", styles["TableMC"])],
         [Paragraph("Nicht eingerichtet", styles["TableMC"]), Paragraph("MISSION_CONTROL_TRANSLATOR_URL und translator-Dienst in derselben YAML prüfen.", styles["TableMC"])],
         [Paragraph("Nicht erreichbar", styles["TableMC"]), Paragraph("Erststart abwarten, Containerstatus und persistentes Model-Dataset prüfen.", styles["TableMC"])],
-        [Paragraph("Sprache fehlt", styles["TableMC"]), Paragraph("Code in LT_LOAD_ONLY ergänzen, App neu bereitstellen und Modellinitialisierung abwarten.", styles["TableMC"])],
+        [Paragraph("Sprache fehlt", styles["TableMC"]), Paragraph("Native Sprache: Code in LT_LOAD_ONLY ergänzen. Beta-Ziele: prüfen, ob das englische Modell verfügbar ist.", styles["TableMC"])],
         [Paragraph("Text bleibt gemischt", styles["TableMC"]), Paragraph("Originalquelle prüfen und Übersetzung erneut auslösen; sehr kurze Abschnitte sind schwerer erkennbar.", styles["TableMC"])],
     ]
     diag_table = Table(diagnostics, colWidths=[47 * mm, 121 * mm], repeatRows=1)

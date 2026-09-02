@@ -14,6 +14,7 @@ if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf) -and (Test-Path -Li
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
 $AgentLanguage = "auto"
 
@@ -63,6 +64,83 @@ function Show-Error([string]$Message) {
     ) | Out-Null
 }
 
+function Get-AgentDecisionLabels() {
+    $labels = @{
+        en = @{ yes = "Yes"; no = "No" }
+        de = @{ yes = "Ja"; no = "Nein" }
+        ru = @{ yes = "Да"; no = "Нет" }
+        it = @{ yes = "Sì"; no = "No" }
+        fr = @{ yes = "Oui"; no = "Non" }
+        es = @{ yes = "Sí"; no = "No" }
+        pt = @{ yes = "Sim"; no = "Não" }
+        pl = @{ yes = "Tak"; no = "Nie" }
+        nl = @{ yes = "Ja"; no = "Nee" }
+        tr = @{ yes = "Evet"; no = "Hayır" }
+        ar = @{ yes = "نعم"; no = "لا" }
+        zh = @{ yes = "是"; no = "否" }
+        tlh = @{ yes = "HIja'"; no = "ghobe'" }
+        sjn = @{ yes = "Mae"; no = "Ú" }
+    }
+    $language = Resolve-AgentLanguage $script:AgentLanguage
+    if (-not $labels.ContainsKey($language)) { $language = "en" }
+    return $labels[$language]
+}
+
+function Show-ConfirmationDialog([string]$Message, [string]$Title) {
+    $labels = Get-AgentDecisionLabels
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = $Title
+    $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+    $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
+    $form.MaximizeBox = $false
+    $form.MinimizeBox = $false
+    $form.ShowInTaskbar = $true
+    $form.ClientSize = New-Object System.Drawing.Size -ArgumentList 640, 280
+
+    $questionIcon = New-Object System.Windows.Forms.PictureBox
+    $questionIcon.Location = New-Object System.Drawing.Point -ArgumentList 22, 24
+    $questionIcon.Size = New-Object System.Drawing.Size -ArgumentList 40, 40
+    $questionIcon.SizeMode = [System.Windows.Forms.PictureBoxSizeMode]::CenterImage
+    $questionIcon.Image = [System.Drawing.SystemIcons]::Question.ToBitmap()
+
+    $messageLabel = New-Object System.Windows.Forms.Label
+    $messageLabel.Location = New-Object System.Drawing.Point -ArgumentList 78, 22
+    $messageLabel.Size = New-Object System.Drawing.Size -ArgumentList 538, 188
+    $messageLabel.Text = $Message
+    $messageLabel.Font = New-Object System.Drawing.Font -ArgumentList "Segoe UI", 9
+    $messageLabel.AutoEllipsis = $true
+
+    $yesButton = New-Object System.Windows.Forms.Button
+    $yesButton.Text = [string]$labels.yes
+    $yesButton.Location = New-Object System.Drawing.Point -ArgumentList 420, 228
+    $yesButton.Size = New-Object System.Drawing.Size -ArgumentList 92, 30
+    $yesButton.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+
+    $noButton = New-Object System.Windows.Forms.Button
+    $noButton.Text = [string]$labels.no
+    $noButton.Location = New-Object System.Drawing.Point -ArgumentList 524, 228
+    $noButton.Size = New-Object System.Drawing.Size -ArgumentList 92, 30
+    # DialogResult.Cancel deliberately makes ESC and the title-bar X behave
+    # exactly like declining the action, while keeping only two visible buttons.
+    $noButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+
+    $form.AcceptButton = $yesButton
+    $form.CancelButton = $noButton
+    $form.Controls.Add($questionIcon)
+    $form.Controls.Add($messageLabel)
+    $form.Controls.Add($yesButton)
+    $form.Controls.Add($noButton)
+
+    try {
+        $result = $form.ShowDialog()
+        return ($result -eq [System.Windows.Forms.DialogResult]::Yes)
+    }
+    finally {
+        if ($questionIcon.Image) { $questionIcon.Image.Dispose() }
+        $form.Dispose()
+    }
+}
+
 function Save-AgentConfig($Config) {
     $json = $Config | ConvertTo-Json -Depth 8
     $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
@@ -74,13 +152,7 @@ function Confirm-LibraryMapping($Config, [string]$LibraryId, [string]$LibraryNam
         return $null
     }
     $message = Get-AgentCopy "mapping" @($LibraryName, $SuggestedPath)
-    $answer = [System.Windows.MessageBox]::Show(
-        $message,
-        "HypeTek Mission Control – $(Get-AgentCopy 'mappingCaption')",
-        [System.Windows.MessageBoxButton]::YesNo,
-        [System.Windows.MessageBoxImage]::Question
-    )
-    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return $null }
+    if (-not (Show-ConfirmationDialog $message "HypeTek Mission Control - $(Get-AgentCopy 'mappingCaption')")) { return $null }
     if (-not $Config.libraries) {
         $Config | Add-Member -NotePropertyName libraries -NotePropertyValue ([PSCustomObject]@{}) -Force
     }
@@ -478,13 +550,7 @@ try {
     $copy = $dialogText[$language]
     $message = "$($copy.title): $($manifest.title)`n`n$($copy.action): $actionLabel`n$($copy.source): $source`n`n$($copy.question)"
     $confirmationTitle = "HypeTek Mission Control – $($copy.caption)"
-    $answer = [System.Windows.MessageBox]::Show(
-        $message,
-        $confirmationTitle,
-        [System.Windows.MessageBoxButton]::YesNo,
-        [System.Windows.MessageBoxImage]::Question
-    )
-    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { exit 0 }
+    if (-not (Show-ConfirmationDialog $message $confirmationTitle)) { exit 0 }
 
     switch ($manifest.action) {
         "open_folder" {

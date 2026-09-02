@@ -26,7 +26,7 @@ The first CI run may generate `item.yaml`, populate `templates/library/` and ref
 
 ## Before opening the PR
 
-1. Confirm `ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.2` exists and passes its `/health` check.
+1. Confirm `ghcr.io/hypetek/hypetek-gamevault:0.9.0-rc.3` exists and passes its `/health` check.
 2. Test a clean install with a read-only game dataset.
 3. Test the managed translator model volume and then an upgrade while preserving `/config`.
 4. Supply the icon and screenshots in the PR description. A TrueNAS reviewer will provide the final CDN URLs.
@@ -35,4 +35,4 @@ The first CI run may generate `item.yaml`, populate `templates/library/` and ref
 
 ## RC note
 
-This package intentionally uses catalog package version `1.0.1` for a new app while `app_version` tracks the upstream Mission Control container version `0.9.0-rc.2`.
+This package intentionally uses catalog package version `1.0.2` for a new app while `app_version` tracks the upstream Mission Control container version `0.9.0-rc.3`.

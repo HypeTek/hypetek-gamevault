@@ -1,4 +1,4 @@
-# 0.9.0-rc.2 Release Candidate checklist
+# 0.9.0-rc.3 Release Candidate checklist
 
 ## Completed in this RC source package
 
@@ -12,6 +12,12 @@
 - [x] TrueNAS Community Catalog staging package added under `truenas-catalog/ix-dev/community/hypetek-mission-control`.
 - [x] Catalog package uses TrueNAS rendering library 2.3.11 and fixed internal port mapping to 8080.
 - [x] Primary game library remains read-only; `/config` and translator models are persistent writable storage.
+- [x] Game-content target list now exposes Arabic and Chinese native targets plus `Klingon (Beta)` and `Elvish / Sindarin (Beta)` when English is available.
+- [x] Experimental Klingon/Sindarin targets are explicitly non-canonical and use an English intermediate plus conservative local vocabulary.
+- [x] LCARS top navigation uses contrast derived from the actual dark capsule background.
+- [x] Windows Agent EXE download checks the versioned release asset and falls back to the bundled ZIP instead of sending users to GitHub 404.
+- [x] Windows Agent confirmation dialog restores a working title-bar `X`; `X`, `Esc` and the negative button all cancel safely.
+- [x] RC documentation keeps `HypeTek/hypetek-gamevault` as the canonical repository during the release-candidate phase.
 
 ## Local checks run on the prepared archive
 
@@ -19,8 +25,8 @@
 - [x] Jinja syntax parse for the TrueNAS Compose template.
 - [x] JavaScript syntax: `app.js`, `i18n.js`, `service-worker.js`.
 - [x] Python compile check for `server/`, `tests/` and `tools/`.
-- [x] 32 non-Flask unit tests passed, including scanner, settings, database, metadata, translation, design profiles, maintenance and release metadata.
-- [x] API/Translator PDF source updated for 0.9.0-rc.2; PDF regenerated in this package.
+- [x] 34 non-Flask unit tests passed, including scanner, settings, database, metadata, translation, design profiles, maintenance and release metadata.
+- [x] API/Translator PDF source updated for 0.9.0-rc.3; PDF regenerated and visually verified across all four pages.
 
 ## Must turn green in GitHub before treating this as a usable RC
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.0-rc.3
+
+- Spielinhaltsübersetzung zeigt nun alle Mission-Control-Zielsprachen: Arabisch und vereinfachtes Chinesisch aus dem verwalteten LibreTranslate-Paket sowie Klingonisch und Elvish/Sindarin als ausdrücklich gekennzeichnete Beta-Ziele.
+- Die beiden Beta-Ziele werden lokal über einen englischen Zwischentext und ein konservatives experimentelles Vokabular gerendert; unbekannte Eigennamen und technische Begriffe bleiben unverändert statt eine vermeintlich kanonische Übersetzung zu erfinden.
+- Sprachbezeichnungen der Spaß-Pakete vereinheitlicht auf `Klingon (Beta)` und `Elvish / Sindarin (Beta)`.
+- LCARS-Kontrastfehler im oberen Navigationsband behoben: schwarze Funktionskapseln verwenden nun die Kontrastfarbe des tatsächlich schwarzen Hintergrunds statt der hellen LCARS-Leiste.
+- Windows-Agent-Download prüft das versionsgenaue GitHub-Release-Asset und fällt bei noch nicht veröffentlichtem EXE automatisch auf das mitgelieferte PowerShell-ZIP zurück, statt auf einer GitHub-404-Seite zu landen.
+- Die Windows-Startbestätigung verwendet einen eigenen zweiknöpfigen Dialog. `X`, `Esc` und `Nein` brechen die Aktion sicher ab; `X` ist damit wieder nutzbar.
+- GitHub-/Repo-Verweise auf das tatsächlich verwendete Repository `HypeTek/hypetek-gamevault` bereinigt.
+- TrueNAS-Community-Catalog-Staging auf App-Version 0.9.0-rc.3 und Paketrevision 1.0.2 aktualisiert.
+
 ## 0.9.0-rc.2
 
 - CI-Hotfix für den Windows-Installer: Der Smart-Quote-Check enthält selbst keine typografischen Anführungszeichen mehr, sondern prüft die Unicode-Codepoints U+201C, U+201D und U+201E.

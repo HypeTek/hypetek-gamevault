@@ -37,6 +37,7 @@ from scanner import ScanResult, scan_library, stable_id
 from settings import DEFAULT_TRANSLATOR_URL, SettingsStore, THEMES
 from translation import (
     TranslationError,
+    content_target_languages,
     normalize_translator_url,
     translate_text,
     validate_translator,
@@ -330,7 +331,7 @@ def translator_status():
         languages = validate_translator(endpoint, settings.get("translator_api_key", ""))
     except TranslationError as error:
         return jsonify(configured=True, reachable=False, error=str(error)), 502
-    response = jsonify(configured=True, reachable=True, languages=languages or [])
+    response = jsonify(configured=True, reachable=True, languages=content_target_languages(languages or []), native_languages=languages or [])
     response.headers["Cache-Control"] = "no-store"
     return response
 
@@ -359,7 +360,7 @@ def test_translator():
         response = jsonify(configured=True, reachable=False, error=str(error))
         response.headers["Cache-Control"] = "no-store"
         return response, 502
-    response = jsonify(configured=True, reachable=True, languages=languages or [])
+    response = jsonify(configured=True, reachable=True, languages=content_target_languages(languages or []), native_languages=languages or [])
     response.headers["Cache-Control"] = "no-store"
     return response
 
@@ -719,14 +720,41 @@ def download_windows_agent():
     )
 
 
+AGENT_INSTALLER_ASSET = "HypeTek-Mission-Control-Agent-Setup.exe"
+
+
+def _versioned_agent_installer_url() -> str:
+    return (
+        "https://github.com/HypeTek/hypetek-gamevault/releases/download/"
+        f"v{APP_VERSION}/{AGENT_INSTALLER_ASSET}"
+    )
+
+
+def _remote_agent_installer_available(installer_url: str) -> bool:
+    try:
+        probe = Request(
+            installer_url,
+            method="HEAD",
+            headers={"User-Agent": f"HypeTek-Mission-Control/{APP_VERSION}"},
+        )
+        with urlopen(probe, timeout=5) as response:
+            return 200 <= int(getattr(response, "status", 200)) < 400
+    except Exception:
+        return False
+
+
 @app.get("/download/windows-agent.exe")
 @login_required
 def download_windows_agent_exe():
-    installer_url = AGENT_INSTALLER_URL or (
-        "https://github.com/HypeTek/hypetek-gamevault/releases/download/"
-        f"v{APP_VERSION}/HypeTek-Mission-Control-Agent-Setup.exe"
-    )
-    return redirect(installer_url)
+    if AGENT_INSTALLER_URL:
+        return redirect(AGENT_INSTALLER_URL)
+    installer_url = _versioned_agent_installer_url()
+    if _remote_agent_installer_available(installer_url):
+        return redirect(installer_url)
+    # A release asset can temporarily be unavailable while an RC workflow is
+    # still running. Never strand the user on a GitHub 404: the bundled ZIP is
+    # a fully functional PowerShell installer fallback for the same server build.
+    return redirect(url_for("download_windows_agent", fallback="release-asset-unavailable"))
 
 
 @app.get("/download/api-and-translator-guide.pdf")
@@ -1095,7 +1123,7 @@ def translate_game_metadata(game_id: str):
         return jsonify(error="Ungültige Zielsprache"), 400
     try:
         languages = validate_translator(endpoint, settings.get("translator_api_key", ""))
-        if target not in languages:
+        if target not in content_target_languages(languages):
             return jsonify(error="Diese Zielsprache ist im Translator nicht installiert"), 409
         translated = translate_text(
             endpoint,

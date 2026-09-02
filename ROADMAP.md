@@ -14,6 +14,10 @@ Copyright © 2026 Michael Härtwig · HypeTek
   LTR-Inseln für Pfade, URLs, IDs und API-Keys (vollständig seit 0.8.0)
 - vereinfachtes Chinesisch vollständig seit 0.8.0; Klingonisch und Sindarin seit
   0.8.0 als gekennzeichnete experimentelle Spaß-Sprachpakete
+- Spieleinhaltsübersetzung seit 0.9.0-rc.3 für alle verwalteten Translator-Sprachen
+  einschließlich Arabisch und Chinesisch; `Klingon (Beta)` und
+  `Elvish / Sindarin (Beta)` verwenden einen lokalen experimentellen Wortschatz über
+  eine englische Zwischenübersetzung und beanspruchen keine kanonische Vollübersetzung
 - künftig: Japanisch und Koreanisch
 - weitere Sprachen als nachladbare, versionierte JSON-Pakete
 - keine unnötige Aufteilung: reine Textübersetzungen sind klein; separate Downloads

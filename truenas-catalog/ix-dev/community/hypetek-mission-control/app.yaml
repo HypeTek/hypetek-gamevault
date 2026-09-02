@@ -1,6 +1,6 @@
 annotations:
   min_scale_version: 24.10.2.2
-app_version: 0.9.0-rc.2
+app_version: 0.9.0-rc.3
 capabilities: []
 categories:
   - media
@@ -39,4 +39,4 @@ sources:
   - https://github.com/HypeTek/hypetek-gamevault
 title: HypeTek Mission Control
 train: community
-version: 1.0.1
+version: 1.0.2
