@@ -37,6 +37,13 @@ jobs:
       - name: Run tests
         run: python -m unittest discover -s tests -v
 
+      - name: Check browser JavaScript and language packs
+        run: |
+          node --check server/static/app.js
+          node --check server/static/i18n.js
+          node --check server/static/service-worker.js
+          node tests/check-i18n.mjs
+
   container:
     name: Build and publish GHCR image
     needs: test
@@ -139,6 +146,10 @@ jobs:
           }
           if ($failed) { exit 1 }
 
+      - name: Test mapped-drive launch path with Windows PowerShell 5.1
+        shell: powershell
+        run: '& "tests\Test-AgentPathResolution.ps1"'
+
       - name: Parse agent with PowerShell 7
         shell: pwsh
         run: |
@@ -158,6 +169,10 @@ jobs:
             }
           }
           if ($failed) { exit 1 }
+
+      - name: Test mapped-drive launch path with PowerShell 7
+        shell: pwsh
+        run: '& "tests\Test-AgentPathResolution.ps1"'
 
       - name: Install Inno Setup
         shell: powershell

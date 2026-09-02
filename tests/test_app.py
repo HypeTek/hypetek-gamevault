@@ -61,7 +61,7 @@ class AppTests(unittest.TestCase):
         )
         status = self.client.get("/api/maintenance/status")
         self.assertEqual(status.status_code, 200)
-        self.assertEqual(status.get_json()["current"], "0.9.0-rc.3")
+        self.assertEqual(status.get_json()["current"], "0.9.0-rc.4")
 
         with backup.open("rb") as input_file:
             preview = self.post(
@@ -71,7 +71,7 @@ class AppTests(unittest.TestCase):
             )
         self.assertEqual(preview.status_code, 200)
         summary = preview.get_json()["summary"]
-        self.assertEqual(summary["application_version"], "0.9.0-rc.3")
+        self.assertEqual(summary["application_version"], "0.9.0-rc.4")
         self.assertFalse(summary["secrets_included"])
 
     def test_invalid_restore_creates_no_rollback_backup(self):
@@ -282,7 +282,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         health = response.get_json()
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["version"], "0.9.0-rc.3")
+        self.assertEqual(health["version"], "0.9.0-rc.4")
         self.assertEqual(health["agent_api"], 3)
         self.assertFalse(health["translator_managed"])
 
@@ -337,7 +337,7 @@ class AppTests(unittest.TestCase):
             self.assertEqual(installer.status_code, 302)
             self.assertEqual(
                 installer.headers["Location"],
-                "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.9.0-rc.3/HypeTek-Mission-Control-Agent-Setup.exe",
+                "https://github.com/HypeTek/hypetek-gamevault/releases/download/v0.9.0-rc.4/HypeTek-Mission-Control-Agent-Setup.exe",
             )
             self.module._remote_agent_installer_available = lambda _url: False
             fallback = self.client.get("/download/windows-agent.exe")
@@ -353,9 +353,9 @@ class AppTests(unittest.TestCase):
         self.assertIn("SMB-/Tailscale-Hilfe", page.get_data(as_text=True))
         self.assertIn("API-/Translator-Hilfe", page.get_data(as_text=True))
         html = page.get_data(as_text=True)
-        self.assertIn("/static/app.js?v=0.9.0-rc.3", html)
-        self.assertIn("/static/i18n.js?v=0.9.0-rc.3", html)
-        self.assertIn("/static/app.css?v=0.9.0-rc.3", html)
+        self.assertIn("/static/app.js?v=0.9.0-rc.4", html)
+        self.assertIn("/static/i18n.js?v=0.9.0-rc.4", html)
+        self.assertIn("/static/app.css?v=0.9.0-rc.4", html)
         self.assertIn("Windows-Agent einrichten", html)
         self.assertIn("EXE-Agent herunterladen", html)
         self.assertIn("SMB-Netzlaufwerk zuerst", html)
@@ -364,7 +364,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("Kartenbild ausrichten", html)
         self.assertNotIn("Cover-Ausschnitt in den Karten", html)
         settings = self.client.get("/api/settings").get_json()
-        self.assertEqual(settings["version"], "0.9.0-rc.3")
+        self.assertEqual(settings["version"], "0.9.0-rc.4")
         self.assertEqual(settings["theme"], "mission")
         self.assertNotIn("thegamesdb_api_key", settings)
         self.assertFalse(settings["thegamesdb_configured"])
@@ -766,23 +766,32 @@ class AppTests(unittest.TestCase):
         self.assertEqual([item["provider"] for item in payload["results"]], ["rawg"])
         self.assertIn("TheGamesDB", payload["warnings"][0])
 
-    def test_cover_position_is_stored_and_clamped(self):
+    def test_cover_framing_is_stored_and_clamped(self):
         self.login()
         self.post("/api/scan")
         game = self.client.get("/api/games").get_json()[0]
         updated = self.client.patch(
             f"/api/games/{game['id']}",
-            json={"cover_position_y": 88},
+            json={"cover_position_y": 88, "cover_fit": "contain", "cover_zoom": 145},
             headers={"X-CSRF-Token": self.csrf},
         )
         self.assertEqual(updated.status_code, 200)
         self.assertEqual(updated.get_json()["cover_position_y"], 88)
+        self.assertEqual(updated.get_json()["cover_fit"], "contain")
+        self.assertEqual(updated.get_json()["cover_zoom"], 145)
         clamped = self.client.patch(
             f"/api/games/{game['id']}",
-            json={"cover_position_y": 999},
+            json={"cover_position_y": 999, "cover_zoom": 999},
             headers={"X-CSRF-Token": self.csrf},
         )
         self.assertEqual(clamped.get_json()["cover_position_y"], 100)
+        self.assertEqual(clamped.get_json()["cover_zoom"], 200)
+        invalid = self.client.patch(
+            f"/api/games/{game['id']}",
+            json={"cover_fit": "stretch"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(invalid.status_code, 400)
 
     def test_favorite_survives_rescan_and_rejects_invalid_values(self):
         self.login()

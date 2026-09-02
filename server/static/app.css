@@ -302,3 +302,11 @@ html[dir="rtl"] .is-loading::before{left:auto;right:13px}
 html[dir="rtl"] body[data-style="lcars"] .lcars-system-rail{left:auto;right:max(3vw,calc((100vw - 1500px)/2));border-radius:52px 0 0 0;box-shadow:inset 7px 0 color-mix(in srgb,var(--teal),black 8%)}
 html[dir="rtl"] input[data-library-field="id"],html[dir="rtl"] input[data-library-field="container_path"],html[dir="rtl"] input[data-library-field="windows_path"],html[dir="rtl"] input[data-library-field="linux_path"],html[dir="rtl"] #settingTheGamesDbApiKey,html[dir="rtl"] #settingRawgApiKey,html[dir="rtl"] #settingTranslatorUrl,html[dir="rtl"] #settingTranslatorApiKey,html[dir="rtl"] #editLauncher,html[dir="rtl"] code,html[dir="rtl"] pre,html[dir="rtl"] .technical-value{direction:ltr;text-align:left;unicode-bidi:isolate}
 @media(max-width:720px){html[dir="rtl"] .floating-brand-home{right:14px}html[dir="rtl"] .brand{padding-right:60px}}
+
+/* 0.9.0-rc.4: persistent cover fit and zoom controls. */
+.cover-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 50%;transform-origin:center center;pointer-events:none;user-select:none}
+.cover-position-preview .cover-image{transition:transform .12s ease,object-position .12s ease}
+.cover-framing-controls{display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1fr) auto;gap:10px;align-items:end}
+.cover-framing-controls label{display:grid;gap:5px}.cover-framing-controls output{margin-inline-start:6px;color:var(--muted);font-size:.85rem}.cover-framing-controls button{min-height:46px}
+.game-info-hero{overflow:hidden}.game-info-hero>.cover-image{z-index:0}.game-info-shade{z-index:1}.game-info-heading{z-index:2}.game-info-close{z-index:3}
+@media(max-width:720px){.cover-framing-controls{grid-template-columns:1fr}.cover-framing-controls button{width:100%}}

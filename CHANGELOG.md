@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0-rc.4
+
+- Direkte Windows-Setups von gemappten SMB-Laufwerken werden vor dem UAC-Start auf ihren UNC-Pfad aufgelöst. Dadurch bleiben Installer auch im erhöhten Prozesskontext erreichbar.
+- Der Agent startet Installer über getrennte, literale `ProcessStartInfo`-Felder; Leerzeichen, Apostrophe, eckige Klammern und lange Titel werden nicht über eine Befehlszeile neu gequotet.
+- Der Abbrechen-Button in den Einstellungen verwendet jetzt in jeder Oberflächensprache den zentralen Übersetzungsschlüssel.
+- Klingonisch und Elbisch/Sindarin übersetzen die sichtbaren Einstellungs-, Bibliotheks-, Design-, Wartungs- und Translator-Bereiche deutlich vollständiger; Produkt- und Protokollnamen bleiben absichtlich unverändert.
+- Der Cover-Editor bietet nun `Rahmen ausfüllen` oder `Ganzes Bild einpassen`, einen persistenten Zoom von 100–200 % und Zurücksetzen. Karten und Detailansicht verwenden dieselbe gespeicherte Darstellung.
+- TrueNAS-Community-Catalog-Staging auf App-Version 0.9.0-rc.4 und Paketrevision 1.0.3 aktualisiert.
+
 ## 0.9.0-rc.3
 
 - Spielinhaltsübersetzung zeigt nun alle Mission-Control-Zielsprachen: Arabisch und vereinfachtes Chinesisch aus dem verwalteten LibreTranslate-Paket sowie Klingonisch und Elvish/Sindarin als ausdrücklich gekennzeichnete Beta-Ziele.

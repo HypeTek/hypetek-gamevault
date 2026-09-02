@@ -1,4 +1,4 @@
-# 0.9.0-rc.3 Release Candidate checklist
+# 0.9.0-rc.4 Release Candidate checklist
 
 ## Completed in this RC source package
 
@@ -18,6 +18,11 @@
 - [x] Windows Agent EXE download checks the versioned release asset and falls back to the bundled ZIP instead of sending users to GitHub 404.
 - [x] Windows Agent confirmation dialog restores a working title-bar `X`; `X`, `Esc` and the negative button all cancel safely.
 - [x] RC documentation keeps `HypeTek/hypetek-gamevault` as the canonical repository during the release-candidate phase.
+- [x] Direct installers on mapped SMB drives are converted to UNC paths before a possible UAC elevation.
+- [x] PowerShell regression test preserves spaces, apostrophes, brackets and long titles during mapped-drive resolution.
+- [x] Settings cancellation uses the selected UI language in every integrated language pack.
+- [x] Klingon and Sindarin beta packs cover the complete settings, library, design, maintenance and Translator workflow without English fallback.
+- [x] Cover fit mode and 100–200 % zoom are stored per game and shared by card, preview and detail view.
 
 ## Local checks run on the prepared archive
 
@@ -25,8 +30,9 @@
 - [x] Jinja syntax parse for the TrueNAS Compose template.
 - [x] JavaScript syntax: `app.js`, `i18n.js`, `service-worker.js`.
 - [x] Python compile check for `server/`, `tests/` and `tools/`.
-- [x] 34 non-Flask unit tests passed, including scanner, settings, database, metadata, translation, design profiles, maintenance and release metadata.
-- [x] API/Translator PDF source updated for 0.9.0-rc.3; PDF regenerated and visually verified across all four pages.
+- [x] 75 Python unit tests passed, including the complete Flask route suite, scanner, settings, database, metadata, translation, design profiles, maintenance and release metadata.
+- [x] PowerShell 7 mapped-drive path regression test passed locally; Windows PowerShell 5.1 is enforced by GitHub Actions.
+- [x] API/Translator PDF source updated for 0.9.0-rc.4; PDF regenerated and visually verified across all four pages.
 
 ## Must turn green in GitHub before treating this as a usable RC
 

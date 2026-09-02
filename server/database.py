@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS games (
     description TEXT NOT NULL DEFAULT '',
     cover_name TEXT,
     cover_position_y INTEGER NOT NULL DEFAULT 50,
+    cover_fit TEXT NOT NULL DEFAULT 'cover',
+    cover_zoom INTEGER NOT NULL DEFAULT 100,
     metadata_provider TEXT,
     metadata_provider_id TEXT,
     metadata_source_url TEXT,
@@ -118,6 +120,14 @@ class Database:
             if "cover_position_y" not in game_columns:
                 connection.execute(
                     "ALTER TABLE games ADD COLUMN cover_position_y INTEGER NOT NULL DEFAULT 50"
+                )
+            if "cover_fit" not in game_columns:
+                connection.execute(
+                    "ALTER TABLE games ADD COLUMN cover_fit TEXT NOT NULL DEFAULT 'cover'"
+                )
+            if "cover_zoom" not in game_columns:
+                connection.execute(
+                    "ALTER TABLE games ADD COLUMN cover_zoom INTEGER NOT NULL DEFAULT 100"
                 )
             if "favorite" not in game_columns:
                 connection.execute(
@@ -264,6 +274,8 @@ class Database:
             "description",
             "cover_name",
             "cover_position_y",
+            "cover_fit",
+            "cover_zoom",
             "metadata_provider",
             "metadata_provider_id",
             "metadata_source_url",

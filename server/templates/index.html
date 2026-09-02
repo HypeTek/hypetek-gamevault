@@ -256,7 +256,7 @@
       <p id="settingsExclusionNote" class="note">Ausschlüsse gelten für Namen auf der obersten Ebene des Games-Ordners. Bestehende Cover und Metadaten bleiben erhalten.</p>
       <div class="settings-footer">
         <div class="version-mark"><strong>HypeTek Mission Control <span id="appVersion">–</span></strong><span>© 2026 Michael Härtwig · HypeTek</span></div>
-        <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeRawgKeyButton" type="button" class="ghost" data-i18n="settings.removeRawg">RAWG-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button type="button" data-close-settings class="secondary">Abbrechen</button><button id="saveSettingsButton" type="submit" value="default">Speichern</button></div>
+        <div class="dialog-actions"><button id="removeTheGamesDbKeyButton" type="button" class="ghost">TheGamesDB-Key entfernen</button><button id="removeRawgKeyButton" type="button" class="ghost" data-i18n="settings.removeRawg">RAWG-Key entfernen</button><button id="removeTranslatorButton" type="button" class="ghost">Translator entfernen</button><button type="button" data-close-settings class="secondary" data-i18n="common.cancel">Abbrechen</button><button id="saveSettingsButton" type="submit" value="default">Speichern</button></div>
       </div>
     </form>
   </dialog>
@@ -362,7 +362,17 @@
         <div><strong>Kartenbild ausrichten</strong><span class="field-hint">Bild nach oben oder unten ziehen. Die Vorschau entspricht exakt der späteren Karte.</span></div>
         <input id="editCoverPosition" type="hidden" value="50">
         <div id="coverPositionPreview" class="cover cover-position-preview" role="slider" tabindex="0" aria-label="Vertikale Position des Kartenbildes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <img id="coverPositionPreviewImage" class="cover-image" alt="">
           <div id="coverPositionPreviewTitle" class="cover-title">Cover-Vorschau</div>
+        </div>
+        <div class="cover-framing-controls">
+          <label><span data-i18n="editor.coverFit">Rahmenmodus</span>
+            <select id="editCoverFit"><option value="cover" data-i18n="editor.coverFill">Rahmen ausfüllen</option><option value="contain" data-i18n="editor.coverContain">Ganzes Bild einpassen</option></select>
+          </label>
+          <label><span data-i18n="editor.coverZoom">Zoom</span> <output id="editCoverZoomValue">100 %</output>
+            <input id="editCoverZoom" type="range" min="100" max="200" step="5" value="100">
+          </label>
+          <button id="resetCoverFraming" type="button" class="secondary" data-i18n="editor.coverReset">Zurücksetzen</button>
         </div>
       </section>
       <section class="metadata-search">
@@ -380,6 +390,7 @@
   <dialog id="gameInfoDialog" class="game-info-dialog">
     <article class="game-info-panel">
       <header id="gameInfoHero" class="game-info-hero">
+        <img id="gameInfoHeroImage" class="cover-image" alt="">
         <div class="game-info-shade"></div>
         <button id="closeGameInfo" type="button" class="game-info-close" aria-label="Infofenster schließen" data-i18n-aria="accessibility.closeInfo">×</button>
         <div class="game-info-heading">

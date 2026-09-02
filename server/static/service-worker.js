@@ -1,4 +1,4 @@
-const STATIC_CACHE = "hypetek-mission-control-static-v0.9.0-rc.3";
+const STATIC_CACHE = "hypetek-mission-control-static-v0.9.0-rc.4";
 
 self.addEventListener("install", () => {});
 

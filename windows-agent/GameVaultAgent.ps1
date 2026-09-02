@@ -176,6 +176,62 @@ function Assert-PathInsideRoot([string]$Root, [string]$RelativePath) {
     return $candidate
 }
 
+function Convert-MappedDrivePathToUnc([string]$Path) {
+    # Installers commonly request elevation. Windows does not reliably expose a
+    # user's mapped drive letters to the elevated token, so ShellExecute can
+    # report ERROR_FILE_NOT_FOUND even though Test-Path succeeded immediately
+    # beforehand. Resolve only mapped network drives; local drives are kept as-is.
+    if ([string]::IsNullOrWhiteSpace($Path) -or $Path -notmatch '^([A-Za-z]:)(\\.*)?$') {
+        return $Path
+    }
+
+    $drive = $Matches[1]
+    $suffix = [string]$Matches[2]
+    $remoteRoot = $null
+
+    try {
+        $mapping = Get-SmbMapping -LocalPath $drive -ErrorAction Stop | Select-Object -First 1
+        if ($mapping -and -not [string]::IsNullOrWhiteSpace([string]$mapping.RemotePath)) {
+            $remoteRoot = [string]$mapping.RemotePath
+        }
+    }
+    catch { }
+
+    if ([string]::IsNullOrWhiteSpace($remoteRoot)) {
+        try {
+            $network = New-Object -ComObject WScript.Network
+            $mappedDrives = $network.EnumNetworkDrives()
+            for ($index = 0; $index -lt $mappedDrives.Count; $index += 2) {
+                if ([string]$mappedDrives.Item($index) -ieq $drive) {
+                    $remoteRoot = [string]$mappedDrives.Item($index + 1)
+                    break
+                }
+            }
+        }
+        catch { }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($remoteRoot)) { return $Path }
+    return $remoteRoot.TrimEnd('\\') + $suffix
+}
+
+function Start-MissionControlInstaller([string]$Path) {
+    $launchPath = Convert-MappedDrivePathToUnc $Path
+    if (-not (Test-Path -LiteralPath $launchPath -PathType Leaf)) {
+        throw (Get-AgentCopy "sourceInvalid" @($launchPath))
+    }
+
+    # ProcessStartInfo passes FileName and WorkingDirectory as separate literal
+    # values. This avoids wildcard parsing and preserves spaces, apostrophes,
+    # brackets and long game titles without command-line re-quoting.
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $launchPath
+    $startInfo.WorkingDirectory = [IO.Path]::GetDirectoryName($launchPath)
+    $startInfo.UseShellExecute = $true
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    if (-not $process) { throw (Get-AgentCopy "sourceInvalid" @($launchPath)) }
+}
+
 function Get-Ticket([string]$ServerUrl, [string]$AgentToken, [string]$Ticket) {
     $headers = @{ Authorization = "Bearer $AgentToken" }
     try {
@@ -562,7 +618,7 @@ try {
             Start-Process explorer.exe -ArgumentList @($folder)
         }
         "direct_setup" {
-            Start-Process -FilePath $source -WorkingDirectory ([IO.Path]::GetDirectoryName($source))
+            Start-MissionControlInstaller $source
         }
         "iso" {
             $image = Mount-DiskImage -ImagePath $source -PassThru
@@ -573,7 +629,7 @@ try {
                 Start-Process explorer.exe "$($volume.DriveLetter):\"
                 throw (Get-AgentCopy "isoInstaller")
             }
-            Start-Process -FilePath $installer -WorkingDirectory ([IO.Path]::GetDirectoryName($installer))
+            Start-MissionControlInstaller $installer
         }
         default { throw (Get-AgentCopy "unsupported" @([string]$manifest.action)) }
     }

@@ -228,6 +228,19 @@ function coverPosition(game) {
   return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 50;
 }
 
+function coverFit(game) {
+  return game?.cover_fit === "contain" ? "contain" : "cover";
+}
+
+function coverZoom(game) {
+  const value = Number(game?.cover_zoom);
+  return Number.isFinite(value) ? Math.max(100, Math.min(200, value)) : 100;
+}
+
+function coverImageStyle(game) {
+  return `object-fit:${coverFit(game)};object-position:center ${coverPosition(game)}%;transform:scale(${coverZoom(game) / 100})`;
+}
+
 function render() {
   const query = state.query.toLocaleLowerCase("de");
   const filteredGames = state.games.filter((game) =>
@@ -253,13 +266,13 @@ function render() {
   library.innerHTML = games.map((game) => {
     const launchable = ["direct_setup", "iso"].includes(game.action) && game.launcher;
     const hasCover = Boolean(game.cover_name);
-    const cover = hasCover ? `background-image:url('${coverUrl(game)}');background-position:center ${coverPosition(game)}%` : "";
+    const coverImage = hasCover ? `<img class="cover-image" src="${coverUrl(game)}" alt="" style="${coverImageStyle(game)}">` : "";
     const monogram = escapeHtml(gameMonogram(game.title));
     const sourceNames = {rawg: "RAWG", thegamesdb: "TheGamesDB"};
     const sourceName = sourceNames[game.metadata_provider];
     const attribution = sourceName && game.metadata_source_url
       ? `<a class="cover-source" href="${escapeHtml(game.metadata_source_url)}" target="_blank" rel="noopener noreferrer">${tr("game.coverSource", {source: sourceName})}</a>` : "";
-    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="${escapeHtml(tr("game.info", {title: game.title}))}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}" style="${cover}">${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${typeLabel(game.action)}</span><span class="badge">${escapeHtml(game.platform || tr("game.unknown"))}</span>${(state.settings?.libraries || []).length > 1 ? `<span class="badge library-badge">${escapeHtml(game.library_name || game.library_id)}</span>` : ""}<span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button class="secondary edit-action" onclick="editGame('${game.id}')">${tr("game.edit")}</button></div></div></article>`;
+    return `<article class="card" data-game-id="${game.id}"><button class="card-info" type="button" onclick="showGameInfo('${game.id}')" aria-label="${escapeHtml(tr("game.info", {title: game.title}))}"><div class="cover ${hasCover ? "" : "placeholder"}" data-monogram="${monogram}">${coverImage}${game.favorite ? '<span class="card-favorite" title="Favorit">★</span>' : ""}<div class="cover-title">${escapeHtml(game.title)}</div></div></button><div class="card-body"><h3 title="${escapeHtml(game.title)}">${escapeHtml(game.title)}</h3><div class="meta"><span class="badge ${launchable ? "launchable" : ""}">${typeLabel(game.action)}</span><span class="badge">${escapeHtml(game.platform || tr("game.unknown"))}</span>${(state.settings?.libraries || []).length > 1 ? `<span class="badge library-badge">${escapeHtml(game.library_name || game.library_id)}</span>` : ""}<span>${formatBytes(game.logical_size)}</span></div>${attribution}${launchable ? "" : `<div class="manual">${escapeHtml(game.detection_note)}</div>`}<div class="card-actions">${launchable ? `<button class="primary-action" onclick="launchGame('${game.id}')">${actionLabel(game)}</button>` : ""}<button class="secondary folder-action" onclick="openGameFolder('${game.id}')">${tr("game.folder")}</button><button class="secondary edit-action" onclick="editGame('${game.id}')">${tr("game.edit")}</button></div></div></article>`;
   }).join("") || `<p>${tr("game.empty")}</p>`;
   renderPagination(filteredGames.length, pageCount, firstIndex, games.length);
 }
@@ -343,6 +356,8 @@ function editGame(id) {
   if (coverPreviewObjectUrl) URL.revokeObjectURL(coverPreviewObjectUrl);
   coverPreviewObjectUrl = null;
   document.querySelector("#editCoverPosition").value = coverPosition(game);
+  document.querySelector("#editCoverFit").value = coverFit(game);
+  document.querySelector("#editCoverZoom").value = coverZoom(game);
   document.querySelector("#metadataQuery").value = game.metadata_search_title || game.title;
   document.querySelector("#metadataResults").innerHTML = "";
   document.querySelector("#editNote").textContent = tr("editor.detected", {type: typeLabel(game.detected_type), note: game.detection_note, path: game.relative_path});
@@ -368,9 +383,16 @@ function updateCoverPositionPreview() {
   const game = state.games.find((candidate) => candidate.id === id);
   const value = Math.max(0, Math.min(100, Number(document.querySelector("#editCoverPosition").value || 50)));
   const preview = document.querySelector("#coverPositionPreview");
+  const previewImage = document.querySelector("#coverPositionPreviewImage");
   const imageUrl = coverPreviewObjectUrl || (game?.cover_name ? coverUrl(game) : "");
-  preview.style.backgroundImage = imageUrl ? `url('${imageUrl}')` : "none";
-  preview.style.backgroundPosition = `center ${value}%`;
+  const fit = document.querySelector("#editCoverFit").value === "contain" ? "contain" : "cover";
+  const zoom = Math.max(100, Math.min(200, Number(document.querySelector("#editCoverZoom").value || 100)));
+  previewImage.src = imageUrl;
+  previewImage.hidden = !imageUrl;
+  previewImage.style.objectFit = fit;
+  previewImage.style.objectPosition = `center ${value}%`;
+  previewImage.style.transform = `scale(${zoom / 100})`;
+  document.querySelector("#editCoverZoomValue").textContent = `${Math.round(zoom)} %`;
   preview.setAttribute("aria-valuenow", String(Math.round(value)));
   preview.classList.toggle("is-empty", !imageUrl);
   document.querySelector("#coverPositionPreviewTitle").textContent = document.querySelector("#editTitle").value.trim() || game?.title || tr("editor.coverPreview");
@@ -422,9 +444,10 @@ function showGameInfo(id) {
   const contentLanguage = String(game.metadata_overview_language || "").trim().toLowerCase();
   const infoTr = (key, variables = {}) => trForLanguage(contentLanguage, key, variables);
   gameInfoDialog.dataset.gameId = game.id;
-  const hero = document.querySelector("#gameInfoHero");
-  hero.style.backgroundImage = game.cover_name ? `url('${coverUrl(game)}')` : "none";
-  hero.style.backgroundPosition = `center ${coverPosition(game)}%`;
+  const heroImage = document.querySelector("#gameInfoHeroImage");
+  heroImage.src = game.cover_name ? coverUrl(game) : "";
+  heroImage.hidden = !game.cover_name;
+  heroImage.setAttribute("style", coverImageStyle(game));
   document.querySelector("#gameInfoProvider").textContent = ({thegamesdb: "TheGamesDB", rawg: "RAWG"})[game.metadata_provider] || "Mission Control";
   document.querySelector("#gameInfoTitle").textContent = game.metadata_title || game.title;
   const metadata = [game.metadata_platform || game.platform, game.metadata_release_date, game.metadata_rating, game.metadata_players ? infoTr("info.players", {count: game.metadata_players}) : "", game.metadata_coop ? infoTr("info.coop", {value: game.metadata_coop}) : ""].filter(Boolean);
@@ -857,6 +880,8 @@ document.querySelector("#editorForm").addEventListener("submit", async (event) =
     launcher_override: document.querySelector("#editLauncher").value.trim() || null,
     description: document.querySelector("#editDescription").value.trim(),
     cover_position_y: Number(document.querySelector("#editCoverPosition").value),
+    cover_fit: document.querySelector("#editCoverFit").value,
+    cover_zoom: Number(document.querySelector("#editCoverZoom").value),
   };
   try {
     await api(`/api/games/${id}`, {method: "PATCH", body: JSON.stringify(body)});
@@ -1270,6 +1295,14 @@ document.querySelector("#coverPositionPreview").addEventListener("pointermove", 
 document.querySelector("#coverPositionPreview").addEventListener("pointerup", stopCoverDrag);
 document.querySelector("#coverPositionPreview").addEventListener("pointercancel", stopCoverDrag);
 document.querySelector("#coverPositionPreview").addEventListener("keydown", nudgeCoverPosition);
+document.querySelector("#editCoverFit").addEventListener("change", updateCoverPositionPreview);
+document.querySelector("#editCoverZoom").addEventListener("input", updateCoverPositionPreview);
+document.querySelector("#resetCoverFraming").addEventListener("click", () => {
+  document.querySelector("#editCoverPosition").value = "50";
+  document.querySelector("#editCoverFit").value = "cover";
+  document.querySelector("#editCoverZoom").value = "100";
+  updateCoverPositionPreview();
+});
 document.querySelector("#brandHomeButton").addEventListener("click", () => window.scrollTo({top: 0, behavior: preferredScrollBehavior()}));
 document.querySelector("#viewGridButton").addEventListener("click", () => setLibraryView("grid"));
 document.querySelector("#viewListButton").addEventListener("click", () => setLibraryView("list"));
